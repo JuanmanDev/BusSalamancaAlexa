@@ -1,0 +1,4 @@
+
+/** Content */
+export interface Content {
+}

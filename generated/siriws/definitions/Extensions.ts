@@ -1,0 +1,4 @@
+
+/** Extensions */
+export interface Extensions {
+}
