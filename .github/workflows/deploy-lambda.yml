@@ -23,8 +23,7 @@ jobs:
           name: lambda-package
           path: lambda.zip
 
-  deploy-prod:
-    if: github.ref == 'refs/heads/main'
+  deploy:
     needs: build-and-zip
     runs-on: ubuntu-latest
     steps:
@@ -32,31 +31,24 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: lambda-package
+      - name: Set environment variables
+        id: set-env
+        run: |
+          if [ "${GITHUB_REF##*/}" = "main" ]; then
+            echo "AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID_PROD }}" >> $GITHUB_ENV
+            echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY_PROD }}" >> $GITHUB_ENV
+            echo "LAMBDA_FUNCTION_NAME=${{ secrets.LAMBDA_FUNCTION_NAME_PROD }}" >> $GITHUB_ENV
+          else
+            echo "AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID_DEV }}" >> $GITHUB_ENV
+            echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY_DEV }}" >> $GITHUB_ENV
+            echo "LAMBDA_FUNCTION_NAME=${{ secrets.LAMBDA_FUNCTION_NAME_DEV }}" >> $GITHUB_ENV
+          fi
       - uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-access-key-id: ${{ env.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ env.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
       - run: |
           aws lambda update-function-code \
-            --function-name BusSalamancaAlexaHandler \
-            --zip-file fileb://lambda.zip
-
-  deploy-dev:
-    if: github.ref != 'refs/heads/main'
-    needs: build-and-zip
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
-        with:
-          name: lambda-package
-      - uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1
-      - run: |
-          aws lambda update-function-code \
-            --function-name BusSalamancaAlexaHandlerDev \
+            --function-name $LAMBDA_FUNCTION_NAME \
             --zip-file fileb://lambda.zip
