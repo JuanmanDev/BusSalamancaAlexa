@@ -1,0 +1,62 @@
+name: Deploy to AWS Lambda
+
+on:
+  push:
+    branches:
+      - '**'
+
+jobs:
+  build-and-zip:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci
+      - run: npm run build
+      - run: mv dist/index.js dist/index.mjs
+      - run: rm -rf node_modules
+      - run: npm ci --only=production
+      - run: |
+          zip -r lambda.zip . -i "dist/*" "package.json" "package-lock.json" "node_modules/*"
+      - run: |
+          cd dist
+          zip -r ../lambda.zip . 
+          cd ..
+          zip -g lambda.zip package.json package-lock.json
+          zip -r lambda.zip node_modules
+      - uses: actions/upload-artifact@v4
+        with:
+          name: lambda-package
+          path: lambda.zip
+
+  deploy:
+    needs: build-and-zip
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: lambda-package
+      - name: Set environment variables
+        id: set-env
+        run: |
+          if [ "${GITHUB_REF##*/}" = "main" ]; then
+            echo "AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID_PROD }}" >> $GITHUB_ENV
+            echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY_PROD }}" >> $GITHUB_ENV
+            echo "LAMBDA_FUNCTION_NAME=${{ secrets.LAMBDA_FUNCTION_NAME_PROD }}" >> $GITHUB_ENV
+          else
+            echo "AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID_DEV }}" >> $GITHUB_ENV
+            echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY_DEV }}" >> $GITHUB_ENV
+            echo "LAMBDA_FUNCTION_NAME=${{ secrets.LAMBDA_FUNCTION_NAME_DEV }}" >> $GITHUB_ENV
+          fi
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ env.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ env.AWS_SECRET_ACCESS_KEY }}
+          aws-region: eu-west-1
+      - run: |
+          aws lambda update-function-code \
+            --function-name $LAMBDA_FUNCTION_NAME \
+            --zip-file fileb://lambda.zip
