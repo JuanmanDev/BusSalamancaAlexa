@@ -92,7 +92,7 @@ const LaunchRequestHandler : RequestHandler = {
         // Add APL directive if supported
         if (Alexa.getSupportedInterfaces(handlerInput.requestEnvelope)['Alexa.Presentation.APL']) {
           const aplDirective = createDirectivePayload(DOCUMENT_ID, datasource);
-          handlerInput.responseBuilder.addDirective(aplDirective);
+          handlerInput.responseBuilder.addDirective(aplDirective as any);
         }
 
         return handlerInput.responseBuilder
@@ -106,7 +106,7 @@ const LaunchRequestHandler : RequestHandler = {
         // Add APL directive if supported
         if (Alexa.getSupportedInterfaces(handlerInput.requestEnvelope)['Alexa.Presentation.APL']) {
           const aplDirective = createDirectivePayload(DOCUMENT_ID, datasource);
-          handlerInput.responseBuilder.addDirective(aplDirective);
+          handlerInput.responseBuilder.addDirective(aplDirective as any);
         }
 
         return handlerInput.responseBuilder
