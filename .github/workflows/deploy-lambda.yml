@@ -15,9 +15,17 @@ jobs:
           node-version: '22'
       - run: npm ci
       - run: npm run build
+      - run: mv dist/index.js dist/index.mjs
       - run: rm -rf node_modules
       - run: npm ci --only=production
-      - run: zip -r lambda.zip dist package.json package-lock.json node_modules
+      - run: |
+          zip -r lambda.zip . -i "dist/*" "package.json" "package-lock.json" "node_modules/*"
+      - run: |
+          cd dist
+          zip -r ../lambda.zip . 
+          cd ..
+          zip -g lambda.zip package.json package-lock.json
+          zip -r lambda.zip node_modules
       - uses: actions/upload-artifact@v4
         with:
           name: lambda-package
