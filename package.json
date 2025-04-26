@@ -10,7 +10,7 @@
     "ask-sdk": "^2.14.0",
     "node-fetch": "^3.3.2",
     "xml2js": "^0.6.2",
-    "xmldom": "^0.8.10"
+    "xmldom": "^0.6.0"
   },
   "devDependencies": {
     "@tsconfig/node22": "^22.0.1",
