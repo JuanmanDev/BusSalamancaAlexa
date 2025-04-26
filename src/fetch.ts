@@ -167,6 +167,15 @@ export function getStopPointName(jsonResult: any): string | undefined {
     return firstVisit?.MonitoredVehicleJourney?.MonitoredCall?.StopPointName;
 }
 
+export function getStopData(jsonResult: any) {
+    const visits = jsonResult?.["soap:Envelope"]?.["soap:Body"]?.GetStopMonitoringResponse?.GetStopMonitoringResult?.Answer?.StopMonitoringDelivery?.MonitoredStopVisit;
+    const firstVisit = Array.isArray(visits) ? visits[0] : visits;
+    return {
+        address: firstVisit?.MonitoredVehicleJourney?.MonitoredCall?.StopPointName,
+        number: firstVisit?.MonitoredVehicleJourney?.MonitoredCall?.StopPointRef,
+    }
+}
+
 function formatArrivalData(arrivalData: any[]) {
     return arrivalData.map(item => {
         if (item.minutesRemaining < 2) {
@@ -174,7 +183,7 @@ function formatArrivalData(arrivalData: any[]) {
         } else {
             return `Línea ${item.line} llega en ${item.minutesRemaining} minutos. `;
         }
-    }).join('\n ');
+    }).join('\n');
 }
 
 export default async function main(parada: number = 199) {
@@ -218,4 +227,36 @@ export async function getStopInfo(parada: number) {
         console.error('There was a problem with the fetch operation:', error);
     }
     return "";
+}
+
+
+export async function dataStructured(parada: number = 199) {
+    try {
+        const xmlText = await fetchBusData(parada);
+        console.debug(xmlText);
+
+        const jsonResult = await parseBusXmlToJson(xmlText);
+        // console.debug(jsonResult);
+
+        const visits = jsonResult?.["soap:Envelope"]?.["soap:Body"]?.GetStopMonitoringResponse?.GetStopMonitoringResult?.Answer?.StopMonitoringDelivery?.MonitoredStopVisit;
+        //console.debug(visits);
+
+        const arrivalData = getArrivalTimesWithMinutes(jsonResult);
+        // console.debug(arrivalData);
+
+        const result = formatArrivalData(arrivalData);
+        // console.debug(result);
+
+        
+        const stopPointName = getStopData(jsonResult);
+        // console.debug(stopPointName);
+
+        return {
+            linesText: result,
+            stopData: stopPointName
+        }
+    } catch (error) {
+        console.error('There was a problem with the fetch operation:', error);
+    }
+    return "No hay información disponible para la parada seleccionada en estos momentos.";
 }

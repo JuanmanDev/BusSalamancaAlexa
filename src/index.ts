@@ -10,6 +10,49 @@ import {
 } from 'ask-sdk-model';
 import main, { getStopInfo } from './fetch.js';
 import AWS from 'aws-sdk';
+import Alexa from 'ask-sdk-core';
+
+const DOCUMENT_ID = "AbreBusSalamanca";
+
+const datasource = {
+    "headlineTemplateData": {
+        "type": "object",
+        "objectId": "headlineSample",
+        "properties": {
+            "backgroundImage": {
+                "contentDescription": null,
+                "smallSourceUrl": null,
+                "largeSourceUrl": null,
+                "sources": [
+                    {
+                        "url": "",
+                        "size": "large"
+                    }
+                ]
+            },
+            "textContent": {
+                "primaryText": {
+                    "type": "PlainText",
+                    "text": "Línea 9 llega en 5 minutos. Línea 7 llega en 15 minutos."
+                }
+            },
+            "logoUrl": "https://m.media-amazon.com/images/I/41E21ldSofL.png",
+            "hintText": "Prueba, \"Alexa, abre Bus Salamanca y dime cuál es mi parada\""
+        }
+    }
+};
+
+const createDirectivePayload = (aplDocumentId: string, dataSources = {}, tokenId = "documentToken") => {
+    return {
+        type: "Alexa.Presentation.APL.RenderDocument",
+        token: tokenId,
+        document: {
+            type: "Link",
+            src: "doc://alexa/apl/documents/" + aplDocumentId
+        },
+        datasources: dataSources
+    }
+};
 
 const dynamoDb = new AWS.DynamoDB.DocumentClient();
 const TABLE_NAME = 'BusSalamanca'; // Replace with your table name
@@ -46,6 +89,12 @@ const LaunchRequestHandler : RequestHandler = {
         speechText = `Tienes la parada guardada: ${stopInfo}.`;
         let text = await main(Number(stopInfo)) as string; // Assuming stopInfo is a number
 
+        // Add APL directive if supported
+        if (Alexa.getSupportedInterfaces(handlerInput.requestEnvelope)['Alexa.Presentation.APL']) {
+          const aplDirective = createDirectivePayload(DOCUMENT_ID, datasource);
+          handlerInput.responseBuilder.addDirective(aplDirective);
+        }
+
         return handlerInput.responseBuilder
           .speak(text)
           .reprompt(text)
@@ -54,6 +103,12 @@ const LaunchRequestHandler : RequestHandler = {
       } else {
         speechText = 'No tienes ninguna parada guardada. Puedes decir Abre Bus Salamanca y guarda la parada 199 para memorizar tu parada, puedes consultar las paradas en la web salamancadetransportes.com , también puedes consultar una parada en específico diciendo abre Bus Salamanca y revisa la parada 199.';
         
+        // Add APL directive if supported
+        if (Alexa.getSupportedInterfaces(handlerInput.requestEnvelope)['Alexa.Presentation.APL']) {
+          const aplDirective = createDirectivePayload(DOCUMENT_ID, datasource);
+          handlerInput.responseBuilder.addDirective(aplDirective);
+        }
+
         return handlerInput.responseBuilder
           .speak(speechText)
           .withSimpleCard("Bus Salamanca:", speechText)

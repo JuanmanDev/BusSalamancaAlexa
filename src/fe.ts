@@ -1,4 +1,6 @@
-import main, { getCurrentDateTime, getStopInfo } from './fetch.js';
+import main, { dataStructured, getCurrentDateTime, getStopInfo } from './fetch.js';
 
-console.log(await getStopInfo(199));
+// console.log(await getStopInfo(199));
 //console.log(getCurrentDateTime());
+
+console.log(await dataStructured());
