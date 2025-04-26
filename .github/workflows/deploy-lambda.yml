@@ -1,0 +1,62 @@
+name: Deploy to AWS Lambda
+
+on:
+  push:
+    branches:
+      - '**'
+
+jobs:
+  build-and-zip:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci
+      - run: npm run build
+      - run: rm -rf node_modules
+      - run: npm ci --only=production
+      - run: zip -r lambda.zip dist package.json package-lock.json node_modules
+      - uses: actions/upload-artifact@v4
+        with:
+          name: lambda-package
+          path: lambda.zip
+
+  deploy-prod:
+    if: github.ref == 'refs/heads/main'
+    needs: build-and-zip
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: lambda-package
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+      - run: |
+          aws lambda update-function-code \
+            --function-name BusSalamancaAlexaHandler \
+            --zip-file fileb://lambda.zip
+
+  deploy-dev:
+    if: github.ref != 'refs/heads/main'
+    needs: build-and-zip
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: lambda-package
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+      - run: |
+          aws lambda update-function-code \
+            --function-name BusSalamancaAlexaHandlerDev \
+            --zip-file fileb://lambda.zip
