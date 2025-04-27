@@ -262,6 +262,7 @@ const LaunchRequestHandler : RequestHandler = {
       if (stopInfo) {
 
 
+        console.debug('LaunchRequestHandler - returnInforResponse', stopInfo);
         return await returnInforResponse(handlerInput, stopInfo);
         
 
@@ -422,6 +423,7 @@ const CheckStopIntentHandler : RequestHandler = {
 
     let speechText: string;
     if (stopInfo) {
+      console.debug('CheckStopIntentHandler - returnInforResponse', stopInfo);
       return await returnInforResponse(handlerInput, stopInfo);
     } else {
       speechText = 'No tienes ninguna parada guardada. Puedes decirme una para guardarla.';
@@ -459,6 +461,7 @@ const CheckAnyStopIntentHandler : RequestHandler = {
     }
 
     
+    console.debug('CheckAnyStopIntentHandler - returnInforResponse', stopNumber);
     return await returnInforResponse(handlerInput, stopNumber);
 
     // Aquí puedes llamar a tu función main o lógica para obtener información de la parada
