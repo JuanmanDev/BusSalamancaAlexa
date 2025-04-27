@@ -268,7 +268,9 @@ const LaunchRequestHandler : RequestHandler = {
 
       } else {
 
-        speechText = 'No tienes ninguna parada guardada.<br>Puedes decir Abre Bus Salamanca y guarda la parada 199 para memorizar tu parada, puedes consultar las paradas en la web salamancadetransportes.com o en su aplicación oficial; también puedes consultar una parada en específico diciendo abre Bus Salamanca y revisa la parada 199.';
+        console.debug('LaunchRequestHandler - No stopInfo found');
+
+        speechText = 'No tienes ninguna parada guardada.<br />Puedes decir Abre Bus Salamanca y guarda la parada 199 para memorizar tu parada, puedes consultar las paradas en la web salamancadetransportes.com o en su aplicación oficial; también puedes consultar una parada en específico diciendo abre Bus Salamanca y revisa la parada 199.';
         
         // // Add APL directive if supported
         // if (Alexa.getSupportedInterfaces(handlerInput.requestEnvelope)['Alexa.Presentation.APL']) {
