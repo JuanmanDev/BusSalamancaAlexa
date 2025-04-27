@@ -316,7 +316,7 @@ async function returnInforResponse(handlerInput: HandlerInput, stopInfo: string,
       .reprompt(data.linesText)
       .withSimpleCard(`Próximas línas de autobús (Parada ${stopInfo}):`, data.linesText)
       .withStandardCard(
-        "Bus Salamanca - Parada Guardada" + stopInfo,
+        "Bus Salamanca - Parada " + stopInfo,
         data.linesText,
         "https://m.media-amazon.com/images/I/41E21ldSofL.png",
         "https://bussalamanca.s3.eu-west-1.amazonaws.com/publicimages/BusSalamancaBackground.png",
