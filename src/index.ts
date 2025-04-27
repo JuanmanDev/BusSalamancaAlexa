@@ -409,7 +409,7 @@ const HelpIntentHandler : RequestHandler = {
       title: "Bus Salamanca",
       subtitle: "Ayuda",
       mainText: speechText,
-      hint: "Prueba \"Alexa, Abre Bus Salamanca y dime cual es mi parada guardada\"."
+      hint: "Prueba \"Alexa, ¿Cuándo llega el autbús?\"."
     });
 
     return handlerInput.responseBuilder
