@@ -486,7 +486,7 @@ const CheckAnyStopIntentHandler : RequestHandler = {
     if (!stopNumber) {
       const speechText = 'No he entendido el número de parada que quieres consultar. Para consultar cualquier parada dí Abre bus salamanca y consulta la parada 199.';
 
-      cardForText(handlerInput, {
+      return cardForText(handlerInput, {
         title: "Bus Salamanca",
         //subtitle: "No he entendido el número de parada que quieres consultar.",
         mainText: speechText,
