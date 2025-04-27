@@ -490,7 +490,7 @@ const CheckAnyStopIntentHandler : RequestHandler = {
         title: "Bus Salamanca",
         //subtitle: "No he entendido el número de parada que quieres consultar.",
         mainText: speechText,
-        hint: "Prueba \"Alexa, Abre Bus Salamanca y consulta la parada 199\"."
+        hint: `Prueba "Alexa, guarda la parada ${stopNumber}".`
       });
 
     }
