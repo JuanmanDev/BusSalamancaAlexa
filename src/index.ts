@@ -402,7 +402,7 @@ const HelpIntentHandler : RequestHandler = {
       && request.intent.name === 'AMAZON.HelpIntent';
   },
   handle(handlerInput : HandlerInput) : Response {
-    const speechText = 'Puedo decirte cuanto tiempo queda para que lleguen los próximos autobuses. Puedes decirme, por ejemplo, abre Bus Salamanca y revisa la parada 199, o siemplemente "Alexa, Abre Bus Salamanca" si ya has guardado tu parada favorita.';
+    const speechText = 'Puedo decirte cuanto tiempo queda para que lleguen los próximos autobuses. Puedes decirme, por ejemplo, abre Bus Salamanca y revisa la parada 199, o siemplemente "Alexa, Abre Bus Salamanca" si ya has guardado tu parada favorita.\nPara cambiar tu parada puede decir "Alexa, abre Bus Salamanca y guarda la parada 123", para saber que paradas hay puedes ir a la web salamancadetransportes.com o a su aplicación oficial.\nSi quieres saber más sobre la skill puedes decir "Alexa, abre Bus Salamanca y dime ayuda" para que te repita este mensaje.';
 
 
     return cardForText(handlerInput, {
