@@ -253,7 +253,8 @@ export async function dataStructured(parada: number = 199) {
 
         return {
             linesText: result,
-            stopData: stopPointName
+            stopData: stopPointName,
+            arrivalData: arrivalData,
         }
     } catch (error) {
         console.error('There was a problem with the fetch operation:', error);
