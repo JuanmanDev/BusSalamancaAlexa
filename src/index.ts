@@ -374,7 +374,7 @@ const LaunchRequestHandler : RequestHandler = {
         const stopRandom1 = Math.floor(Math.random() * 250) + 1;
         const stopRandom2 = Math.floor(Math.random() * 250) + 1;
         const stopRandom3 = Math.floor(Math.random() * 250) + 1;
-        speechText = "No sé de qué parada puedo informarte.\nPuedes decir Abre Bus Salamanca y guarda la parada " + stopRandom1 +" para memorizar tu parada y que te informe cada que que abras esta skill, puedes consultar las paradas en la web\nsalamancadetransportes.com\no en su aplicación oficial.\nTambién puedes consultar una parada en específico diciendo abre Bus Salamanca y revisa la parada " + stopRandom2 +".";
+        speechText = "No sé de qué parada puedo informarte.\nPuedes decir Abre Bus Salamanca y guarda la parada " + stopRandom1 +" para memorizar tu parada y que te informe cada que vez que abras esta skill, puedes consultar las paradas en la web\nsalamancadetransportes.com\no en su aplicación oficial.\nTambién puedes consultar una parada en específico diciendo abre Bus Salamanca y revisa la parada " + stopRandom2 +".";
 
         return cardForText(handlerInput, {
           title: "Bus Salamanca",
