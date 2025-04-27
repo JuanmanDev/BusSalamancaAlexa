@@ -497,7 +497,7 @@ const AddStopIntentHandler : RequestHandler = {
         title: "Bus Salamanca",
         subtitle: `Parada ${stopNumber} guardada`,
         mainText: `He guardado la parada número ${stopNumber} para tí.\nAhora solo necesitas decir abre Bus Salamanca para que te informe sobre esa parada.`,
-        hint: "Prueba \"Alexa, Abre Bus Salamanca y dime cuál es mi parada guardada\"."
+        hint: "Prueba \"Alexa, cuando llega el autbús\"."
       });
     } catch (error) {
       console.error('DynamoDB put error:', error);
