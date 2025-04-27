@@ -5,60 +5,210 @@ import {
     SkillBuilders,
   } from 'ask-sdk-core';
 import {
+  Directive,
   Response,
   SessionEndedRequest,
 } from 'ask-sdk-model';
-import main, { getStopInfo } from './fetch.js';
+import main, { dataStructured, getStopInfo } from './fetch.js';
 import AWS from 'aws-sdk';
 import Alexa from 'ask-sdk-core';
 
-const DOCUMENT_ID = "AbreBusSalamanca";
 
-const datasource = {
-    "headlineTemplateData": {
-        "type": "object",
-        "objectId": "headlineSample",
-        "properties": {
-            "backgroundImage": {
-                "contentDescription": null,
-                "smallSourceUrl": null,
-                "largeSourceUrl": null,
-                "sources": [
-                    {
-                        "url": "",
-                        "size": "large"
-                    }
-                ]
-            },
-            "textContent": {
-                "primaryText": {
-                    "type": "PlainText",
-                    "text": "Línea 9 llega en 5 minutos. Línea 7 llega en 15 minutos."
-                }
-            },
-            "logoUrl": "https://m.media-amazon.com/images/I/41E21ldSofL.png",
-            "hintText": "Prueba, \"Alexa, abre Bus Salamanca y dime cuál es mi parada\""
-        }
-    }
-};
-
-const createDirectivePayload = (aplDocumentId: string, dataSources = {}, tokenId = "documentToken") => {
-    return {
-        type: "Alexa.Presentation.APL.RenderDocument",
-        token: tokenId,
-        document: {
-            type: "Link",
-            src: "doc://alexa/apl/documents/" + aplDocumentId
-        },
-        datasources: dataSources
-    }
-};
+const APL_TOKEN_CARD = "BusSalamancaToken";
 
 const dynamoDb = new AWS.DynamoDB.DocumentClient();
 const TABLE_NAME = 'BusSalamanca'; // Replace with your table name
 
 // Make sure this matches your DynamoDB table's partition key name
 const DYNAMO_KEY_NAME = 'BusSalamanca'; // <-- Change this if your key is not 'userId'
+
+// Helper to build the APL document with dynamic data
+function buildCardDocument(stopNumber: string, stopAddress: string, lines: {line: number, minutesRemaining: number}[]) {
+    return {
+        "type": "APL",
+        "version": "2024.3",
+        "theme": "dark",
+        "import": [
+            {
+                "name": "alexa-layouts",
+                "version": "1.7.0"
+            }
+        ],
+        "styles": {
+            "customStatDescriptionStyle": {
+                "extends": "textStyleCallout",
+                "values": [
+                    {
+                        "color": "ivory",
+                        "shrink": 1,
+                        "spacing": "@spacingXSmall",
+                        "fontStyle": "italic",
+                        "_fontSize": "@fontSizeMedium",
+                        "padding": "20dp"
+                    },
+                    {
+                        "when": "${@viewportProfile == @hubRoundSmall}",
+                        "maxLines": 2,
+                        "_fontSize": "@fontSizeXSmall",
+                        "padding": "5dp"
+                    },
+                    {
+                        "when": "${@viewportProfile == @tvLandscapeXLarge}",
+                        "fontSize": "@fontSize2XLarge"
+                    }
+                ]
+            }
+        },
+        "mainTemplate": {
+            "parameters": [
+                "gameStrings",
+                "gameStats",
+                "images"
+            ],
+            "items": [
+                {
+                    "type": "Container",
+                    "height": "100%",
+                    "width": "100%",
+                    "items": [
+                        {
+                            "type": "AlexaBackground",
+                            "backgroundImageSource": "https://bussalamanca.s3.eu-west-1.amazonaws.com/publicimages/BusSalamancaBackground.png",
+                            "backgroundBlur": false
+                        },
+                        {
+                            "type": "Container",
+                            "grow": 1,
+                            "width": "100%",
+                            "_height": "100%",
+                            "alignSelf": "center",
+                            "items": [
+                                {
+                                    "type": "Sequence",
+                                    "height": "100%",
+                                    "justifyContent": "center",
+                                    "items": [
+                                        {
+                                            "type": "AlexaHeader",
+                                            //"headerBackgroundColor": "black",
+                                            "headerTitle": `BUS SALAMANCA - PARADA ${stopNumber} `,
+                                            "headerSubtitle": stopAddress,
+                                            "headerAttributionImage": "https://m.media-amazon.com/images/I/41E21ldSofL.png",
+                                            "opacity": "@opacityNonResponse",
+                                            "when": "${@viewportProfile != @hubRoundSmall}"
+                                        },
+                                        {
+                                            "type": "AlexaHeader",
+                                            "headerBackgroundColor": "black",
+                                            "headerAttributionImage": "https://m.media-amazon.com/images/I/41E21ldSofL.png",
+                                            "opacity": "@opacityNonResponse",
+                                            "when": "${@viewportProfile == @hubRoundSmall}"
+                                        },
+                                        {
+                                            "text": "Próximas líneas de autobuses en llegar: ",
+                                            "textAlign": "center",
+                                            "type": "Text",
+                                            "when": "${@viewportProfile != @hubRoundSmall}",
+                                            "width": "100%",
+                                            "paddingTop": "10dp",
+                                            "paddingBottom": "10dp",
+                                            "direction": "row",
+                                            "alignSelf": "center",
+                                            "justifyContent": "center"
+                                        },
+                                        // Dynamically generate bus lines
+                                        ...lines.map(l => ({
+                                            "type": "Container",
+                                            "direction": "row",
+                                            "width": "100%",
+                                            "alignSelf": "center",
+                                            "justifyContent": "center",
+                                            "items": [
+                                                {
+                                                    "type": "Text",
+                                                    "text": `Línea ${l.line}`,
+                                                    "width": "45%",
+                                                    "textAlign": "right",
+                                                    "alignSelf": "center"
+                                                },
+                                                {
+                                                    "type": "Text",
+                                                    "text": (l.minutesRemaining < 2) ? "llegando" : `en ${l.minutesRemaining} minutos`,
+                                                    "alignSelf": "center",
+                                                    "width": "55%",
+                                                    "style": "customStatDescriptionStyle"
+                                                }
+                                            ]
+                                        }))
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    };
+}
+
+// Update createDirectivePayload to use a single object parameter
+const createDirectivePayload = ({
+    stopNumber,
+    stopAddress,
+    lines
+}: {
+    stopNumber: string,
+    stopAddress: string,
+    lines: {line: number, minutesRemaining: number}[]
+}): Directive => {
+    const cardDocument = buildCardDocument(stopNumber, stopAddress, lines);
+    return {
+        type: 'Alexa.Presentation.APL.RenderDocument',
+        token: APL_TOKEN_CARD,
+        document: cardDocument
+    };
+};
+
+async function resturnInforResponse(handlerInput: HandlerInput, stopInfo: string) {
+  
+  const data = await dataStructured(Number(stopInfo));
+
+  if (typeof data === 'string') {
+    return handlerInput.responseBuilder
+      .speak(data)
+      .withStandardCard(
+        "Bus Salamanca - Parada " + stopInfo,
+        data,
+        "https://m.media-amazon.com/images/I/41E21ldSofL.png",
+        "https://bussalamanca.s3.eu-west-1.amazonaws.com/publicimages/BusSalamancaBackground.png",
+      )
+      .withSimpleCard("Bus Salamanca - Parada " + stopInfo, data)
+      .withShouldEndSession(true)
+      .getResponse();
+  }
+
+  // Add APL directive if supported
+  if (Alexa.getSupportedInterfaces(handlerInput.requestEnvelope)['Alexa.Presentation.APL']) {
+    const aplDirective = createDirectivePayload({
+      stopNumber: data.stopData.number,
+      stopAddress: data.stopData.address, // Assuming text contains the address
+      lines: data.arrivalData // Assuming text is a JSON string with lines info
+    });
+    handlerInput.responseBuilder.addDirective(aplDirective);
+  }
+
+  return handlerInput.responseBuilder
+    .speak(data.linesText)
+    .reprompt(data.linesText)
+    .withSimpleCard(`Próximas línas de autobús (Parada ${stopInfo}):`, data.linesText)
+    .withStandardCard(
+      "Bus Salamanca - Parada Guardada" + stopInfo,
+      data.linesText,
+      "https://m.media-amazon.com/images/I/41E21ldSofL.png",
+      "https://bussalamanca.s3.eu-west-1.amazonaws.com/publicimages/BusSalamancaBackground.png",
+    )
+    .getResponse();
+}
 
 const LaunchRequestHandler : RequestHandler = {
   canHandle(handlerInput : HandlerInput) : boolean {
@@ -81,37 +231,35 @@ const LaunchRequestHandler : RequestHandler = {
         stopInfo = result.Item?.stop; // Assuming "stop" is the attribute name
       } catch (dbErr) {
         console.error('DynamoDB error:', dbErr);
+        return handlerInput.responseBuilder
+          .speak("Ha ocurrido un error con DynamoDB.")
+          .getResponse();
       }
 
       // 3. Respond based on whether a stop is associated
       let speechText: string;
       if (stopInfo) {
-        speechText = `Tienes la parada guardada: ${stopInfo}.`;
-        let text = await main(Number(stopInfo)) as string; // Assuming stopInfo is a number
 
-        // Add APL directive if supported
-        if (Alexa.getSupportedInterfaces(handlerInput.requestEnvelope)['Alexa.Presentation.APL']) {
-          const aplDirective = createDirectivePayload(DOCUMENT_ID, datasource);
-          handlerInput.responseBuilder.addDirective(aplDirective as any);
-        }
+        return resturnInforResponse(handlerInput, stopInfo);
 
-        return handlerInput.responseBuilder
-          .speak(text)
-          .reprompt(text)
-          .withSimpleCard(`Próximas línas de autobús (Parada ${stopInfo}):`, text)
-          .getResponse();
       } else {
-        speechText = 'No tienes ninguna parada guardada. Puedes decir Abre Bus Salamanca y guarda la parada 199 para memorizar tu parada, puedes consultar las paradas en la web salamancadetransportes.com , también puedes consultar una parada en específico diciendo abre Bus Salamanca y revisa la parada 199.';
+        speechText = 'No tienes ninguna parada guardada.<br>Puedes decir Abre Bus Salamanca y guarda la parada 199 para memorizar tu parada, puedes consultar las paradas en la web salamancadetransportes.com , también puedes consultar una parada en específico diciendo abre Bus Salamanca y revisa la parada 199.';
         
-        // Add APL directive if supported
-        if (Alexa.getSupportedInterfaces(handlerInput.requestEnvelope)['Alexa.Presentation.APL']) {
-          const aplDirective = createDirectivePayload(DOCUMENT_ID, datasource);
-          handlerInput.responseBuilder.addDirective(aplDirective as any);
-        }
+        // // Add APL directive if supported
+        // if (Alexa.getSupportedInterfaces(handlerInput.requestEnvelope)['Alexa.Presentation.APL']) {
+        //   const aplDirective = createDirectivePayload(DOCUMENT_ID, datasource);
+        //   handlerInput.responseBuilder.addDirective(aplDirective as any);
+        // }
 
         return handlerInput.responseBuilder
           .speak(speechText)
-          .withSimpleCard("Bus Salamanca:", speechText)
+          .withStandardCard(
+            "Bus Salamanca - No hay parada configurada:",
+            speechText,
+            "https://m.media-amazon.com/images/I/41E21ldSofL.png",
+            "https://bussalamanca.s3.eu-west-1.amazonaws.com/publicimages/BusSalamancaBackground.png",
+          )
+          .withSimpleCard("Bus Salamanca - No hay parada configurada:", speechText)
           .getResponse();
       }
     } catch (error) {
@@ -123,22 +271,6 @@ const LaunchRequestHandler : RequestHandler = {
   },
 };
 
-const AskWeatherIntentHandler : RequestHandler = {
-  canHandle(handlerInput : HandlerInput) : boolean {
-    const request = handlerInput.requestEnvelope.request;  
-    return request.type === 'IntentRequest'
-      && request.intent.name === 'AskWeatherIntent';
-  },
-  handle(handlerInput : HandlerInput) : Response {
-    const speechText = 'The weather today is sunny.';
-
-    return handlerInput.responseBuilder
-      .speak(speechText)
-      .withSimpleCard('The weather today is sunny.', speechText)
-      .getResponse();
-  },
-};
-
 const HelpIntentHandler : RequestHandler = {
   canHandle(handlerInput : HandlerInput) : boolean {
     const request = handlerInput.requestEnvelope.request;    
@@ -146,12 +278,18 @@ const HelpIntentHandler : RequestHandler = {
       && request.intent.name === 'AMAZON.HelpIntent';
   },
   handle(handlerInput : HandlerInput) : Response {
-    const speechText = 'You can ask me the weather!';
+    const speechText = 'Puedo decirte cuanto tiempo queda para que lleguen los próximos autobuses.<br>Puedes decirme, por ejemplo, abre Bus Salamanca y revisa la parada 199, o siemplemente "Alexa, Abre Bus Salamanca" si ya has guardado tu parada favorita.';
 
     return handlerInput.responseBuilder
       .speak(speechText)
       .reprompt(speechText)
-      .withSimpleCard('You can ask me the weather!', speechText)
+      .withSimpleCard('Bus Salamanca', speechText)
+      .withStandardCard(
+        "Bus Salamanca",
+        speechText,
+        "https://m.media-amazon.com/images/I/41E21ldSofL.png",
+        "https://bussalamanca.s3.eu-west-1.amazonaws.com/publicimages/BusSalamancaBackground.png",
+      )
       .getResponse();
   },
 };
@@ -164,12 +302,12 @@ const CancelAndStopIntentHandler : RequestHandler = {
          || request.intent.name === 'AMAZON.StopIntent');
   },
   handle(handlerInput : HandlerInput) : Response {
-    const speechText = 'Goodbye!';
+    const speechText = 'Adiós!';
 
     return handlerInput.responseBuilder
       .speak(speechText)
-      .withSimpleCard('Goodbye!', speechText)
-      .withShouldEndSession(true)      
+      .withSimpleCard('Bus Salamanca', speechText)
+      .withShouldEndSession(true)
       .getResponse();
   },
 };
@@ -218,6 +356,12 @@ const AddStopIntentHandler : RequestHandler = {
       const speechText = `He guardado la parada número ${stopNumber} para ti.\nAhora solo necesitas decir abre Bus Salamanca para que te informe sobre esa parada.`;
       return handlerInput.responseBuilder
         .speak(speechText)
+        .withStandardCard(
+          "Bus Salamanca - Parada Guardada" + stopNumber,
+          speechText,
+          "https://m.media-amazon.com/images/I/41E21ldSofL.png",
+          "https://bussalamanca.s3.eu-west-1.amazonaws.com/publicimages/BusSalamancaBackground.png",
+        )
         .withSimpleCard('Parada guardada', speechText)
         .getResponse();
     } catch (error) {
@@ -251,20 +395,20 @@ const CheckStopIntentHandler : RequestHandler = {
 
     let speechText: string;
     if (stopInfo) {
-      speechText = `Tu parada guardada es la número ${stopInfo}.`;
-      let text = await main(Number(stopInfo));
-
-      return handlerInput.responseBuilder
-        .speak(speechText)
-        .withSimpleCard('Parada guardada', speechText)
-        .getResponse();
+      return resturnInforResponse(handlerInput, stopInfo);
     } else {
       speechText = 'No tienes ninguna parada guardada. Puedes decirme una para guardarla.';
     }
 
     return handlerInput.responseBuilder
       .speak(speechText)
-      .withSimpleCard('Parada guardada', speechText)
+      .withSimpleCard('Bus Salamanca - No hay ninguna parada guardada', speechText)
+      .withStandardCard(
+        'Bus Salamanca - No hay ninguna parada guardada',
+        speechText,
+        "https://m.media-amazon.com/images/I/41E21ldSofL.png",
+        "https://bussalamanca.s3.eu-west-1.amazonaws.com/publicimages/BusSalamancaBackground.png",
+      )
       .getResponse();
   }
 };
@@ -281,12 +425,14 @@ const CheckAnyStopIntentHandler : RequestHandler = {
       : undefined;
 
     if (!stopNumber) {
-      const speechText = 'No he entendido el número de parada que quieres consultar. Para consultar cualquier parada di Abre bus salamanca y consulta la parada 193.';
+      const speechText = 'No he entendido el número de parada que quieres consultar. Para consultar cualquier parada dí Abre bus salamanca y consulta la parada 193.';
       return handlerInput.responseBuilder
         .speak(speechText)
-        .reprompt(speechText)
         .getResponse();
     }
+
+    
+    return resturnInforResponse(handlerInput, stopNumber);
 
     // Aquí puedes llamar a tu función main o lógica para obtener información de la parada
     try {
@@ -401,7 +547,7 @@ const ErrorHandler : ErrorHandler = {
 export const handler = SkillBuilders.custom()
   .addRequestHandlers(
     LaunchRequestHandler,
-    AskWeatherIntentHandler,
+
     HelpIntentHandler,
     CancelAndStopIntentHandler,
     SessionEndedRequestHandler,
