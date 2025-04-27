@@ -585,8 +585,26 @@ const CheckMyStopIntentHandler : RequestHandler = {
         console.error('Error fetching stop details:', err);
       }
       speechText = `Tu parada guardada es la número ${stopInfo}.${addressText}`;
+      
+      return cardForText(handlerInput, {
+        title: "Bus Salamanca",
+        subtitle: "Parada guardada " + stopInfo,
+        mainText: speechText,
+        hint: "Prueba \"Alexa, ¿Cuándo llega el autobús?\"."
+      });
     } else {
-      speechText = 'No tienes ninguna parada guardada. Puedes decirme abre Bus Salamanca y guarda la parada 199 para poder informate de los autobuses que van a llegar a tu parada más cercana.';
+      const stopRandom1 = Math.floor(Math.random() * 250) + 1;
+      const stopRandom2 = Math.floor(Math.random() * 250) + 1;
+      const stopRandom3 = Math.floor(Math.random() * 250) + 1;
+      speechText = "No sé de qué parada puedo informarte.\nPuedes decir Abre Bus Salamanca y guarda la parada " + stopRandom1 +" para memorizar tu parada y que te informe cada que que abras esta skill, puedes consultar las paradas en la web\nsalamancadetransportes.com\no en su aplicación oficial.\nTambién puedes consultar una parada en específico diciendo abre Bus Salamanca y revisa la parada " + stopRandom2 +".";
+
+      return cardForText(handlerInput, {
+        title: "Bus Salamanca",
+        subtitle: "No hay parada configurada",
+        mainText: speechText,
+        hint: "Prueba \"Alexa, guarda la parada " + stopRandom3 + "\"."
+      });
+
     }
 
     return handlerInput.responseBuilder
