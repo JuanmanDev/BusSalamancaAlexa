@@ -171,7 +171,9 @@ const createDirectivePayload = ({
 
 async function returnInforResponse(handlerInput: HandlerInput, stopInfo: string) {
   try {
+    console.debug('returnInforResponse - stopInfo', stopInfo);
     const data = await dataStructured(Number(stopInfo));
+    console.debug('returnInforResponse - data', data);
 
     if (typeof data === 'string') {
       return handlerInput.responseBuilder
@@ -189,12 +191,14 @@ async function returnInforResponse(handlerInput: HandlerInput, stopInfo: string)
 
     // Add APL directive if supported
     if (Alexa.getSupportedInterfaces(handlerInput.requestEnvelope)['Alexa.Presentation.APL']) {
+      console.debug('returnInforResponse - APL enabled');
       const aplDirective = createDirectivePayload({
         stopNumber: data.stopData.number,
         stopAddress: data.stopData.address, // Assuming text contains the address
         lines: data.arrivalData // Assuming text is a JSON string with lines info
       });
       handlerInput.responseBuilder.addDirective(aplDirective);
+      console.debug('returnInforResponse - APL completed');
     }
 
     return handlerInput.responseBuilder
@@ -224,59 +228,44 @@ const LaunchRequestHandler : RequestHandler = {
     return request.type === 'LaunchRequest';        
   },
   async handle(handlerInput : HandlerInput) : Promise<Response> {
-    let number = 0;
-    console.debug("my number is: ", number++);
-
     try {
-    console.debug("my number is: ", number++);
 
       // 1. Get userId
       const userId = handlerInput.requestEnvelope.context.System.user.userId;
-      console.debug("my number is: ", number++);
 
       // 2. Query DynamoDB for user's stop
       let stopInfo;
-    console.debug("my number is: ", number++);
 
       try {
-    console.debug("my number is: ", number++);
 
         const result = await dynamoDb.get({
           TableName: TABLE_NAME,
           Key: { [DYNAMO_KEY_NAME]: userId } // Use correct key name
         }).promise();
-    console.debug("my number is: ", number++);
 
         stopInfo = result.Item?.stop; // Assuming "stop" is the attribute name
-    console.debug("my number is: ", number++);
 
       } catch (dbErr) {
-    console.debug("my number is: ", number++);
 
         console.error('DynamoDB error:', dbErr);
-    console.debug("my number is: ", number++);
 
         return handlerInput.responseBuilder
           .speak("Ha ocurrido un error con DynamoDB.")
           .withShouldEndSession(true)
           .getResponse();
-    console.debug("my number is: ", number++);
 
       }
-    console.debug("my number is: ", number++);
 
 
       // 3. Respond based on whether a stop is associated
       let speechText: string;
       if (stopInfo) {
-    console.debug("my number is: ", number++);
 
 
         return returnInforResponse(handlerInput, stopInfo);
         
 
       } else {
-    console.debug("my number is: ", number++);
 
         speechText = 'No tienes ninguna parada guardada.<br>Puedes decir Abre Bus Salamanca y guarda la parada 199 para memorizar tu parada, puedes consultar las paradas en la web salamancadetransportes.com o en su aplicación oficial; también puedes consultar una parada en específico diciendo abre Bus Salamanca y revisa la parada 199.';
         
@@ -285,7 +274,6 @@ const LaunchRequestHandler : RequestHandler = {
         //   const aplDirective = createDirectivePayload(DOCUMENT_ID, datasource);
         //   handlerInput.responseBuilder.addDirective(aplDirective as any);
         // }
-        console.debug("my number is: ", number++);
 
         return handlerInput.responseBuilder
           .speak(speechText)
@@ -299,7 +287,6 @@ const LaunchRequestHandler : RequestHandler = {
           .getResponse();
       }
     } catch (error) {
-    console.debug("my number is: ", number++);
 
       console.error("MAIN ERROR", error);
       return handlerInput.responseBuilder
