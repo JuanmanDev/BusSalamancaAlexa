@@ -184,23 +184,7 @@ function buildCardTextDocument(title: string, subtitle: string | undefined, main
     "mainTemplate": {
         "parameters": [
             "payload"
-        ],
-        "item": [
-            {
-                "type": "AlexaHeadline",
-                "id": "PlantHeadline",
-                "headerTitle": title,
-                "headerSubtitle": subtitle,
-                "headerAttributionImage": "https://m.media-amazon.com/images/I/41E21ldSofL.png",
-                "headerBackButton": false,
-                "primaryText": mainText.replaceAll("\n", "<br>"),
-                "headerAttributionPrimacy": true,
-                "footerHintText": hint,
-                "backgroundImageSource": "https://bussalamanca.s3.eu-west-1.amazonaws.com/publicimages/BusSalamancaBackground.png",
-                "backgroundColorOverlay": false
-            }
-        ]
-        
+        ],        
         "item": [
           {
               "type": "Container",
