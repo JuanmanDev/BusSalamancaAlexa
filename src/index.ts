@@ -200,6 +200,69 @@ function buildCardTextDocument(title: string, subtitle: string | undefined, main
                 "backgroundColorOverlay": false
             }
         ]
+        
+        "item": [
+          {
+              "type": "Container",
+              "height": "100%",
+              "width": "100%",
+              "paddingTop": "16dp",
+              "paddingLeft": "16dp",
+              "paddingRight": "16dp",
+              "paddingBottom": "16dp",
+              "items": [
+                  {
+                      "type": "AlexaBackground",
+                      "backgroundImageSource": "https://bussalamanca.s3.eu-west-1.amazonaws.com/publicimages/BusSalamancaBackground.png",
+                      "backgroundBlur": false
+                  },
+                  
+                  {
+                    "type": "AlexaHeader",
+                    //"headerBackgroundColor": "black",
+                      "headerTitle": title,
+                      "headerSubtitle": subtitle,
+                    "headerAttributionImage": "https://m.media-amazon.com/images/I/41E21ldSofL.png",
+                    "opacity": "@opacityNonResponse",
+                    "when": "${@viewportProfile != @hubRoundSmall}"
+                  },
+                  {
+                      "type": "AlexaHeader",
+                      "headerBackgroundColor": "black",
+                      "headerAttributionImage": "https://m.media-amazon.com/images/I/41E21ldSofL.png",
+                      "opacity": "@opacityNonResponse",
+                      "when": "${@viewportProfile == @hubRoundSmall}"
+                  },
+                  {
+                      "items": [
+                          {
+                              "item": [
+                                  {
+                                      "text": mainText.replaceAll("\n", "<br>"),
+                                      "textAlign": "center",
+                                      "type": "Text"
+                                  }
+                              ],
+                              "type": "ScrollView",
+                              "height": "100%",
+                              "width": "100%"
+                          }
+                      ],
+                      "wrap": "wrap",
+                      "grow": 1,
+                      "type": "Container",
+                      "height": "200dp",
+                      "width": "100%",
+                      "paddingLeft": "16dp",
+                      "paddingRight": "16dp",
+                  },
+                  {
+                      "type": "AlexaFooter",
+                      "hintText": hint
+                  }
+              ]
+          }
+      ]
     }
 };
 }
