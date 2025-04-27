@@ -17,7 +17,7 @@ import Alexa from 'ask-sdk-core';
 const APL_TOKEN_CARD = "BusSalamancaToken";
 
 const dynamoDb = new AWS.DynamoDB.DocumentClient();
-const TABLE_NAME = 'BusSalamanca'; // Replace with your table name
+const TABLE_NAME = process.env.DYNAMODB_TABLE_NAME || 'MISSING_DYNAMODB_TABLE_NAME'; // Use env variable or default
 
 // Make sure this matches your DynamoDB table's partition key name
 const DYNAMO_KEY_NAME = 'BusSalamanca'; // <-- Change this if your key is not 'userId'
@@ -233,6 +233,7 @@ const LaunchRequestHandler : RequestHandler = {
         console.error('DynamoDB error:', dbErr);
         return handlerInput.responseBuilder
           .speak("Ha ocurrido un error con DynamoDB.")
+          .withShouldEndSession(true)
           .getResponse();
       }
 
@@ -266,6 +267,7 @@ const LaunchRequestHandler : RequestHandler = {
       console.error(error);
       return handlerInput.responseBuilder
         .speak("Ha ocurrido un error")
+        .withShouldEndSession(true)
         .getResponse();
     }
   },
@@ -290,6 +292,7 @@ const HelpIntentHandler : RequestHandler = {
         "https://m.media-amazon.com/images/I/41E21ldSofL.png",
         "https://bussalamanca.s3.eu-west-1.amazonaws.com/publicimages/BusSalamancaBackground.png",
       )
+      .withShouldEndSession(true)
       .getResponse();
   },
 };
