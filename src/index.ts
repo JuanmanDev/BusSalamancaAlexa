@@ -169,45 +169,53 @@ const createDirectivePayload = ({
     };
 };
 
-async function resturnInforResponse(handlerInput: HandlerInput, stopInfo: string) {
-  
-  const data = await dataStructured(Number(stopInfo));
+async function returnInforResponse(handlerInput: HandlerInput, stopInfo: string) {
+  try {
+    const data = await dataStructured(Number(stopInfo));
 
-  if (typeof data === 'string') {
+    if (typeof data === 'string') {
+      return handlerInput.responseBuilder
+        .speak(data)
+        .withStandardCard(
+          "Bus Salamanca - Parada " + stopInfo,
+          data,
+          "https://m.media-amazon.com/images/I/41E21ldSofL.png",
+          "https://bussalamanca.s3.eu-west-1.amazonaws.com/publicimages/BusSalamancaBackground.png",
+        )
+        .withSimpleCard("Bus Salamanca - Parada " + stopInfo, data)
+        .withShouldEndSession(true)
+        .getResponse();
+    }
+
+    // Add APL directive if supported
+    if (Alexa.getSupportedInterfaces(handlerInput.requestEnvelope)['Alexa.Presentation.APL']) {
+      const aplDirective = createDirectivePayload({
+        stopNumber: data.stopData.number,
+        stopAddress: data.stopData.address, // Assuming text contains the address
+        lines: data.arrivalData // Assuming text is a JSON string with lines info
+      });
+      handlerInput.responseBuilder.addDirective(aplDirective);
+    }
+
     return handlerInput.responseBuilder
-      .speak(data)
+      .speak(data.linesText)
+      .reprompt(data.linesText)
+      .withSimpleCard(`Próximas línas de autobús (Parada ${stopInfo}):`, data.linesText)
       .withStandardCard(
-        "Bus Salamanca - Parada " + stopInfo,
-        data,
+        "Bus Salamanca - Parada Guardada" + stopInfo,
+        data.linesText,
         "https://m.media-amazon.com/images/I/41E21ldSofL.png",
         "https://bussalamanca.s3.eu-west-1.amazonaws.com/publicimages/BusSalamancaBackground.png",
       )
-      .withSimpleCard("Bus Salamanca - Parada " + stopInfo, data)
+      .getResponse();
+      
+  } catch (error) {
+    console.error('Error in returnInforResponse:', error);
+    return handlerInput.responseBuilder
+      .speak("Ha ocurrido un error al procesar la información.")
       .withShouldEndSession(true)
       .getResponse();
   }
-
-  // Add APL directive if supported
-  if (Alexa.getSupportedInterfaces(handlerInput.requestEnvelope)['Alexa.Presentation.APL']) {
-    const aplDirective = createDirectivePayload({
-      stopNumber: data.stopData.number,
-      stopAddress: data.stopData.address, // Assuming text contains the address
-      lines: data.arrivalData // Assuming text is a JSON string with lines info
-    });
-    handlerInput.responseBuilder.addDirective(aplDirective);
-  }
-
-  return handlerInput.responseBuilder
-    .speak(data.linesText)
-    .reprompt(data.linesText)
-    .withSimpleCard(`Próximas línas de autobús (Parada ${stopInfo}):`, data.linesText)
-    .withStandardCard(
-      "Bus Salamanca - Parada Guardada" + stopInfo,
-      data.linesText,
-      "https://m.media-amazon.com/images/I/41E21ldSofL.png",
-      "https://bussalamanca.s3.eu-west-1.amazonaws.com/publicimages/BusSalamancaBackground.png",
-    )
-    .getResponse();
 }
 
 const LaunchRequestHandler : RequestHandler = {
@@ -216,41 +224,68 @@ const LaunchRequestHandler : RequestHandler = {
     return request.type === 'LaunchRequest';        
   },
   async handle(handlerInput : HandlerInput) : Promise<Response> {
+    let number = 0;
+    console.debug("my number is: ", number++);
 
     try {
+    console.debug("my number is: ", number++);
+
       // 1. Get userId
       const userId = handlerInput.requestEnvelope.context.System.user.userId;
+      console.debug("my number is: ", number++);
 
       // 2. Query DynamoDB for user's stop
       let stopInfo;
+    console.debug("my number is: ", number++);
+
       try {
+    console.debug("my number is: ", number++);
+
         const result = await dynamoDb.get({
           TableName: TABLE_NAME,
           Key: { [DYNAMO_KEY_NAME]: userId } // Use correct key name
         }).promise();
+    console.debug("my number is: ", number++);
+
         stopInfo = result.Item?.stop; // Assuming "stop" is the attribute name
+    console.debug("my number is: ", number++);
+
       } catch (dbErr) {
+    console.debug("my number is: ", number++);
+
         console.error('DynamoDB error:', dbErr);
+    console.debug("my number is: ", number++);
+
         return handlerInput.responseBuilder
           .speak("Ha ocurrido un error con DynamoDB.")
           .withShouldEndSession(true)
           .getResponse();
+    console.debug("my number is: ", number++);
+
       }
+    console.debug("my number is: ", number++);
+
 
       // 3. Respond based on whether a stop is associated
       let speechText: string;
       if (stopInfo) {
+    console.debug("my number is: ", number++);
 
-        return resturnInforResponse(handlerInput, stopInfo);
+
+        return returnInforResponse(handlerInput, stopInfo);
+        
 
       } else {
-        speechText = 'No tienes ninguna parada guardada.<br>Puedes decir Abre Bus Salamanca y guarda la parada 199 para memorizar tu parada, puedes consultar las paradas en la web salamancadetransportes.com , también puedes consultar una parada en específico diciendo abre Bus Salamanca y revisa la parada 199.';
+    console.debug("my number is: ", number++);
+
+        speechText = 'No tienes ninguna parada guardada.<br>Puedes decir Abre Bus Salamanca y guarda la parada 199 para memorizar tu parada, puedes consultar las paradas en la web salamancadetransportes.com o en su aplicación oficial; también puedes consultar una parada en específico diciendo abre Bus Salamanca y revisa la parada 199.';
         
         // // Add APL directive if supported
         // if (Alexa.getSupportedInterfaces(handlerInput.requestEnvelope)['Alexa.Presentation.APL']) {
         //   const aplDirective = createDirectivePayload(DOCUMENT_ID, datasource);
         //   handlerInput.responseBuilder.addDirective(aplDirective as any);
         // }
+        console.debug("my number is: ", number++);
 
         return handlerInput.responseBuilder
           .speak(speechText)
@@ -264,7 +299,9 @@ const LaunchRequestHandler : RequestHandler = {
           .getResponse();
       }
     } catch (error) {
-      console.error(error);
+    console.debug("my number is: ", number++);
+
+      console.error("MAIN ERROR", error);
       return handlerInput.responseBuilder
         .speak("Ha ocurrido un error")
         .withShouldEndSession(true)
@@ -398,7 +435,7 @@ const CheckStopIntentHandler : RequestHandler = {
 
     let speechText: string;
     if (stopInfo) {
-      return resturnInforResponse(handlerInput, stopInfo);
+      return returnInforResponse(handlerInput, stopInfo);
     } else {
       speechText = 'No tienes ninguna parada guardada. Puedes decirme una para guardarla.';
     }
@@ -435,7 +472,7 @@ const CheckAnyStopIntentHandler : RequestHandler = {
     }
 
     
-    return resturnInforResponse(handlerInput, stopNumber);
+    return returnInforResponse(handlerInput, stopNumber);
 
     // Aquí puedes llamar a tu función main o lógica para obtener información de la parada
     try {
@@ -476,7 +513,7 @@ const CheckMyStopIntentHandler : RequestHandler = {
       stopInfo = result.Item?.stop;
 
       if (!stopInfo) {
-        const speechText = 'No tienes ninguna parada guardada. Puedes decirme abre Bus Salamanca y guarda la parada 199 para poder informate de los autbuses que van a llegar a tu parada más cercana.';
+        const speechText = 'No tienes ninguna parada guardada. Puedes decirme abre Bus Salamanca y guarda la parada 199 para poder informate de los autobuses que van a llegar a tu parada más cercana.';
         return handlerInput.responseBuilder
           .speak(speechText)
           .withSimpleCard('Parada guardada', speechText)
@@ -499,7 +536,7 @@ const CheckMyStopIntentHandler : RequestHandler = {
       }
       speechText = `Tu parada guardada es la número ${stopInfo}.${addressText}`;
     } else {
-      speechText = 'No tienes ninguna parada guardada. Puedes decirme abre Bus Salamanca y guarda la parada 199 para poder informate de los autbuses que van a llegar a tu parada más cercana.';
+      speechText = 'No tienes ninguna parada guardada. Puedes decirme abre Bus Salamanca y guarda la parada 199 para poder informate de los autobuses que van a llegar a tu parada más cercana.';
     }
 
     return handlerInput.responseBuilder
@@ -550,14 +587,13 @@ const ErrorHandler : ErrorHandler = {
 export const handler = SkillBuilders.custom()
   .addRequestHandlers(
     LaunchRequestHandler,
-
     HelpIntentHandler,
     CancelAndStopIntentHandler,
     SessionEndedRequestHandler,
     AddStopIntentHandler,
     CheckStopIntentHandler,
     CheckAnyStopIntentHandler,
-    CheckMyStopIntentHandler, // <-- Register new intent handler here
+    CheckMyStopIntentHandler,
   )
   .addErrorHandlers(ErrorHandler)
   .lambda();
