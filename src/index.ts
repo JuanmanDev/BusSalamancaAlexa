@@ -270,7 +270,7 @@ const LaunchRequestHandler : RequestHandler = {
 
         console.debug('LaunchRequestHandler - No stopInfo found');
 
-        speechText = 'No tienes ninguna parada guardada.<br />Puedes decir Abre Bus Salamanca y guarda la parada 199 para memorizar tu parada, puedes consultar las paradas en la web salamancadetransportes.com o en su aplicación oficial; también puedes consultar una parada en específico diciendo abre Bus Salamanca y revisa la parada 199.';
+        speechText = 'No tienes ninguna parada guardada. Puedes decir Abre Bus Salamanca y guarda la parada 199 para memorizar tu parada, puedes consultar las paradas en la web salamancadetransportes.com o en su aplicación oficial; también puedes consultar una parada en específico diciendo abre Bus Salamanca y revisa la parada 199.';
         
         // // Add APL directive if supported
         // if (Alexa.getSupportedInterfaces(handlerInput.requestEnvelope)['Alexa.Presentation.APL']) {
@@ -307,7 +307,7 @@ const HelpIntentHandler : RequestHandler = {
       && request.intent.name === 'AMAZON.HelpIntent';
   },
   handle(handlerInput : HandlerInput) : Response {
-    const speechText = 'Puedo decirte cuanto tiempo queda para que lleguen los próximos autobuses.<br>Puedes decirme, por ejemplo, abre Bus Salamanca y revisa la parada 199, o siemplemente "Alexa, Abre Bus Salamanca" si ya has guardado tu parada favorita.';
+    const speechText = 'Puedo decirte cuanto tiempo queda para que lleguen los próximos autobuses. Puedes decirme, por ejemplo, abre Bus Salamanca y revisa la parada 199, o siemplemente "Alexa, Abre Bus Salamanca" si ya has guardado tu parada favorita.';
 
     return handlerInput.responseBuilder
       .speak(speechText)
