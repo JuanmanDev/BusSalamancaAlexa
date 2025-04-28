@@ -18,6 +18,7 @@ const APL_TOKEN_CARD = "BusSalamancaToken";
 
 const dynamoDb = new AWS.DynamoDB.DocumentClient();
 const TABLE_NAME = process.env.DYNAMODB_TABLE_NAME || 'MISSING_DYNAMODB_TABLE_NAME'; // Use env variable or default
+const IS_DEV = process.env.IS_DEV || '';
 
 // Make sure this matches your DynamoDB table's partition key name
 const DYNAMO_KEY_NAME = 'BusSalamanca'; // <-- Change this if your key is not 'userId'
@@ -90,8 +91,7 @@ function buildCardDocument(stopNumber: string, stopAddress: string, lines: {line
                                     "items": [
                                         {
                                             "type": "AlexaHeader",
-                                            //"headerBackgroundColor": "black",
-                                            "headerTitle": `BUS SALAMANCA - PARADA ${stopNumber} `,
+                                            "headerTitle": IS_DEV + `BUS SALAMANCA - PARADA ${stopNumber} `,
                                             "headerSubtitle": stopAddress,
                                             "headerAttributionImage": "https://m.media-amazon.com/images/I/41E21ldSofL.png",
                                             "opacity": "@opacityNonResponse",
@@ -204,7 +204,7 @@ function buildCardTextDocument(title: string, subtitle: string | undefined, main
                   {
                     "type": "AlexaHeader",
                     //"headerBackgroundColor": "black",
-                      "headerTitle": title,
+                      "headerTitle": IS_DEV + title,
                       "headerSubtitle": subtitle,
                     "headerAttributionImage": "https://m.media-amazon.com/images/I/41E21ldSofL.png",
                     "opacity": "@opacityNonResponse",
@@ -301,10 +301,20 @@ async function returnInforResponse(handlerInput: HandlerInput, stopInfo: string,
         .getResponse();
     }
 
+    // if data === []
+    if (data.arrivalData.length === 0) {
+      return cardForText(handlerInput, {
+        title: "Bus Salamanca - Parada " + stopInfo,
+        subtitle: "No hay información disponible",
+        mainText: "No hay información disponible para la parada " + stopInfo + ".",
+        hint: "Prueba \"Alexa, ¿Cuál es mi parada?\"."
+      });
+    }
+
     // Add APL directive if supported
     if (Alexa.getSupportedInterfaces(handlerInput.requestEnvelope)['Alexa.Presentation.APL']) {
       const aplDirective = createDirectivePayload({
-        stopNumber: data.stopData.number,
+        stopNumber: stopInfo,
         stopAddress: data.stopData.address, // Assuming text contains the address
         lines: data.arrivalData // Assuming text is a JSON string with lines info
       });
