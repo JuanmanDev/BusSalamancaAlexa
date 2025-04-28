@@ -307,7 +307,7 @@ async function returnInforResponse(handlerInput: HandlerInput, stopInfo: string,
         title: "Bus Salamanca - Parada " + stopInfo,
         subtitle: "No hay información disponible",
         mainText: "No hay información disponible para la parada " + stopInfo + ".",
-        hint: "Prueba \"Alexa, Abre Bus Salamanca\"."
+        hint: "Prueba \"Alexa, ¿Cuál es mi parada?\"."
       });
     }
 
