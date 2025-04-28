@@ -301,10 +301,25 @@ async function returnInforResponse(handlerInput: HandlerInput, stopInfo: string,
         .getResponse();
     }
 
+    // if data === []
+    if (data.arrivalData.length === 0) {
+      return handlerInput.responseBuilder
+        .speak("No hay información disponible para la parada " + stopInfo + ".")
+        .withStandardCard(
+          "Bus Salamanca - Parada " + stopInfo,
+          "No hay información disponible para la parada " + stopInfo + ".",
+          "https://m.media-amazon.com/images/I/41E21ldSofL.png",
+          "https://bussalamanca.s3.eu-west-1.amazonaws.com/publicimages/BusSalamancaBackground.png",
+        )
+        .withSimpleCard("Bus Salamanca - Parada " + stopInfo, "No hay información disponible para la parada " + stopInfo + ".")
+        .withShouldEndSession(true)
+        .getResponse();
+    }
+
     // Add APL directive if supported
     if (Alexa.getSupportedInterfaces(handlerInput.requestEnvelope)['Alexa.Presentation.APL']) {
       const aplDirective = createDirectivePayload({
-        stopNumber: data.stopData.number,
+        stopNumber: stopInfo,
         stopAddress: data.stopData.address, // Assuming text contains the address
         lines: data.arrivalData // Assuming text is a JSON string with lines info
       });
