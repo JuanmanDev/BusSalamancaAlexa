@@ -13,7 +13,6 @@ import main, { dataStructured, getStopInfo } from './fetch.js';
 import AWS from 'aws-sdk';
 import Alexa from 'ask-sdk-core';
 
-
 const APL_TOKEN_CARD = "BusSalamancaToken";
 
 const dynamoDb = new AWS.DynamoDB.DocumentClient();
@@ -21,7 +20,7 @@ const TABLE_NAME = process.env.DYNAMODB_TABLE_NAME || 'MISSING_DYNAMODB_TABLE_NA
 const IS_DEV = process.env.IS_DEV || '';
 
 // Make sure this matches your DynamoDB table's partition key name
-const DYNAMO_KEY_NAME = 'BusSalamanca'; // <-- Change this if your key is not 'userId'
+const DYNAMO_KEY_NAME = 'BusSalamanca';
 
 // Helper to build the APL document with dynamic data
 function buildCardDocument(stopNumber: string, stopAddress: string, lines: {line: number, minutesRemaining: number}[]) {
@@ -422,18 +421,6 @@ const HelpIntentHandler : RequestHandler = {
       hint: "Prueba \"Alexa, ¿Cuándo llega el autbús?\"."
     });
 
-    return handlerInput.responseBuilder
-      .speak(speechText)
-      .reprompt(speechText)
-      .withSimpleCard('Bus Salamanca', speechText)
-      .withStandardCard(
-        "Bus Salamanca",
-        speechText,
-        "https://m.media-amazon.com/images/I/41E21ldSofL.png",
-        "https://bussalamanca.s3.eu-west-1.amazonaws.com/publicimages/BusSalamancaBackground.png",
-      )
-      .withShouldEndSession(true)
-      .getResponse();
   },
 };
 
@@ -452,13 +439,6 @@ const CancelAndStopIntentHandler : RequestHandler = {
       mainText: "¡Adiós!\nEspero que llegues a tiempo al autobús.",
       hint: "Prueba \"Alexa, Abre Bus Salamanca\"."
     });
-    const speechText = 'Adiós!';
-
-    return handlerInput.responseBuilder
-      .speak(speechText)
-      .withSimpleCard('Bus Salamanca', speechText)
-      .withShouldEndSession(true)
-      .getResponse();
   },
 };
 
@@ -617,10 +597,6 @@ const CheckMyStopIntentHandler : RequestHandler = {
 
     }
 
-    return handlerInput.responseBuilder
-      .speak(speechText)
-      .withSimpleCard('Parada guardada', speechText)
-      .getResponse();
   }
 };
 
