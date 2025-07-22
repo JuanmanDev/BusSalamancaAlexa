@@ -20,15 +20,16 @@ This project is **not affiliated** with "Salamanca de Transportes" company or th
 The project follows this architecture:
 
 ```
-┌──────────────┐      ┌──────────────┐      ┌──────────────┐
-│              │      │              │      │              │
-│  Alexa Skill │─────▶│  AWS Lambda  │─────▶│  SIRI API    │
-│              │      │              │      │              │
-└──────────────┘      └──────────────┘      └──────────────┘
-       ▲                                            │
-       │                                            │
-       └────────────────────────────────────────────┘
-                        Response
+┌───────────────┐      ┌────────────────┐      ┌───────────────┐      ┌────────────────┐
+│               │      │                │      │               │      │                │
+│  Alexa Device │─────▶│  Alexa Cloud   │─────▶│  AWS Lambda   │─────▶│ External SIRI  │
+│               │      │     (AWS)      │      │  (This Code)  │      │  Web Service   │
+│               │◀─────│                │◀─────│   +UI Data    │◀─────│                │
+└───────────────┘      └────────────────┘      └───────────────┘      └────────────────┘
+        ▲                                                                     │
+        │                                                                     │
+        └─────────────────────────────────────────────────────────────────────┘
+                                     Response Flow
 ```
 
 ## 🔧 Technical Details
@@ -42,13 +43,6 @@ The project follows this architecture:
 
 This project uses GitHub Actions for continuous integration and deployment:
 
-```
-┌──────────┐     ┌──────────┐     ┌───────────┐     ┌──────────┐
-│          │     │          │     │           │     │          │
-│   Code   │────▶│   Test   │────▶│   Build   │────▶│  Deploy  │
-│          │     │          │     │           │     │          │
-└──────────┘     └──────────┘     └───────────┘     └──────────┘
-```
 
 The CI/CD pipeline automatically:
 1. Runs tests when code is pushed to the main branch
@@ -119,3 +113,19 @@ The project is automatically deployed through GitHub Actions. If you want to man
 ## 📄 License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
+
+## 📷 Screenshots
+
+Here are some screenshots of the Bus Salamanca Alexa Skill in action:
+
+![Bus Salamanca Screenshot 1](./fotos/IMG-20250418-WA0006_edit.jpg)
+![Bus Salamanca Screenshot 2](./fotos/IMG-20250418-WA0007_edit.jpg)
+![Bus Salamanca Screenshot 3](./fotos/IMG-20250418-WA0008_edit.jpg)
+![Bus Salamanca Screenshot 4](./fotos/IMG-20250418-WA0009_edit.jpg)
+![Bus Salamanca Screenshot 5](./fotos/IMG-20250418-WA0010_edit.jpg)
+![Bus Salamanca App Icon](./fotos/1280_800/0.jpg)
+![Bus Salamanca Interface](./fotos/1280_800/1.jpg)
+![Bus Salamanca Detail View](./fotos/1280_800/2.jpg)
+![Bus Salamanca Route Map](./fotos/1280_800/3.jpg)
+![Bus Salamanca Schedule](./fotos/1280_800/4.jpg)
+![Bus Salamanca Live Updates](./fotos/1280_800/5.jpg)
