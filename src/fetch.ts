@@ -121,21 +121,35 @@ async function fetchBusData(parada: number) {
 
     const base64Text = stringToBase64(xmlString);
 
-    const response = await fetch("http://95.63.53.46:8015/SIRI/SiriWS.asmx", {
-        headers: {
-            "User-Agent": "ksoap2-android/2.6.0+",
-            "SOAPAction": "http://tempuri.org/GetStopMonitoring",
-            "Content-Type": "text/xml;charset=utf-8",
-            "Accept-Encoding": "gzip",
-        },
-        body: base64toBytesArray(base64Text) as BodyInit,
-        method: "POST"
-    });
+    console.log(`[fetchBusData] Starting fetch for stop ${parada} at ${new Date().toISOString()}`);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 2500); // 2.5s timeout
 
-    if (response.status !== 200) {
-        throw new Error('Network response was not ok.' + response.statusText + ' ' + response.status);
+    try {
+        const response = await fetch("http://95.63.53.46:8015/SIRI/SiriWS.asmx", {
+            headers: {
+                "User-Agent": "ksoap2-android/2.6.0+",
+                "SOAPAction": "http://tempuri.org/GetStopMonitoring",
+                "Content-Type": "text/xml;charset=utf-8",
+                "Accept-Encoding": "gzip",
+            },
+            body: base64toBytesArray(base64Text) as BodyInit,
+            method: "POST",
+            signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+
+        console.log(`[fetchBusData] Response received. Status: ${response.status}`);
+
+        if (response.status !== 200) {
+            throw new Error('Network response was not ok.' + response.statusText + ' ' + response.status);
+        }
+        return response.text();
+    } catch (error) {
+        clearTimeout(timeoutId);
+        console.error(`[fetchBusData] Fetch error: ${error}`);
+        throw error;
     }
-    return response.text();
 }
 
 interface StopMonitoringResponse {
@@ -211,7 +225,7 @@ export default async function main(parada: number = 199) {
 }
 
 export async function getStopInfo(parada: number) {
-    
+
     try {
         const xmlText = await fetchBusData(parada);
         // console.debug(xmlText);
@@ -247,7 +261,7 @@ export async function dataStructured(parada: number = 199) {
         const result = formatArrivalData(arrivalData);
         // console.debug(result);
 
-        
+
         const stopPointName = getStopData(jsonResult);
         // console.debug(stopPointName);
 
