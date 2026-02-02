@@ -123,7 +123,7 @@ async function fetchBusData(parada: number) {
 
     console.log(`[fetchBusData] Starting fetch for stop ${parada} at ${new Date().toISOString()}`);
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 2500); // 2.5s timeout
+    const timeoutId = setTimeout(() => controller.abort(), 10500); // Reduced to 1.5s timeout to fit in 3s Lambda limit
 
     try {
         const response = await fetch("http://95.63.53.46:8015/SIRI/SiriWS.asmx", {
