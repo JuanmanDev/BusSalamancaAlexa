@@ -1,15 +1,56 @@
-# Bus Salamanca Alexa Skill
+# Bus Salamanca Alexa
 
-![Alexa Skill](https://m.media-amazon.com/images/G/01/mobile-apps/dex/alexa/alexa-skills-kit/tutorials/quiz-game/header._TTH_.png)
+[![Docker Build and Push](https://github.com/JuanmanDev/BusSalamancaAlexa/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/JuanmanDev/BusSalamancaAlexa/actions/workflows/docker-publish.yml)
 
-## 📝 Description
+Skill for Alexa to get bus arrival times in Salamanca.
 
-Bus Salamanca is an Alexa skill that provides real-time information about bus schedules and arrivals in Salamanca, Spain. The skill allows users to ask when the next bus will arrive at a specific stop or get information about bus routes.
+## 🚀 New Dockerized Version
 
-You can download and install the skill from the Amazon Alexa Skills Store:
-[Bus Salamanca on Amazon](https://www.amazon.es/Juan-Manuel-B%C3%A9c-Bus-Salamanca/dp/B0F59TDK93/)
+This project has been refactored to run as a standalone Docker service, removing the AWS Lambda dependency.
 
-**GitHub Repository:** [https://github.com/JuanmanDev/BusSalamancaAlexa/](https://github.com/JuanmanDev/BusSalamancaAlexa/)
+### Features
+- **Docker Ready**: Lightweight image based on Alpine Node.
+- **SQLite**: Local storage for favorite stops.
+- **Express Server**: Official Alexa SDK Adapter for Express.
+- **CI/CD**: Automatic image publishing to GitHub Container Registry (GHCR).
+
+### Quick Deployment (Docker Compose)
+
+1. Create a `docker-compose.yml` file:
+   ```yaml
+   services:
+     bus-salamanca:
+       image: ghcr.io/juanmandev/bussalamancaalexa:latest
+       ports:
+         - "3000:3000"
+       environment:
+         - VERIFY_SIGNATURE=true
+       volumes:
+         - ./data:/data
+   ```
+2. Run `docker-compose up -d`.
+3. Configure your endpoint in the Alexa Console pointing to your server (HTTPS required).
+
+For more details, see [DEPLOY.md](DEPLOY.md).
+
+## Local Development
+
+```bash
+# Install dependencies
+npm install
+
+# Run in dev mode (with auto-reload)
+npm run dev
+
+# Run local verification tests
+npm run test:local
+```
+
+### Environment Variables
+Check `.env.example` to see available variables.
+
+---
+**Note**: Legacy AWS Lambda deployment has been temporarily disabled.
 
 ## ⚠️ Disclaimer
 
