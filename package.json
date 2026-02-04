@@ -37,6 +37,7 @@
     "build": "tsc",
     "start": "node dist/server.js",
     "dev": "tsx watch src/server.ts",
-    "test:local": "node ./local_test_script.js"
+    "test:local": "node ./local_test_script.js",
+    "test:siri": "npx tsx siri/local_test_siri.ts"
   }
 }
