@@ -15,60 +15,168 @@ const mapStore = useMapStore()
 const { data: allStops } = await useBusStops()
 const { data: allLines } = await useBusLines()
 
-// Format lines for USelectMenu
+// Local state for vehicles fetched by the map page
+const localVehicles = ref<BusVehicle[]>([])
+
+// Format lines for USelectMenu (multi-select)
 const lineSelectItems = computed(() => {
   const lines = allLines.value
   if (!lines || !Array.isArray(lines)) return []
   return lines.map((line: { id: string; name: string }) => ({
-    label: `Línea ${line.id} - ${line.name}`,
+    label: `${line.id} - ${line.name}`,
     value: line.id
   }))
 })
 
 const selectedStop = ref<BusStop | null>(null)
 const selectedVehicle = ref<BusVehicle | null>(null)
-const highlightLineId = ref<string | null>(null)
+const selectedLineIds = ref<string[]>([]) // Multi-select: array of line IDs
 const isRefreshing = ref(false)
 
-// Selected line item for USelectMenu - needs to match the item object structure
-const selectedLineItem = computed(() => {
-  if (!highlightLineId.value) return undefined
-  return lineSelectItems.value.find(item => item.value === highlightLineId.value)
+// Visibility toggles
+const showStops = ref(true)
+const showBuses = ref(true)
+
+// Selected line items for USelectMenu (array for multi-select)
+const selectedLineItems = computed({
+  get() {
+    return lineSelectItems.value.filter(item => selectedLineIds.value.includes(item.value))
+  },
+  set(items: { label: string; value: string }[]) {
+    selectedLineIds.value = items?.map(item => item.value) || []
+  }
 })
 
-function handleLineSelect(item: { label: string; value: string } | undefined) {
-  setLineFilter(item?.value || null)
+// Select all / none helpers
+function selectAllLines() {
+  selectedLineIds.value = [...lineSelectItems.value.map(item => item.value)]
 }
 
-// Filtered stops
-const displayedStops = computed(() => {
-  if (!allStops.value) return []
-  if (highlightLineId.value) {
-    return allStops.value.filter(s => s.lines?.includes(highlightLineId.value!))
+function selectNoLines() {
+  selectedLineIds.value = []
+}
+
+// Filtered stops based on selected lines (local filtering, doesn't modify store)
+const filteredStops = computed(() => {
+  if (!allStops.value || !Array.isArray(allStops.value)) return []
+  if (selectedLineIds.value.length === 0) {
+    return allStops.value
   }
-  return allStops.value
+  return allStops.value.filter((s: BusStop) => 
+    s.lines?.some((lineId: string) => selectedLineIds.value.includes(lineId))
+  )
 })
 
-// Filtered vehicles based on line filter
-const displayedVehicles = computed(() => {
-  if (highlightLineId.value) {
-    return mapStore.vehicles.filter(v => v.lineId === highlightLineId.value)
+// Filtered vehicles based on selected lines
+const filteredVehicles = computed(() => {
+  if (selectedLineIds.value.length === 0) {
+    return localVehicles.value
   }
-  return mapStore.vehicles
+  return localVehicles.value.filter(v => selectedLineIds.value.includes(v.lineId))
 })
+
+// What to display based on visibility toggles
+const displayedStops = computed(() => showStops.value ? filteredStops.value : [])
+const displayedVehicles = computed(() => showBuses.value ? filteredVehicles.value : [])
+
+// Fetch vehicles for map page - using arrivals from multiple stops
+const busService = useBusService()
+let refreshInterval: ReturnType<typeof setInterval> | null = null
+
+async function fetchVehicles() {
+  try {
+    isRefreshing.value = true
+    
+    // First try the global vehicles endpoint
+    const globalVehicles = await busService.fetchVehicles()
+    if (globalVehicles.length > 0) {
+      localVehicles.value = globalVehicles
+      console.log('[Map] Fetched', globalVehicles.length, 'vehicles from global endpoint')
+      return
+    }
+    
+    // Fallback: Extract vehicles from arrivals across multiple stops
+    console.log('[Map] Global endpoint empty, fetching from arrivals...')
+    const stops = allStops.value
+    if (!stops || !Array.isArray(stops) || stops.length === 0) {
+      console.warn('[Map] No stops available to fetch arrivals from')
+      return
+    }
+    
+    // Sample stops distributed across the city (every 10th stop, max 20 stops)
+    const step = Math.max(1, Math.floor(stops.length / 20))
+    const stopsToCheck = stops.filter((_: BusStop, index: number) => index % step === 0).slice(0, 20)
+    
+    console.log('[Map] Fetching arrivals from', stopsToCheck.length, 'stops')
+    
+    // Fetch arrivals in parallel
+    const promises = stopsToCheck.map((stop: BusStop) => 
+      busService.fetchArrivals(stop.id).catch(() => [])
+    )
+    const results = await Promise.all(promises)
+    
+    // Extract unique vehicles from arrivals
+    const vehicleMap = new Map<string, BusVehicle>()
+    
+    results.flat().forEach((arrival: any) => {
+      if (arrival.vehicleRef && arrival.location) {
+        vehicleMap.set(arrival.vehicleRef, {
+          id: arrival.vehicleRef,
+          lineId: arrival.lineId,
+          lineName: arrival.lineName,
+          latitude: arrival.location.latitude,
+          longitude: arrival.location.longitude,
+          destination: arrival.destination
+        })
+      }
+    })
+    
+    const extractedVehicles = Array.from(vehicleMap.values())
+    localVehicles.value = extractedVehicles
+    console.log('[Map] Extracted', extractedVehicles.length, 'vehicles from arrivals')
+    
+  } catch (e) {
+    console.error('Error fetching vehicles:', e)
+  } finally {
+    isRefreshing.value = false
+  }
+}
 
 // Set map context on mount
 onMounted(async () => {
-  await mapStore.setContextToMapPage()
+  // Set map to fullscreen interactive mode
+  mapStore.setMapState({
+    isInteractive: true,
+    isFullscreen: true,
+    showControls: true,
+  })
+  
+  // Load all stops
+  if (allStops.value && Array.isArray(allStops.value)) {
+    mapStore.stops = allStops.value
+  }
+  
+  // Request location
+  const geolocation = useGeolocation()
+  geolocation.requestLocation()
+  
+  // Fetch vehicles
+  await fetchVehicles()
+  
+  // Start auto-refresh
+  refreshInterval = setInterval(fetchVehicles, 15000)
 })
 
-// Update displayed data when filter changes
-watch([displayedStops, displayedVehicles], () => {
-  mapStore.stops = displayedStops.value
-  // Note: vehicles are already in store from context, we just filter the view
-}, { immediate: true })
+// Update store with filtered data for the map component
+watch([displayedStops, displayedVehicles], ([stops, vehicles]) => {
+  mapStore.stops = stops
+  mapStore.vehicles = vehicles
+}, { immediate: true, deep: false })
 
 onUnmounted(() => {
+  if (refreshInterval) {
+    clearInterval(refreshInterval)
+  }
   mapStore.setMapState({
     isFullscreen: false,
     vehicles: [],
@@ -110,8 +218,8 @@ function centerMapWithOffset(lat: number, lng: number) {
   })
 }
 
-// Watch selected vehicle to follow it
-watch(() => mapStore.vehicles, (newVehicles) => {
+// Watch for vehicle updates to follow selected vehicle
+watch(localVehicles, (newVehicles) => {
   if (selectedVehicle.value) {
     const updated = newVehicles.find(v => v.id === selectedVehicle.value?.id)
     if (updated) {
@@ -129,14 +237,15 @@ watch(() => mapStore.vehicles, (newVehicles) => {
 }, { deep: true })
 
 function centerOnUser() {
-  if (geolocation.userLocation.value) {
+  const geo = useGeolocation()
+  if (geo.userLocation.value) {
     if (mapStore.mapInstance) {
         mapStore.mapInstance.flyTo({
-            center: [geolocation.userLocation.value.lng, geolocation.userLocation.value.lat],
+            center: [geo.userLocation.value.lng, geo.userLocation.value.lat],
             zoom: 16
         })
     } else {
-        mapStore.center = [geolocation.userLocation.value.lng, geolocation.userLocation.value.lat]
+        mapStore.center = [geo.userLocation.value.lng, geo.userLocation.value.lat]
         mapStore.zoom = 16
     }
   }
@@ -157,58 +266,113 @@ function clearSelection() {
   selectedVehicle.value = null
 }
 
-function setLineFilter(lineId: string | null) {
-  highlightLineId.value = lineId
-  mapStore.highlightLineId = lineId
+async function refresh() {
+  await fetchVehicles()
 }
 
 // Refs
 const mapContainer = ref<HTMLDivElement>()
+
+// Computed for user location button visibility
+const hasUserLocation = computed(() => useGeolocation().userLocation.value !== null)
 </script>
 
 <template>
-  <div class="relative h-[calc(100vh-4rem)] md:h-[calc(100vh-4rem)]" ref="mapContainer">
+  <div class="relative h-[calc(100vh-10rem)]]" ref="mapContainer">
     <!-- Top controls -->
-    <div class="absolute top-4 left-4 right-4 z-40 flex items-start gap-3 pointer-events-none">
-      <!-- Line filter with searchable select -->
-      <div class="glass-card p-2 flex-1 max-w-xs pointer-events-auto">
-        <USelectMenu
-          :model-value="selectedLineItem"
-          :items="lineSelectItems"
-          placeholder="Todas las líneas"
-          searchable
-          :search-attributes="['label']"
-          value-attribute="value"
-          class="w-full"
-          @update:model-value="handleLineSelect"
-        />
+    <div class="absolute top-4 left-4 right-4 z-40 flex flex-col gap-3 pointer-events-none">
+      <!-- First row: Line filter and actions -->
+      <div class="flex items-start gap-2 flex-wrap">
+        <!-- Line filter with multi-select -->
+        <div class="glass-card p-2 flex-1 min-w-[200px] max-w-sm pointer-events-auto">
+          <USelectMenu
+            v-model="selectedLineItems"
+            :items="lineSelectItems"
+            placeholder="Todas las líneas"
+            searchable
+            multiple
+            :search-attributes="['label']"
+            class="w-full"
+          >
+            <template #label>
+              <span v-if="selectedLineIds.length === 0" class="text-gray-500">
+                Todas las líneas
+              </span>
+              <span v-else-if="selectedLineIds.length === 1">
+                Línea {{ selectedLineIds[0] }}
+              </span>
+              <span v-else>
+                {{ selectedLineIds.length }} líneas
+              </span>
+            </template>
+          </USelectMenu>
+        </div>
+
+        <!-- Select All / None buttons -->
+        <div class="glass-card p-1.5 flex gap-1 pointer-events-auto">
+          <button
+            class="px-3 py-2 text-xs font-medium rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex items-center gap-1"
+            :class="selectedLineIds.length === lineSelectItems.length && lineSelectItems.length > 0 ? 'text-primary-600 bg-primary-50 dark:bg-primary-900/30' : 'text-gray-600 dark:text-gray-400'"
+            @click="selectAllLines"
+            title="Seleccionar todas"
+          >
+            <UIcon name="i-lucide-check-check" class="w-4 h-4" />
+            <span class="hidden sm:inline">Todas</span>
+          </button>
+          <button
+            class="px-3 py-2 text-xs font-medium rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex items-center gap-1"
+            :class="selectedLineIds.length === 0 ? 'text-primary-600 bg-primary-50 dark:bg-primary-900/30' : 'text-gray-600 dark:text-gray-400'"
+            @click="selectNoLines"
+            title="Deseleccionar todas"
+          >
+            <UIcon name="i-lucide-x" class="w-4 h-4" />
+            <span class="hidden sm:inline">Ninguna</span>
+          </button>
+        </div>
+
+        <!-- Visibility toggles -->
+        <div class="glass-card px-3 py-2 flex items-center gap-3 pointer-events-auto">
+          <label class="flex items-center gap-1.5 cursor-pointer">
+            <UCheckbox v-model="showStops" />
+            <UIcon name="i-lucide-map-pin" class="w-4 h-4" :class="showStops ? 'text-primary-500' : 'text-gray-400'" />
+            {{ displayedStops.length }}
+            <span class="text-xs hidden sm:inline" :class="showStops ? 'text-gray-900 dark:text-white' : 'text-gray-400'">Paradas</span>
+          </label>
+          <label class="flex items-center gap-1.5 cursor-pointer">
+            <UCheckbox v-model="showBuses" />
+            <UIcon name="i-lucide-bus" class="w-4 h-4" :class="showBuses ? 'text-green-500' : 'text-gray-400'" />
+            {{ displayedVehicles.length }}
+            <span class="text-xs hidden sm:inline" :class="showBuses ? 'text-gray-900 dark:text-white' : 'text-gray-400'">Buses</span>
+          </label>
+        </div>
+
+        <!-- Refresh indicator -->
+        <button
+          class="glass-card p-3 hover:scale-105 transition-transform pointer-events-auto"
+          :class="isRefreshing ? 'opacity-50' : ''"
+          :disabled="isRefreshing"
+          @click="refresh"
+        >
+          <UIcon 
+            name="i-lucide-refresh-cw" 
+            class="w-5 h-5 text-gray-600 dark:text-gray-400"
+            :class="isRefreshing ? 'animate-spin' : ''"
+          />
+        </button>
+
+        <!-- Center on user -->
+        <button
+          v-if="hasUserLocation"
+          class="glass-card p-3 hover:scale-105 transition-transform pointer-events-auto"
+          @click="centerOnUser"
+        >
+          <UIcon name="i-lucide-navigation" class="w-5 h-5 text-primary-500" />
+        </button>
       </div>
-
-      <!-- Refresh indicator -->
-      <button
-        class="glass-card p-3 hover:scale-105 transition-transform pointer-events-auto"
-        :class="isRefreshing ? 'opacity-50' : ''"
-        @click="mapStore.setContextToMapPage()"
-      >
-        <UIcon 
-          name="i-lucide-refresh-cw" 
-          class="w-5 h-5 text-gray-600 dark:text-gray-400"
-          :class="isRefreshing ? 'animate-spin' : ''"
-        />
-      </button>
-
-      <!-- Center on user -->
-      <button
-        v-if="geolocation.userLocation.value"
-        class="glass-card p-3 hover:scale-105 transition-transform pointer-events-auto"
-        @click="centerOnUser"
-      >
-        <UIcon name="i-lucide-navigation" class="w-5 h-5 text-primary-500" />
-      </button>
     </div>
 
     <!-- Stats -->
-    <div class="absolute top-20 left-4 z-40 pointer-events-none">
+    <div v-if="0" class="absolute top-24 left-4 z-40 pointer-events-none">
       <div class="glass-card px-3 py-2 text-sm space-y-1 pointer-events-auto">
         <div class="flex items-center gap-2 text-gray-600 dark:text-gray-400">
           <UIcon name="i-lucide-map-pin" class="w-4 h-4" />
@@ -221,7 +385,7 @@ const mapContainer = ref<HTMLDivElement>()
             :class="displayedVehicles.length > 0 ? 'text-green-500' : 'text-gray-400'"
           />
           <span :class="displayedVehicles.length > 0 ? 'text-green-600 dark:text-green-400' : 'text-gray-500'">
-            {{ displayedVehicles.length }} buses activos
+            {{ displayedVehicles.length }} buses
           </span>
         </div>
       </div>

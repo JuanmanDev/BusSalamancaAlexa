@@ -128,7 +128,7 @@ export const useMapStore = defineStore('map', () => {
     function updatePositionWithMapPreviewContainer(points: { lat: number; lng: number }[], options: { zoom?: number, padding?: any, type?: PositionEventType } = {}) {
         console.log('updatePositionWithMapPreviewContainer', points, options);
 
-        let paddingValue = { top: 0, bottom: 0, left: 0, right: 0 };
+        let paddingValue = { top: 20, bottom: 20, left: 20, right: 20 };
         if (!isFullscreen.value) {
             paddingValue = pagePadding.value
         }
@@ -305,8 +305,8 @@ export const useMapStore = defineStore('map', () => {
             pagePadding.value = {
                 top: topPadding,
                 bottom: bottomPadding,
-                left: 0,
-                right: 0
+                left: 20,
+                right: 20
             }
         }
     }

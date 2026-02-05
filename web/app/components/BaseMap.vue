@@ -535,7 +535,7 @@ onUnmounted(() => {
                       <div 
                           v-for="lineId in selectedStopData.lines" 
                           :key="lineId"
-                          class="flex items-center gap-1.5 bg-gray-100 dark:bg-gray-800 rounded px-2 py-1"
+                          class="flex items-center gap-1.5"
                       >
                            <div 
                               class="w-5 h-5 rounded flex items-center justify-center text-xs font-bold text-white"
@@ -543,9 +543,9 @@ onUnmounted(() => {
                             >
                               {{ lineId }}
                             </div>
-                            <span class="text-xs text-gray-600 dark:text-gray-300 truncate max-w-[120px]">
+                            <!-- <span class="text-xs text-gray-600 dark:text-gray-300 truncate max-w-[120px]">
                               {{ getLineInfo(lineId)?.destination }}
-                            </span>
+                            </span> -->
                       </div>
                   </div>
 
