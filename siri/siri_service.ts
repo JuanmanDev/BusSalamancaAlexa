@@ -224,8 +224,13 @@ export async function getStopMonitoring(stopCode: number | string) {
  * const data = await getVehicleMonitoring();
  * const vehicles = data.Answer.VehicleMonitoringDelivery.VehicleActivity;
  */
-export async function getVehicleMonitoring() {
-    const requestXml = buildSiriRequest("", false);
+export async function getVehicleMonitoring(lineRef?: string) {
+    // requesting 'normal' detail level to get vehicle activity
+    let innerXml = `<n4:VehicleMonitoringDetailLevel xmlns:n4="http://www.siri.org.uk/siri">normal</n4:VehicleMonitoringDetailLevel>`;
+    if (lineRef) {
+        innerXml += `<n4:LineRef xmlns:n4="http://www.siri.org.uk/siri">${lineRef}</n4:LineRef>`;
+    }
+    const requestXml = buildSiriRequest(innerXml, false);
     return await callSiriSoapService("GetVehicleMonitoring", requestXml);
 }
 

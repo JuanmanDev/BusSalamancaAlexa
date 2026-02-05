@@ -13,6 +13,49 @@ async function test() {
     console.log('--- Testing SiriWS Client ---');
     console.log('Time:', getCurrentDateTime());
 
+    const testToCheck = 6;
+
+    switch (testToCheck) {
+        case 1:
+            console.log('\n1. Testing GetStopMonitoring (Stop 199)...');
+            const stopMon = await getStopMonitoring(199);
+            console.log('Result:', JSON.stringify(stopMon, null, 2));
+            break;
+        case 2:
+            console.log('\n2. Testing GetVehicleMonitoring...');
+            const vehMon = await getVehicleMonitoring();
+            console.log('Result:', JSON.stringify(vehMon, null, 2));
+            break;
+        case 3:
+            console.log('\n3. Testing LinesDiscovery...');
+            const lines = await getLinesDiscovery();
+            console.log('Result:', JSON.stringify(lines, null, 2));
+            break;
+        case 4:
+            console.log('\n4. Testing StopPointsDiscovery...');
+            const stops = await getStopPointsDiscovery();
+            console.log('Result:', JSON.stringify(stops, null, 2));
+            break;
+        case 5:
+            console.log('\n5. Testing GetProductionTimetable...');
+            const prodTime = await getProductionTimetable();
+            console.log('Result:', JSON.stringify(prodTime, null, 2));
+            break;
+        case 6:
+            console.log('\n6. Testing GetStopTimetable (Stop 199)...');
+            const stopTime = await getStopTimetable(199);
+            console.log('Result:', JSON.stringify(stopTime, null, 2));
+            break;
+        case 7:
+            console.log('\n7. Testing GetGeneralMessage...');
+            const genMsg = await getGeneralMessage();
+            console.log('Result:', JSON.stringify(genMsg, null, 2).substring(0, 500) + '...');
+            break;
+        default:
+            break;
+    }
+    return;
+
     try {
         console.log('\n1. Testing GetStopMonitoring (Stop 199)...');
         const stopMon = await getStopMonitoring(199);
