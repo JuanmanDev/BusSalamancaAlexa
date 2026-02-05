@@ -1,9 +1,12 @@
 /**
  * Pinia store for global map state management
  * Controls the background map in the default layout
+ * 
+ * Context-based architecture: Pages call context setters (e.g., setContextToStopPage)
+ * and the store manages all map logic, data fetching, and refresh intervals internally.
  */
 
-import type { BusStop, BusVehicle } from '~/types/bus'
+import type { BusStop, BusVehicle, BusArrival } from '~/types/bus'
 
 export interface MapState {
     // Map position
@@ -23,8 +26,8 @@ export interface MapState {
     isInteractive: boolean
     isFullscreen: boolean
     showControls: boolean
-    padding: { top: nuber; bottom: number; left: number; right: number }
-    pagePadding: { top: nuber; bottom: number; left: number; right: number }
+    padding: { top: number; bottom: number; left: number; right: number }
+    pagePadding: { top: number; bottom: number; left: number; right: number }
 
     // Instance (optional/internal)
     mapInstance?: any
@@ -40,6 +43,9 @@ export interface MapPositionEvent {
     padding?: { top: number; bottom: number; left: number; right: number }
 }
 
+// Context types
+export type MapContext = 'home' | 'stop' | 'line' | 'map' | 'stops-list' | 'lines-list'
+
 export const useMapStore = defineStore('map', () => {
     // Default center: Salamanca Plaza Mayor
     const center = ref<[number, number]>([-5.6635, 40.9701])
@@ -50,6 +56,12 @@ export const useMapStore = defineStore('map', () => {
     const stops = ref<BusStop[]>([])
     const allStops = ref<BusStop[]>([]) // Preserve full stops list for restoration
     const vehicles = ref<BusVehicle[]>([])
+
+    // Arrivals for stop context (exposed for stop page to read)
+    const arrivals = ref<BusArrival[]>([])
+    const arrivalsLoading = ref(false)
+    const arrivalsError = ref<string | null>(null)
+    const lastUpdated = ref<Date | null>(null)
 
     // Event triggered positioning
     const positionEvent = ref<MapPositionEvent | null>(null)
@@ -68,7 +80,40 @@ export const useMapStore = defineStore('map', () => {
     // Map instance
     const mapInstance = shallowRef<any | null>(null)
 
-    // Actions
+    // ===== Context Management =====
+    const currentContext = ref<MapContext | null>(null)
+    const currentContextId = ref<string | null>(null)
+    let refreshInterval: ReturnType<typeof setInterval> | null = null
+
+    // ===== Internal Helpers =====
+
+    function clearRefreshInterval() {
+        if (refreshInterval) {
+            clearInterval(refreshInterval)
+            refreshInterval = null
+        }
+    }
+
+    function clearContext() {
+        console.log('[MapStore] Clearing context:', currentContext.value)
+        clearRefreshInterval()
+
+        // Reset state
+        vehicles.value = []
+        arrivals.value = []
+        arrivalsLoading.value = false
+        arrivalsError.value = null
+        highlightStopId.value = null
+        highlightLineId.value = null
+        highlightVehicleId.value = null
+        selectedVehicle.value = null
+
+        currentContext.value = null
+        currentContextId.value = null
+    }
+
+    // ===== Position Actions =====
+
     function updatePosition(points: { lat: number; lng: number }[], options: { zoom?: number, padding?: any, type?: PositionEventType } = {}) {
         console.log('updatePosition', points, options);
         positionEvent.value = {
@@ -83,22 +128,21 @@ export const useMapStore = defineStore('map', () => {
     function updatePositionWithMapPreviewContainer(points: { lat: number; lng: number }[], options: { zoom?: number, padding?: any, type?: PositionEventType } = {}) {
         console.log('updatePositionWithMapPreviewContainer', points, options);
 
-        let padding = { top: 0, bottom: 0, left: 0, right: 0 };
+        let paddingValue = { top: 0, bottom: 0, left: 0, right: 0 };
         if (!isFullscreen.value) {
-            padding = pagePadding.value
+            paddingValue = pagePadding.value
         }
 
-        console.log('updatePositionWithMapPreviewContainer padding', padding);
+        console.log('updatePositionWithMapPreviewContainer padding', paddingValue);
 
         positionEvent.value = {
             id: Date.now(),
             type: options.type || 'manual',
             points,
             zoom: options.zoom,
-            padding: padding
+            padding: paddingValue
         }
     }
-
 
     function setMapState(state: Partial<MapState>) {
         if (state.stops) {
@@ -163,10 +207,10 @@ export const useMapStore = defineStore('map', () => {
     }
 
     // Update vehicle position when following
-    function updateFollowedVehicle(vehicles: BusVehicle[]) {
+    function updateFollowedVehicle(vehiclesList: BusVehicle[]) {
         if (!selectedVehicle.value) return
 
-        const updated = vehicles.find(v => v.id === selectedVehicle.value?.id)
+        const updated = vehiclesList.find(v => v.id === selectedVehicle.value?.id)
         if (updated) {
             selectedVehicle.value = updated
             // Smooth pan to new position
@@ -193,9 +237,10 @@ export const useMapStore = defineStore('map', () => {
         stops.value = lineStops
     }
 
-    function showAllStops(allStops: BusStop[]) {
-        console.log('showAllStops', allStops.length);
-        stops.value = allStops
+    function showAllStops(allStopsData: BusStop[]) {
+        console.log('showAllStops', allStopsData.length);
+        stops.value = allStopsData
+        allStops.value = allStopsData
         highlightStopId.value = null
         highlightLineId.value = null
 
@@ -208,18 +253,8 @@ export const useMapStore = defineStore('map', () => {
         isInteractive.value = value
         showControls.value = value
 
-        // if (isFullscreen.value) {
-        //     // Make the points cover the screen
-        //     padding.value = { top: 0, bottom: 0, left: 0, right: 0 }
-        // } else {
-        //     // Make the point to fit inside the top 60% of the screen and full width
-        //     padding.value = { top: 0, bottom: 500, left: 0, right: 0 }
-        // }
-
-
         // Retrigger last position event to adjust layout (padding) if needed
         if (positionEvent.value) {
-            //positionEvent.value = { ...positionEvent.value, id: Date.now() }
             updatePositionWithMapPreviewContainer(positionEvent.value.points, { ...positionEvent.value, padding: padding.value, type: 'manual' })
         }
     }
@@ -229,6 +264,7 @@ export const useMapStore = defineStore('map', () => {
         updatePosition([{ lng: -5.6635, lat: 40.9701 }], { zoom: 14, type: 'manual' })
         stops.value = []
         vehicles.value = []
+        arrivals.value = []
         highlightStopId.value = null
         highlightLineId.value = null
         highlightVehicleId.value = null
@@ -250,18 +286,15 @@ export const useMapStore = defineStore('map', () => {
         }
     }
 
-    function setPagePadding(padding: { top: number; bottom: number; left: number; right: number }) {
-        pagePadding.value = padding
+    function setPagePadding(paddingValue: { top: number; bottom: number; left: number; right: number }) {
+        pagePadding.value = paddingValue
     }
 
     function setPagePaddingFromMapPreviewContainer() {
-
         const mapPreviewContainer = document.getElementById('mapPreviewContainer')
 
-
-        let padding = { top: 0, bottom: 0, left: 0, right: 0 };
+        let paddingValue = { top: 0, bottom: 0, left: 0, right: 0 };
         if (!isFullscreen.value && mapPreviewContainer) {
-            // Como se hace uns translet, los valores la segunda vez son erroneos
             const rect = mapPreviewContainer.getBoundingClientRect()
             const windowHeight = window.innerHeight
 
@@ -278,6 +311,277 @@ export const useMapStore = defineStore('map', () => {
         }
     }
 
+    // ===== Context Handlers =====
+
+    /**
+     * Home page context: Show all stops, handle user location + nearby stops
+     */
+    async function setContextToHomePage() {
+        console.log('[MapStore] setContextToHomePage')
+        clearContext()
+        currentContext.value = 'home'
+
+        setPagePaddingFromMapPreviewContainer()
+
+        const busService = useBusService()
+        const geolocation = useGeolocation()
+
+        // Load all stops
+        const allStopsData = await busService.fetchStops()
+        showAllStops(allStopsData)
+
+        // Try to get user location and update map
+        if (geolocation.userLocation.value) {
+            await updateMapToUserLocation(allStopsData, geolocation)
+        } else if (!geolocation.permissionDenied.value) {
+            const success = await geolocation.requestLocation()
+            if (success) {
+                await updateMapToUserLocation(allStopsData, geolocation)
+            }
+        }
+    }
+
+    async function updateMapToUserLocation(allStopsData: BusStop[], geolocation: ReturnType<typeof useGeolocation>) {
+        if (!geolocation.userLocation.value) return
+
+        const closeStops = geolocation.getNearbyStops(allStopsData, 2000).slice(0, 5)
+
+        const points = [{
+            lng: geolocation.userLocation.value.lng,
+            lat: geolocation.userLocation.value.lat
+        }]
+
+        closeStops.forEach(stop => {
+            if (stop.longitude && stop.latitude) {
+                points.push({ lng: stop.longitude, lat: stop.latitude })
+            }
+        })
+
+        await new Promise(resolve => setTimeout(resolve, 1000))
+
+        stops.value = allStopsData
+
+        updatePositionWithMapPreviewContainer(points, {
+            type: 'multi-stop'
+        })
+    }
+
+    /**
+     * Stop detail page context: Single stop view with arrivals and vehicles
+     */
+    async function setContextToStopPage(stopId: string) {
+        console.log('[MapStore] setContextToStopPage', stopId)
+        clearContext()
+        currentContext.value = 'stop'
+        currentContextId.value = stopId
+
+        setPagePaddingFromMapPreviewContainer()
+
+        const busService = useBusService()
+
+        // Load stop info
+        const allStopsData = await busService.fetchStops()
+        const stopInfo = allStopsData.find(s => s.id === stopId)
+
+        if (stopInfo) {
+            stops.value = [stopInfo]
+            highlightStopId.value = stopInfo.id
+            focusOnStop(stopInfo)
+        }
+
+        // Fetch arrivals and extract vehicles
+        await fetchArrivalsForStop(stopId)
+
+        // Start auto-refresh
+        refreshInterval = setInterval(() => {
+            if (currentContext.value === 'stop' && currentContextId.value === stopId) {
+                fetchArrivalsForStop(stopId)
+            }
+        }, 10000)
+    }
+
+    async function fetchArrivalsForStop(stopId: string) {
+        const busService = useBusService()
+
+        try {
+            arrivalsLoading.value = arrivals.value.length === 0
+            arrivalsError.value = null
+
+            const fetchedArrivals = await busService.fetchArrivals(stopId)
+            arrivals.value = fetchedArrivals
+
+            // Extract vehicles from arrivals
+            const arrivalVehicles = fetchedArrivals
+                .filter(a => a.location && a.vehicleRef)
+                .map(a => ({
+                    id: a.vehicleRef!,
+                    lineId: a.lineId,
+                    lineName: a.lineName,
+                    latitude: a.location!.latitude,
+                    longitude: a.location!.longitude,
+                    destination: a.destination
+                }))
+
+            vehicles.value = arrivalVehicles
+            lastUpdated.value = new Date()
+        } catch (e) {
+            arrivalsError.value = 'Error al cargar llegadas'
+            console.error(e)
+        } finally {
+            arrivalsLoading.value = false
+        }
+    }
+
+    /**
+     * Line detail page context: Show all stops on line, fetch vehicles
+     */
+    async function setContextToLinePage(lineId: string) {
+        console.log('[MapStore] setContextToLinePage', lineId)
+        clearContext()
+        currentContext.value = 'line'
+        currentContextId.value = lineId
+
+        setPagePaddingFromMapPreviewContainer()
+
+        const busService = useBusService()
+
+        // Load all stops and filter by line
+        const allStopsData = await busService.fetchStops()
+        const lineStops = allStopsData
+            .filter(s => s.lines?.includes(lineId))
+            .sort((a, b) => parseInt(a.id) - parseInt(b.id))
+
+        if (lineStops.length > 0) {
+            focusOnLine(lineId, lineStops)
+        }
+
+        // Fetch vehicles for this line
+        await fetchVehiclesForLine(lineId, lineStops, busService)
+
+        // Start auto-refresh
+        refreshInterval = setInterval(() => {
+            if (currentContext.value === 'line' && currentContextId.value === lineId) {
+                fetchVehiclesForLine(lineId, lineStops, busService)
+            }
+        }, 10000)
+    }
+
+    async function fetchVehiclesForLine(lineId: string, lineStops: BusStop[], busService: ReturnType<typeof useBusService>) {
+        try {
+            // First try global endpoint
+            const globalData = await busService.fetchVehicles()
+            const validGlobalVehicles = globalData.filter(v => v.lineId === lineId)
+
+            if (validGlobalVehicles.length > 0) {
+                vehicles.value = validGlobalVehicles
+                return
+            }
+
+            // Fallback: Check arrivals for key stops
+            if (lineStops.length > 0) {
+                const stopsToCheck: BusStop[] = []
+                const step = Math.max(1, Math.floor(lineStops.length / 5))
+
+                for (let i = 0; i < lineStops.length; i += step) {
+                    stopsToCheck.push(lineStops[i]!)
+                }
+
+                const lastStop = lineStops[lineStops.length - 1]
+                if (lastStop && !stopsToCheck.includes(lastStop)) {
+                    stopsToCheck.push(lastStop)
+                }
+
+                const promises = stopsToCheck.map(s => busService.fetchArrivals(s.id))
+                const results = await Promise.all(promises)
+
+                const derivedVehicles = new Map<string, BusVehicle>()
+
+                results.flat().forEach(arrival => {
+                    if (arrival.lineId === lineId && arrival.vehicleRef && arrival.location) {
+                        derivedVehicles.set(arrival.vehicleRef, {
+                            id: arrival.vehicleRef,
+                            lineId: arrival.lineId,
+                            lineName: arrival.lineName,
+                            latitude: arrival.location.latitude,
+                            longitude: arrival.location.longitude,
+                            destination: arrival.destination
+                        })
+                    }
+                })
+
+                vehicles.value = Array.from(derivedVehicles.values())
+            }
+        } catch (e) {
+            console.error('Error fetching vehicles for line:', e)
+        }
+    }
+
+    /**
+     * Full map page context: Interactive map with all stops and live vehicles
+     */
+    async function setContextToMapPage() {
+        console.log('[MapStore] setContextToMapPage')
+        clearContext()
+        currentContext.value = 'map'
+
+        const busService = useBusService()
+        const geolocation = useGeolocation()
+
+        // Set to full interactive mode
+        setMapState({
+            isInteractive: true,
+            isFullscreen: true,
+            showControls: true,
+        })
+
+        // Load all stops
+        const allStopsData = await busService.fetchStops()
+        stops.value = allStopsData
+
+        // Request location
+        geolocation.requestLocation()
+
+        // Fetch vehicles
+        await fetchAllVehicles(busService)
+
+        // Start auto-refresh
+        refreshInterval = setInterval(() => {
+            if (currentContext.value === 'map') {
+                fetchAllVehicles(busService)
+            }
+        }, 15000)
+    }
+
+    async function fetchAllVehicles(busService: ReturnType<typeof useBusService>) {
+        try {
+            const fetched = await busService.fetchVehicles()
+            vehicles.value = fetched
+            updateFollowedVehicle(fetched)
+        } catch (e) {
+            console.error('Error fetching vehicles:', e)
+        }
+    }
+
+    /**
+     * Stops list page context: Simple list, no map interaction
+     */
+    function setContextToStopsListPage() {
+        console.log('[MapStore] setContextToStopsListPage')
+        clearContext()
+        currentContext.value = 'stops-list'
+        setFullscreen(false)
+    }
+
+    /**
+     * Lines list page context: Simple list, no map interaction
+     */
+    function setContextToLinesListPage() {
+        console.log('[MapStore] setContextToLinesListPage')
+        clearContext()
+        currentContext.value = 'lines-list'
+        setFullscreen(false)
+    }
+
     return {
         // State
         center,
@@ -285,6 +589,10 @@ export const useMapStore = defineStore('map', () => {
         stops,
         allStops,
         vehicles,
+        arrivals,
+        arrivalsLoading,
+        arrivalsError,
+        lastUpdated,
         highlightStopId,
         highlightLineId,
         highlightVehicleId,
@@ -294,6 +602,8 @@ export const useMapStore = defineStore('map', () => {
         padding,
         mapInstance,
         positionEvent,
+        currentContext,
+        currentContextId,
 
         // Actions
         setMapState,
@@ -311,6 +621,14 @@ export const useMapStore = defineStore('map', () => {
         followVehicle,
         updateFollowedVehicle,
         selectedVehicle,
+
+        // Context Handlers
+        setContextToHomePage,
+        setContextToStopPage,
+        setContextToLinePage,
+        setContextToMapPage,
+        setContextToStopsListPage,
+        setContextToLinesListPage,
+        clearContext,
     }
 })
-

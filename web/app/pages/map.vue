@@ -8,13 +8,11 @@ useSeoMeta({
 
 const router = useRouter()
 const storage = useStorage()
-const busService = useBusService()
 const geolocation = useGeolocation()
 const mapStore = useMapStore()
 
-// Data
+// Data from store
 const { data: allStops } = await useBusStops()
-
 const { data: allLines } = await useBusLines()
 
 // Format lines for USelectMenu
@@ -27,7 +25,6 @@ const lineSelectItems = computed(() => {
   }))
 })
 
-const vehicles = ref<BusVehicle[]>([])
 const selectedStop = ref<BusStop | null>(null)
 const selectedVehicle = ref<BusVehicle | null>(null)
 const highlightLineId = ref<string | null>(null)
@@ -43,9 +40,6 @@ function handleLineSelect(item: { label: string; value: string } | undefined) {
   setLineFilter(item?.value || null)
 }
 
-// Helper for line color
-
-
 // Filtered stops
 const displayedStops = computed(() => {
   if (!allStops.value) return []
@@ -58,60 +52,25 @@ const displayedStops = computed(() => {
 // Filtered vehicles based on line filter
 const displayedVehicles = computed(() => {
   if (highlightLineId.value) {
-    return vehicles.value.filter(v => v.lineId === highlightLineId.value)
+    return mapStore.vehicles.filter(v => v.lineId === highlightLineId.value)
   }
-  return vehicles.value
+  return mapStore.vehicles
 })
 
-// Fetch vehicles
-async function fetchVehicles() {
-  try {
-    isRefreshing.value = true
-    const fetched = await busService.fetchVehicles()
-    vehicles.value = fetched
-    // Sync to store immediately so BaseMap renders them
-    mapStore.vehicles = displayedVehicles.value
-  } catch (e) {
-    console.error('Error fetching vehicles:', e)
-  } finally {
-    isRefreshing.value = false
-  }
-}
-
-// Auto-refresh
-let refreshInterval: ReturnType<typeof setInterval>
-
-onMounted(() => {
-  // Set map to full interactive mode
-  mapStore.setMapState({
-    isInteractive: true,
-    isFullscreen: true,
-    showControls: true,
-    stops: displayedStops.value,
-    vehicles: displayedVehicles.value,
-  })
-
-  geolocation.requestLocation()
-  fetchVehicles()
-  refreshInterval = setInterval(fetchVehicles, 15000)
+// Set map context on mount
+onMounted(async () => {
+  await mapStore.setContextToMapPage()
 })
 
-// Update map when data changes
+// Update displayed data when filter changes
 watch([displayedStops, displayedVehicles], () => {
   mapStore.stops = displayedStops.value
-  mapStore.vehicles = displayedVehicles.value
-  // Update followed vehicle position
-  mapStore.updateFollowedVehicle(displayedVehicles.value)
+  // Note: vehicles are already in store from context, we just filter the view
 }, { immediate: true })
 
 onUnmounted(() => {
-  clearInterval(refreshInterval)
-  // mapStore.reset()
   mapStore.setMapState({
-    // isInteractive: false,
     isFullscreen: false,
-    // showControls: false,
-    // stops: [],
     vehicles: [],
   })
 })
@@ -146,16 +105,13 @@ function centerMapWithOffset(lat: number, lng: number) {
   mapStore.mapInstance.flyTo({
     center: [lng, lat],
     zoom: 16,
-    offset: [0, -offsetY], // Shift center UP to move point DOWN? No. 
-                           // Offset [0, -100] means the center is at (W/2, H/2 - 100).
-                           // If we center on Paris, Paris is at (W/2, H/2 - 100).
-                           // This means Paris is HIGHER on screen. Correct.
+    offset: [0, -offsetY],
     padding: { bottom: 0, top: 0, left: 0, right: 0 }
   })
 }
 
 // Watch selected vehicle to follow it
-watch(() => vehicles.value, (newVehicles) => {
+watch(() => mapStore.vehicles, (newVehicles) => {
   if (selectedVehicle.value) {
     const updated = newVehicles.find(v => v.id === selectedVehicle.value?.id)
     if (updated) {
@@ -212,24 +168,6 @@ const mapContainer = ref<HTMLDivElement>()
 
 <template>
   <div class="relative h-[calc(100vh-4rem)] md:h-[calc(100vh-4rem)]" ref="mapContainer">
-    <!-- The map is in the layout background, so we just show overlay UI? 
-         WAIT. If map is in layout background, we CANNOT control its flyTo instance easily from here unless we use the Store or BaseMap emits event globally?
-         Actually default.vue renders BaseMap. map.vue renders NOTHING map-related directly?
-         Review `map.vue` template. It currently DOES NOT include <BaseMap>. 
-         It relies on `default.vue` <BaseMap>.
-         BUT `default.vue` passes props from `mapStore`.
-         We need `mapStore` to expose `flyTo` or `mapInstance`?
-         OR we should render a local BaseMap here specifically for the "Map Page" to have full control?
-         The plan said "Move the map to the default layout as a persistent background layer".
-         So `map.vue` is just UI OVERLAY.
-         
-         PROBLEM: `default.vue` holds the Map instance. `map.vue` cannot mistakenly access it via a local Ref unless we move instance to Store.
-         
-         SOLUTION: Update `useMapStore` to hold the `mapInstance` (shallowRef).
-         `BaseMap` should write to `mapStore.mapInstance`.
-         Then `map.vue` can read `mapStore.mapInstance`.
-    -->
-    
     <!-- Top controls -->
     <div class="absolute top-4 left-4 right-4 z-40 flex items-start gap-3 pointer-events-none">
       <!-- Line filter with searchable select -->
@@ -250,7 +188,7 @@ const mapContainer = ref<HTMLDivElement>()
       <button
         class="glass-card p-3 hover:scale-105 transition-transform pointer-events-auto"
         :class="isRefreshing ? 'opacity-50' : ''"
-        @click="fetchVehicles"
+        @click="mapStore.setContextToMapPage()"
       >
         <UIcon 
           name="i-lucide-refresh-cw" 

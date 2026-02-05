@@ -9,12 +9,7 @@ useSeoMeta({
 const router = useRouter()
 const storage = useStorage()
 const geolocation = useGeolocation()
-const busService = useBusService()
 const mapStore = useMapStore()
-
-// Location permission state machine
-type LocationState = 'idle' | 'requesting' | 'locating' | 'found' | 'denied'
-const locationState = ref<LocationState>('idle')
 
 // Load static data
 const { data: allStops, status: stopsStatus } = await useBusStops()
@@ -29,40 +24,13 @@ const nearbyStops = computed(() => {
   return geolocation.getNearbyStops(allStops.value, 2000).slice(0, 5)
 })
 
-// Update map to user location
-async function updateMapToLocation() {
-  if (!geolocation.userLocation.value || !allStops.value) return
-  
-  // Calculate padding (MapPreview is ~50vh, so we want bottom padding to mask the bottom 50vh)
-  const bottomPadding = typeof window !== 'undefined' ? window.innerHeight / 2 : 0
-  const padding = { top: (bottomPadding / 3), bottom: bottomPadding + 20, left: 20, right: 20 }
-
-  // Prepare points: User location + 5 nearby stops
-  // Use getNearbyStops directly to ensure freshness
-  const closeStops = geolocation.getNearbyStops(allStops.value, 2000).slice(0, 5)
-  
-  const points = [{ 
-      lng: geolocation.userLocation.value.lng, 
-      lat: geolocation.userLocation.value.lat 
-  }]
-
-  closeStops.forEach(stop => {
-      if (stop.longitude && stop.latitude) {
-          points.push({ lng: stop.longitude, lat: stop.latitude })
-      }
-  })
-
-  await new Promise(resolve => setTimeout(resolve, 1000))
-
-  // Ensure stops are loaded in map (in case they weren't)
-  mapStore.setMapState({ stops: allStops.value })
-  
-  mapStore.updatePositionWithMapPreviewContainer(points, {
-      // padding,
-      type: 'multi-stop'
-  })
-  
-}
+// Location state derived from geolocation
+const locationState = computed(() => {
+  if (geolocation.isLocating.value) return 'locating'
+  if (geolocation.userLocation.value) return 'found'
+  if (geolocation.permissionDenied.value) return 'denied'
+  return 'idle'
+})
 
 // Enhanced recents - include destination info
 interface EnhancedRecent {
@@ -108,51 +76,14 @@ function toggleFavoriteLine(line: BusLine) {
   storage.toggleFavorite('line', line.id, line.name)
 }
 
-// Request location with state machine
+// Request location handler
 async function handleRequestLocation() {
-  locationState.value = 'locating'
-  
-  // Use promise to avoid blocking UI if called from onMounted? 
-  // Actually async/await is fine here, but we can do the logic linearly.
-  const success = await geolocation.requestLocation()
-  
-  if (success) {
-    locationState.value = 'found'
-    updateMapToLocation()
-  } else if (geolocation.permissionDenied.value) {
-    locationState.value = 'denied'
-  } else {
-    locationState.value = 'idle'
-  }
+  await geolocation.requestLocation()
 }
 
-// Sync state with geolocation on mount
-onMounted(() => {
-
-  // Reset map
-  mapStore.reset()
-  mapStore.setPagePaddingFromMapPreviewContainer();
-  
-  // 1. Always reset and show all stops initially (Default View)
-  if (allStops.value) {
-    mapStore.showAllStops(allStops.value)
-  }
-
-  // 2. Check location state
-  if (geolocation.userLocation.value) {
-    locationState.value = 'found'
-    updateMapToLocation()
-  } else if (geolocation.permissionDenied.value) {
-    locationState.value = 'denied'
-  } else {
-    // 3. If no location known, try to request it
-    handleRequestLocation()
-  }
-})
-
-// Reset map on unmount
-onUnmounted(() => {
-  // mapStore.reset()
+// Set map context on mount
+onMounted(async () => {
+  await mapStore.setContextToHomePage()
 })
 </script>
 

@@ -64,49 +64,13 @@ function toggleFavorite(stop: { id: string; name: string }) {
   storage.toggleFavorite('stop', stop.id, stop.name)
 }
 
-// Update map with stops
-// watch([filteredStops, allStops], () => {
-//   if (filteredStops.value.length > 0) {
-//     mapStore.showAllStops(filteredStops.value.slice(0, 50))
-//   } else if (allStops.value) {
-//     mapStore.showAllStops(allStops.value.slice(0, 50))
-//   }
-// }, { immediate: true })
-
-// Request location on mount if nearby mode
+// Set map context on mount
 onMounted(() => {
+  mapStore.setContextToStopsListPage()
+  
   if (showNearby.value) {
     geolocation.requestLocation()
   }
-})
-
-// Center map on user location when available and nearby mode is active
-// watch(() => geolocation.userLocation.value, (loc) => {
-//   if (loc && showNearby.value) {
-//     mapStore.updatePosition(
-//         [{ lng: loc.lng, lat: loc.lat }],
-//         { zoom: 16, type: 'user' }
-//     )
-//   }
-// }, { immediate: true })
-
-// // Also watch showNearby to re-center if toggled on and we have location
-// watch(showNearby, (enabled) => {
-//   if (enabled && geolocation.userLocation.value) {
-//     const loc = geolocation.userLocation.value
-//     mapStore.updatePosition(
-//         [{ lng: loc.lng, lat: loc.lat }],
-//         { zoom: 16, type: 'user' }
-//     )
-//   }
-// })
-
-onUnmounted(() => {
-  // mapStore.reset()
-  // mapStore.reset()
-  mapStore.setFullscreen(false);
-  // mapStore.vehicles = []
-
 })
 </script>
 

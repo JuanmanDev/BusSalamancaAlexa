@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import type { BusStop, BusVehicle, BusLine } from '~/types/bus'
+import type { BusStop, BusLine } from '~/types/bus'
 
 const route = useRoute()
 const router = useRouter()
 const storage = useStorage()
-const busService = useBusService()
 const mapStore = useMapStore()
 
 const lineId = computed(() => route.params.id as string)
@@ -29,16 +28,6 @@ const lineStops = computed((): BusStop[] => {
   
   // Sort numerically by stop id
   return filtered.sort((a, b) => parseInt(a.id) - parseInt(b.id))
-})
-
-// Map center - average of line stops
-const mapCenter = computed((): [number, number] => {
-  const stops = lineStops.value.filter(s => s.latitude && s.longitude)
-  if (stops.length === 0) return [-5.6635, 40.9701]
-  
-  const avgLng = stops.reduce((sum, s) => sum + s.longitude!, 0) / stops.length
-  const avgLat = stops.reduce((sum, s) => sum + s.latitude!, 0) / stops.length
-  return [avgLng, avgLat]
 })
 
 // Parse route name
@@ -75,117 +64,28 @@ function goToStop(stop: BusStop) {
   router.push(`/stop/${stop.id}`)
 }
 
-
-
-// Vehicles for this line
-const vehicles = ref<BusVehicle[]>([])
+// Vehicles for this line (from store)
 const lineVehicles = computed(() => 
-  vehicles.value.filter(v => v.lineId === lineId.value)
+  mapStore.vehicles.filter(v => v.lineId === lineId.value)
 )
 
-const isRefreshing = ref(false)
-const lastUpdated = ref<Date | null>(null)
+const isRefreshing = computed(() => mapStore.arrivalsLoading)
 
-
-
-async function fetchVehicles() {
-  try {
-    isRefreshing.value = true
-    
-    // First try the global endpoint directly via service
-    const globalData = await busService.fetchVehicles()
-    const validGlobalVehicles = globalData.filter(v => v.lineId === lineId.value)
-    
-    if (validGlobalVehicles.length > 0) {
-      vehicles.value = globalData
-      mapStore.vehicles = validGlobalVehicles
-      return
-    }
-
-    // Fallback: Check arrivals for key stops to find vehicles
-    // We pick up to 5 stops distributed along the line to "sample" vehicle locations
-    if (lineStops.value.length > 0) {
-      const stopsToCheck = []
-      const step = Math.max(1, Math.floor(lineStops.value.length / 5))
-      
-      for (let i = 0; i < lineStops.value.length; i += step) {
-        stopsToCheck.push(lineStops.value[i])
-      }
-      
-      // Add last stop if not included
-      if (lineStops.value.length > 0 && !stopsToCheck.includes(lineStops.value[lineStops.value.length - 1])) {
-        stopsToCheck.push(lineStops.value[lineStops.value.length - 1])
-      }
-
-      // Fetch arrivals for these stops in parallel
-      const promises = stopsToCheck.map(s => busService.fetchArrivals(s!.id))
-      const results = await Promise.all(promises)
-      
-      // Extract unique vehicles from arrivals
-      const derivedVehicles = new Map<string, BusVehicle>()
-      
-      results.flat().forEach(arrival => {
-        if (arrival.lineId === lineId.value && arrival.vehicleRef && arrival.location) {
-          derivedVehicles.set(arrival.vehicleRef, {
-            id: arrival.vehicleRef,
-            lineId: arrival.lineId,
-            lineName: arrival.lineName,
-            latitude: arrival.location.latitude,
-            longitude: arrival.location.longitude,
-            destination: arrival.destination
-          })
-        }
-      })
-      
-      const newVehicles = Array.from(derivedVehicles.values())
-      vehicles.value = newVehicles
-      mapStore.vehicles = newVehicles
-    }
-  } catch (e) {
-    console.error('Error fetching vehicles:', e)
-  } finally {
-    isRefreshing.value = false
-  }
-}
-
-// Setup map and auto-refresh
-let refreshInterval: ReturnType<typeof setInterval>
-
-onMounted(() => {
-  // mapStore.reset();
-  mapStore.setPagePaddingFromMapPreviewContainer();
-  if (lineInfo.value) {
-    storage.addRecent('line', lineId.value, lineInfo.value.name)
-    console.log('lineInfo.value', lineInfo.value)
-  }
-  
-  fetchVehicles()
-  refreshInterval = setInterval(fetchVehicles, 20000)
-})
-
-// Update map when line stops load or change (e.g., navigating between lines)
-watch(lineStops, (stops) => {
-  if (stops.length > 0) {
-    mapStore.focusOnLine(lineId.value, stops)
-  }
-}, { immediate: true })
-
-// Also watch lineId for route param changes
-watch(lineId, () => {
-  // Clear stale vehicles immediately before fetching new ones
-  vehicles.value = []
-  mapStore.vehicles = []
-  mapStore.reset()
+// Set map context on mount
+onMounted(async () => {
   if (lineInfo.value) {
     storage.addRecent('line', lineId.value, lineInfo.value.name)
   }
-  fetchVehicles()
+  await mapStore.setContextToLinePage(lineId.value)
 })
 
-onUnmounted(() => {
-  clearInterval(refreshInterval)
-  // Clear vehicles to prevent stale data appearing on other pages
-  mapStore.vehicles = []
+// Handle line ID changes (navigation between lines)
+watch(lineId, async (newId) => {
+  const line = allLines.value?.find(l => l.id === newId)
+  if (line) {
+    storage.addRecent('line', newId, line.name)
+  }
+  await mapStore.setContextToLinePage(newId)
 })
 
 const isLoading = computed(() => 

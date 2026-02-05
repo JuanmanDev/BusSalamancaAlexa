@@ -6,7 +6,6 @@ useSeoMeta({
 
 const router = useRouter()
 const storage = useStorage()
-const busService = useBusService()
 const mapStore = useMapStore()
 
 // Search
@@ -38,9 +37,9 @@ function toggleFavorite(line: { id: string; name: string }) {
   storage.toggleFavorite('line', line.id, line.name)
 }
 
-// Reset map on mount
+// Set map context on mount
 onMounted(() => {
-  mapStore.setFullscreen(false);
+  mapStore.setContextToLinesListPage()
 })
 </script>
 

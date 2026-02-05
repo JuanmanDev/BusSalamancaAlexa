@@ -230,6 +230,11 @@ watch(() => props.highlightStopId, () => {
   updateStopMarkers()
 })
 
+// Watch for vehicles changes - update vehicle markers
+watch(() => props.vehicles, () => {
+  updateVehicleMarkers()
+}, { deep: true })
+
 function updateStopMarkers() {
   if (!map.value || !isLoaded.value) return
   
@@ -505,7 +510,7 @@ onUnmounted(() => {
           v-if="selectedStopData" 
           class="fixed bottom-6 left-4 right-4 z-[60] md:left-1/2 md:-translate-x-1/2 md:w-96"
       >
-          <UCard :ui="{ body: { padding: 'p-0' }, ring: 'ring-1 ring-gray-200 dark:ring-gray-800' }">
+          <UCard :ui="{ body: 'p-0', root: 'ring-1 ring-gray-200 dark:ring-gray-800' }">
               <div class="p-4">
                   <div class="flex items-start justify-between gap-3 mb-3">
                       <div>
@@ -565,7 +570,7 @@ onUnmounted(() => {
           v-if="mapStore.selectedVehicle && mapStore.isFullscreen" 
           class="fixed bottom-6 left-4 right-4 z-[60] md:left-1/2 md:-translate-x-1/2 md:w-96"
       >
-          <UCard :ui="{ body: { padding: 'p-0' }, ring: 'ring-1 ring-gray-200 dark:ring-gray-800' }">
+          <UCard :ui="{ body: 'p-0', root: 'ring-1 ring-gray-200 dark:ring-gray-800' }">
               <!-- Header colored strip with dynamic color -->
               <div class="h-2 w-full" :class="getLineColor(mapStore.selectedVehicle.lineId)"></div>
               
