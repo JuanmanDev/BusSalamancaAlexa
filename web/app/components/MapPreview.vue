@@ -30,7 +30,9 @@ const clickLocationButton = async () => {
       const loc = geolocation.userLocation.value
       mapStore.mapInstance?.flyTo({
         center: [loc.lng, loc.lat],
-        zoom: 15
+        zoom: 15,
+        duration: 2000,
+        essential: mapStore.forceAnimations
       })
     } else {
       // Handle errors
@@ -61,9 +63,35 @@ const clickLocationButton = async () => {
     if (loc) {
         mapStore.mapInstance?.flyTo({
           center: [loc.lng, loc.lat],
-          zoom: 15
+          zoom: 15,
+          duration: 2000,
+          essential: mapStore.forceAnimations
         })
     }
+  }
+}
+
+const zoomInAnimated = () => {
+  const map = mapStore.mapInstance
+  if (map) {
+    const currentZoom = map.getZoom()
+    map.flyTo({
+      zoom: currentZoom + 1,
+      duration: 500,
+      essential: mapStore.forceAnimations,
+    })
+  }
+}
+
+const zoomOutAnimated = () => {
+  const map = mapStore.mapInstance
+  if (map) {
+    const currentZoom = map.getZoom()
+    map.flyTo({
+      zoom: currentZoom - 1,
+      duration: 500,
+      essential: mapStore.forceAnimations,
+    })
   }
 }
 
@@ -90,14 +118,14 @@ const clickLocationButton = async () => {
     <div class="absolute bottom-4 left-4 z-10 pointer-events-auto flex flex-row gap-2">
       <button
         class="bg-white hover:bg-gray-100 text-gray-700 p-2 rounded-lg shadow-lg flex items-center justify-center transition-all hover:scale-105"
-        @click="mapStore.mapInstance?.zoomOut()"
+        @click="zoomOutAnimated()"
         title="Alejar"
       >
         <UIcon name="i-lucide-minus" class="w-5 h-5" />
       </button>
       <button
         class="bg-white hover:bg-gray-100 text-gray-700 p-2 rounded-lg shadow-lg flex items-center justify-center transition-all hover:scale-105"
-        @click="mapStore.mapInstance?.zoomIn()"
+        @click="zoomInAnimated()"
         title="Acercar"
       >
         <UIcon name="i-lucide-plus" class="w-5 h-5" />

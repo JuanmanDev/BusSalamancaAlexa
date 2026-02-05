@@ -31,6 +31,8 @@ export interface MapState {
 
     // Instance (optional/internal)
     mapInstance?: any
+
+    forceAnimations: boolean
 }
 
 export type PositionEventType = 'stop' | 'line' | 'multi-stop' | 'user' | 'manual'
@@ -73,6 +75,7 @@ export const useMapStore = defineStore('map', () => {
     const isInteractive = ref(false)
     const isFullscreen = ref(false)
     const showControls = ref(false)
+    const forceAnimations = ref(true)
 
     // Selected vehicle for following (UI state)
     const selectedVehicle = ref<BusVehicle | null>(null)
@@ -201,7 +204,8 @@ export const useMapStore = defineStore('map', () => {
             mapInstance.value.flyTo({
                 center: [vehicle.longitude, vehicle.latitude],
                 zoom: 16,
-                duration: 1500
+                duration: 2000,
+
             })
         }
     }
@@ -217,7 +221,7 @@ export const useMapStore = defineStore('map', () => {
             if (mapInstance.value && !mapInstance.value.isMoving()) {
                 mapInstance.value.easeTo({
                     center: [updated.longitude, updated.latitude],
-                    duration: 1000
+                    duration: 2000
                 })
             }
         }
@@ -295,12 +299,14 @@ export const useMapStore = defineStore('map', () => {
 
         let paddingValue = { top: 0, bottom: 0, left: 0, right: 0 };
         if (!isFullscreen.value && mapPreviewContainer) {
+
+            // get the position of the mapPreviewContainer relative to the parent
             const rect = mapPreviewContainer.getBoundingClientRect()
             const windowHeight = window.innerHeight
 
             // paddings
-            const topPadding = rect.top
-            const bottomPadding = windowHeight - rect.bottom
+            const topPadding = rect.top + window.scrollY;
+            const bottomPadding = windowHeight - rect.bottom - topPadding;
 
             pagePadding.value = {
                 top: topPadding,
@@ -604,6 +610,7 @@ export const useMapStore = defineStore('map', () => {
         positionEvent,
         currentContext,
         currentContextId,
+        forceAnimations,
 
         // Actions
         setMapState,

@@ -142,6 +142,7 @@ const mapStore = useMapStore() // We can use the store directly if we want, or r
 // The user plan said: "Component (`web/app/components/BaseMap.vue`): Watch `mapStore.positionEvent`"
 // So we will import the store.
 
+
 watch(() => mapStore.positionEvent, (event) => {
     if (!map.value || !event) return
     
@@ -165,7 +166,8 @@ watch(() => mapStore.positionEvent, (event) => {
                 center: [point.lng, point.lat],
                 zoom: targetZoom,
                 padding: 0, // No padding needed for fullscreen centering
-                duration: 2000
+                duration: 2000,
+                essential: mapStore.forceAnimations,
             })
         } else {
             // Preview Mode
@@ -177,7 +179,8 @@ watch(() => mapStore.positionEvent, (event) => {
                 center: [point.lng, point.lat],
                 zoom: targetZoom,
                 padding: p,
-                duration: 2000
+                duration: 2000,
+                essential: mapStore.forceAnimations,
             })
         }
     } else if (points.length > 1) {
@@ -188,14 +191,16 @@ watch(() => mapStore.positionEvent, (event) => {
         if (isFullscreen) {
              map.value.fitBounds(bounds, {
                 padding: 50, // Loose padding
-                duration: 2000
+                duration: 2000,
+                essential: mapStore.forceAnimations,
             })
         } else {
             // Preview Mode - Strict padding to ensure visibility in the window slice
              const p = event.padding ?? mapStore.padding
              map.value.fitBounds(bounds, {
                 padding: p,
-                duration: 2000
+                duration: 2000,
+                essential: mapStore.forceAnimations,
             })
         }
     }
@@ -475,10 +480,14 @@ function updateUserLocation() {
 defineExpose({
   map,
   flyTo: (center: [number, number], zoom?: number) => {
-    map.value?.flyTo({ center, zoom: zoom ?? props.zoom, duration: 1000 })
+    map.value?.flyTo({ center, zoom: zoom ?? props.zoom, duration: 2000,
+      essential: mapStore.forceAnimations
+     })
   },
   fitBounds: (bounds: maplibregl.LngLatBoundsLike, padding?: number | maplibregl.PaddingOptions) => {
-    map.value?.fitBounds(bounds, { padding: padding ?? 50, duration: 1000 })
+    map.value?.fitBounds(bounds, { padding: padding ?? 50, duration: 2000,
+      essential: mapStore.forceAnimations
+     })
   },
 })
 
