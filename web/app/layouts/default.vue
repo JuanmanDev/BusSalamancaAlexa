@@ -88,8 +88,7 @@ const showMainContent = computed(() => !(mapStore.isFullscreen && !isMapPage.val
     <Transition name="main-slide">
       <main 
         v-show="showMainContent"
-        class="relative z-10 flex-1 pt-16 pb-20 md:pb-8"
-        :class="isMapPage || mapStore.isFullscreen ? 'pointer-events-none' : ''"
+        class="relative z-10 flex-1 pt-16 pb-20 md:pb-8 pointer-events-none"
       >
         <!-- Content wrapper - allows map to show in gaps -->
         <div>

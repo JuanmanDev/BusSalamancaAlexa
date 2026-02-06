@@ -44,7 +44,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="max-w-3xl mx-auto px-4 py-6 space-y-4">
+  <div class="max-w-3xl mx-auto px-4 py-6 space-y-4 pointer-events-auto">
     <!-- Header -->
     <div class="glass-card p-5">
       <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-1">

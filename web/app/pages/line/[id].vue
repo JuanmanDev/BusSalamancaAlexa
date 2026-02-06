@@ -84,6 +84,8 @@ watch(lineId, async (newId) => {
   const line = allLines.value?.find(l => l.id === newId)
   if (line) {
     storage.addRecent('line', newId, line.name)
+  } else {
+    console.error(`Línea ${newId} no encontrada`)
   }
   await mapStore.setContextToLinePage(newId)
 })
@@ -99,9 +101,7 @@ const isLoading = computed(() =>
     <!-- Mobile: Map (Top) -> Content
       Desktop: Content -> Map (Bottom)
     -->
-    <div class="md:order-last mb-4 md:mb-0 md:mt-6">
-       <MapPreview />
-    </div>
+    <MapPreview />
 
     <!-- Content -->
     <div class="px-4 py-6 space-y-4">

@@ -2,6 +2,22 @@
 import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import type { BusStop, BusVehicle, BusLine } from '~/types/bus'
+import { generateStopMarkerSVG } from '~/utils/bus'
+
+// ===== Map Configuration =====
+// These constants control map features for performance optimization
+const MAP_CONFIG = {
+  // Performance settings
+  disable3DBuildings: true,  // Disable 3D buildings for better mobile performance
+  disablePOILabels: false,   // Keep POI labels for orientation
+  
+  // Zoom limits
+  maxZoom: 18,
+  minZoom: 10,
+  
+  // Default center: Salamanca Plaza Mayor
+  defaultCenter: [-5.6635, 40.9701] as [number, number],
+}
 
 const props = withDefaults(defineProps<{
   center?: [number, number]
@@ -38,7 +54,7 @@ const map = shallowRef<maplibregl.Map | null>(null)
 const isLoaded = ref(false)
 
 // Map styles
-const LIGHT_STYLE = 'https://tiles.openfreemap.org/styles/liberty'
+const LIGHT_STYLE = 'https://tiles.openfreemap.org/styles/bright'
 const DARK_STYLE = 'https://tiles.openfreemap.org/styles/dark'
 
 const mapStyle = computed(() => 
@@ -61,6 +77,11 @@ onMounted(() => {
     zoom: props.zoom,
     interactive: props.interactive,
     attributionControl: false,
+    // Performance optimizations
+    maxZoom: MAP_CONFIG.maxZoom,
+    minZoom: MAP_CONFIG.minZoom,
+    // fadeDuration: 0, // Disable fade animations for faster tile rendering
+    renderWorldCopies: false, // Don't render multiple world copies
   })
 
   if (props.showControls && props.interactive) {
@@ -71,6 +92,12 @@ onMounted(() => {
   mapInstance.on('load', () => {
     isLoaded.value = true
     map.value = markRaw(mapInstance)
+    
+    // Disable 3D buildings for performance
+    if (MAP_CONFIG.disable3DBuildings) {
+      disableBuildingLayers(mapInstance)
+    }
+    
     setupMapListeners(mapInstance)
     emit('mapReady', mapInstance)
     
@@ -88,6 +115,15 @@ onMounted(() => {
 
     // Move to the current position
     mapStore.setFullscreen(mapStore.isFullscreen);
+
+    // Force always enabled
+    map.value.scrollZoom.enable()
+    map.value.boxZoom.enable()
+    map.value.dragRotate.enable()
+    map.value.dragPan.enable()
+    map.value.keyboard.enable()
+    map.value.doubleClickZoom.enable()
+    map.value.touchZoomRotate.enable()
   })
 })
 
@@ -102,7 +138,7 @@ watch(mapStyle, (newStyle) => {
 watch(() => props.interactive, (isInteractive) => {
   if (!map.value) return
   
-  if (isInteractive) {
+  if (isInteractive || true) {
     map.value.scrollZoom.enable()
     map.value.boxZoom.enable()
     map.value.dragRotate.enable()
@@ -240,6 +276,21 @@ watch(() => props.vehicles, () => {
   updateVehicleMarkers()
 }, { deep: true })
 
+/**
+ * Disable 3D building layers for better performance
+ */
+function disableBuildingLayers(mapInstance: maplibregl.Map) {
+  const style = mapInstance.getStyle()
+  if (style?.layers) {
+    style.layers.forEach(layer => {
+      // Hide fill-extrusion layers (3D buildings)
+      if (layer.type === 'fill-extrusion') {
+        mapInstance.setLayoutProperty(layer.id, 'visibility', 'none')
+      }
+    })
+  }
+}
+
 function updateStopMarkers() {
   if (!map.value || !isLoaded.value) return
   
@@ -251,26 +302,22 @@ function updateStopMarkers() {
 
   for (const stop of props.stops) {
     if (!stop.latitude || !stop.longitude) continue
-    
-    // Filter by line if specified
-    if (props.highlightLineId && !stop.lines?.includes(props.highlightLineId)) continue
 
-    const isHighlighted = stop.id === props.highlightStopId
-    const isSelected = stop.id === props.highlightStopId
+    const isSelected = stop.id === mapStore.highlightStopId
+    const lineIds = stop.lines || []
+    
+    // Generate segmented SVG marker with line colors
+    const markerSize = isSelected ? 36 : 24
+    const svg = generateStopMarkerSVG(lineIds, markerSize, isSelected)
 
     const el = document.createElement('div')
     el.className = 'stop-marker'
     
-    // Updated marker styling for normal and selected states
-    const baseClasses = 'w-6 h-6 rounded-full shadow-lg flex items-center justify-center cursor-pointer transition-all duration-300'
-    const normalClasses = 'bg-primary-500 border-2 border-white hover:scale-110'
-    const selectedClasses = 'bg-amber-500 scale-125 border-4 border-amber-200 z-50'
-    
+    // Container with transitions and selection ring
     el.innerHTML = `
-      <div class="${baseClasses} ${isSelected ? selectedClasses : normalClasses}">
-        <svg class="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 24 24">
-          <circle cx="12" cy="12" r="4"/>
-        </svg>
+      <div class="relative transition-transform duration-300 cursor-pointer ${isSelected ? 'scale-125' : 'hover:scale-110'}">
+        ${svg}
+        ${isSelected ? '<div class="absolute inset-0 rounded-full ring-4 ring-amber-400 ring-opacity-60 animate-pulse" style="margin: -4px;"></div>' : ''}
       </div>
     `
 

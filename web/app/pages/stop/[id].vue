@@ -92,9 +92,7 @@ function openInAppleMaps() {
 <template>
   <div class="max-w-3xl mx-auto flex flex-col md:block">
     <!-- Map Preview -->
-    <div ref="mapPreviewContainer" class="md:order-last mb-4 md:mb-0 md:mt-6">
-       <MapPreview />
-    </div>
+    <MapPreview />
 
     <!-- Content -->
     <div class="px-4 py-6 space-y-4">

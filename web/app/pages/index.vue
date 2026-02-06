@@ -88,7 +88,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="max-w-3xl mx-auto px-4 py-6 space-y-6" id="mapPreviewContainer__">
+  <div class="max-w-3xl mx-auto px-4 py-6 space-y-6 " id="mapPreviewContainer__">
     <!-- Hero section -->
     <div class="glass-card text-center py-6 px-4">
       <h1 class="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-2">
@@ -100,9 +100,7 @@ onMounted(async () => {
     </div>
     
     <!-- Map preview spacer - ensures minimum height for map visibility -->
-    <div class="md:order-last mb-4 md:mb-0 md:mt-6">
-       <MapPreview />
-    </div>
+    <MapPreview />
 
     <!-- Loading state -->
     <div v-if="isLoading" class="glass-card p-6">

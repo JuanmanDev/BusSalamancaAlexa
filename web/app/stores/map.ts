@@ -230,15 +230,15 @@ export const useMapStore = defineStore('map', () => {
     function focusOnLine(lineId: string, lineStops: BusStop[]) {
         console.log('focusOnLine', lineId, lineStops);
         const stopsWithCoords = lineStops.filter(s => s.latitude && s.longitude)
+        highlightLineId.value = lineId
+        highlightStopId.value = null
+        stops.value = lineStops
         if (stopsWithCoords.length > 0) {
             updatePositionWithMapPreviewContainer(
                 stopsWithCoords.map(s => ({ lng: s.longitude!, lat: s.latitude! })),
                 { type: 'line' }
             )
         }
-        highlightLineId.value = lineId
-        highlightStopId.value = null
-        stops.value = lineStops
     }
 
     function showAllStops(allStopsData: BusStop[]) {
@@ -300,13 +300,30 @@ export const useMapStore = defineStore('map', () => {
         let paddingValue = { top: 0, bottom: 0, left: 0, right: 0 };
         if (!isFullscreen.value && mapPreviewContainer) {
 
+            if (currentContext.value === 'home') {
+                paddingValue = { top: 0, bottom: 0, left: 0, right: 0 };
+            } else {
+                // set the top padding to the height of the appheader
+                pagePadding.value.top = 64;
+                // Bottom is 50vh - top
+                const windowHeight = window.innerHeight / 2;
+                pagePadding.value.bottom = windowHeight - 64 + 20;
+                pagePadding.value.left = 20;
+                pagePadding.value.right = 20;
+
+                return;
+            }
             // get the position of the mapPreviewContainer relative to the parent
             const rect = mapPreviewContainer.getBoundingClientRect()
             const windowHeight = window.innerHeight
 
             // paddings
             const topPadding = rect.top + window.scrollY;
-            const bottomPadding = windowHeight - rect.bottom - topPadding;
+            const bottomPadding = windowHeight - rect.bottom;
+            console.log('windowHeight', windowHeight, 'rect.bottom', rect.bottom);
+
+            if (topPadding < 0) return;
+            if (bottomPadding < 0) return;
 
             pagePadding.value = {
                 top: topPadding,
@@ -350,7 +367,7 @@ export const useMapStore = defineStore('map', () => {
     async function updateMapToUserLocation(allStopsData: BusStop[], geolocation: ReturnType<typeof useGeolocation>) {
         if (!geolocation.userLocation.value) return
 
-        const closeStops = geolocation.getNearbyStops(allStopsData, 2000).slice(0, 5)
+        const closeStops = geolocation.getNearbyStops(allStopsData, 2000).slice(0, 15)
 
         const points = [{
             lng: geolocation.userLocation.value.lng,
@@ -363,12 +380,13 @@ export const useMapStore = defineStore('map', () => {
             }
         })
 
-        await new Promise(resolve => setTimeout(resolve, 1000))
+        // await new Promise(resolve => setTimeout(resolve, 1000))
+        await new Promise(resolve => setTimeout(resolve, 10))
 
         stops.value = allStopsData
 
         updatePositionWithMapPreviewContainer(points, {
-            type: 'multi-stop'
+            zoom: 9,
         })
     }
 
@@ -381,7 +399,7 @@ export const useMapStore = defineStore('map', () => {
         currentContext.value = 'stop'
         currentContextId.value = stopId
 
-        setPagePaddingFromMapPreviewContainer()
+        //setPagePaddingFromMapPreviewContainer()
 
         const busService = useBusService()
 
@@ -447,7 +465,9 @@ export const useMapStore = defineStore('map', () => {
         currentContext.value = 'line'
         currentContextId.value = lineId
 
-        setPagePaddingFromMapPreviewContainer()
+        await nextTick();
+
+        //setPagePaddingFromMapPreviewContainer()
 
         const busService = useBusService()
 

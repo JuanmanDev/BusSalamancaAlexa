@@ -95,6 +95,10 @@ const zoomOutAnimated = () => {
   }
 }
 
+onMounted(() => {
+  mapStore.setPagePaddingFromMapPreviewContainer();
+})
+
 </script>
 
 <template>
@@ -144,3 +148,16 @@ const zoomOutAnimated = () => {
     </div>
   </div>
 </template>
+
+<style >
+
+/* Make the brothers, al brothers and sistesr at the same level with same parent of the element #mapPreviewContainer to be pointer-events-auto */
+#mapPreviewContainer + *,
+#mapPreviewContainer ~ * {
+  pointer-events: auto;
+}
+#mapPreviewContainer {
+  pointer-events: none;
+}
+
+</style>
