@@ -149,11 +149,40 @@ export async function fetchLines() {
 
     const linesArray = Array.isArray(annotatedLines) ? annotatedLines : [annotatedLines]
 
-    return linesArray.map((line: any) => ({
-        id: line.LineRef || '',
-        name: line.LineName || '',
-        destination: line.Destinations?.Destination?.DestinationName || '',
-    }))
+    return linesArray.map((line: any) => {
+        let directions: any[] = []
+
+        if (line.Directions?.Direction) {
+            const rawDirs = line.Directions.Direction
+            const dirsArray = Array.isArray(rawDirs) ? rawDirs : [rawDirs]
+
+            directions = dirsArray.map((d: any) => {
+                let stops: any[] = []
+                if (d.Stops?.StopPointInPattern) {
+                    const rawStops = d.Stops.StopPointInPattern
+                    const stopsArray = Array.isArray(rawStops) ? rawStops : [rawStops]
+
+                    stops = stopsArray.map((s: any) => ({
+                        id: s.StopPointRef,
+                        order: parseInt(s.Order)
+                    })).sort((a: any, b: any) => a.order - b.order)
+                }
+
+                return {
+                    id: d.DirectionRef || '',
+                    name: d.DirectionName || '',
+                    stops
+                }
+            })
+        }
+
+        return {
+            id: line.LineRef || '',
+            name: line.LineName || '',
+            destination: line.Destinations?.Destination?.DestinationName || '',
+            directions
+        }
+    })
 }
 
 export async function fetchStops() {

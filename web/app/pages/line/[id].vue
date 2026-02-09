@@ -88,6 +88,87 @@ watch(lineId, async (newId) => {
     console.error(`Línea ${newId} no encontrada`)
   }
   await mapStore.setContextToLinePage(newId)
+  updateMapLines()
+})
+
+// Update Map Lines (Connect stops 1->2->3...)
+function updateMapLines() {
+    if (!lineStops.value || lineStops.value.length < 2) {
+        // Only clear if we really have no stops (and thus no line)
+        if (lineStops.value && lineStops.value.length === 0) {
+             mapStore.setLines([])
+        }
+        return
+    }
+
+    const linesToSet: { id: string, color: string, points: { lat: number, lng: number }[] }[] = []
+    const hex = getLineColorHex(lineId.value)
+
+    // Strategy 1: Use explicit directions from API (Best)
+    if (lineInfo.value?.directions && lineInfo.value.directions.length > 0) {
+        lineInfo.value.directions.forEach((dir, idx) => {
+            const points: { lat: number; lng: number }[] = []
+            
+            dir.stops.forEach(stopRef => {
+                const stop = allStops.value?.find(s => s.id === stopRef.id)
+                if (stop && stop.latitude && stop.longitude) {
+                    points.push({ lat: stop.latitude, lng: stop.longitude })
+                }
+            })
+            
+            if (points.length > 1) {
+                linesToSet.push({
+                    id: `${lineId.value}-${dir.id || idx}`,
+                    color: hex,
+                    points: points
+                })
+            }
+        })
+    }
+
+    // Strategy 2: Fallback to numeric sort (Legacy/Backup)
+    if (linesToSet.length === 0) {
+        const points: { lat: number; lng: number }[] = []
+        const validStops = lineStops.value.filter(s => s.latitude && s.longitude)
+        
+        validStops.forEach(s => {
+            points.push({ lat: s.latitude!, lng: s.longitude! })
+        })
+        
+        if (points.length > 1) {
+            linesToSet.push({
+                id: lineId.value,
+                color: hex,
+                points: points
+            })
+        }
+    }
+    
+    mapStore.setLines(linesToSet)
+    console.log('Map lines updated', linesToSet.length, 'segments')
+}
+
+// Watch stops and lineId to update lines
+// Removed immediate: true to avoid race with setContextToLinePage clearing lines
+watch([lineStops, lineId, lineInfo], () => {
+    updateMapLines()
+})
+
+onMounted(async () => {
+  if (lineInfo.value) {
+    storage.addRecent('line', lineId.value, lineInfo.value.name)
+  }
+  // This clears context (and lines)
+  await mapStore.setContextToLinePage(lineId.value)
+  
+  // Ensure we fetch stops if not present (for the computed)
+  if (!allStops.value || allStops.value.length === 0) {
+      const busService = useBusService()
+      allStops.value = await busService.fetchStops()
+  }
+  
+  // Now set the lines
+  updateMapLines()
 })
 
 const isLoading = computed(() => 

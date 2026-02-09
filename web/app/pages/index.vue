@@ -13,7 +13,6 @@ const mapStore = useMapStore()
 
 // Load static data
 const { data: allStops, status: stopsStatus } = await useBusStops()
-
 const { data: allLines, status: linesStatus } = await useBusLines()
 
 const isLoading = computed(() => stopsStatus.value === 'pending' || linesStatus.value === 'pending')
@@ -81,6 +80,11 @@ async function handleRequestLocation() {
   await geolocation.requestLocation()
 }
 
+// Route Search
+function navigateToSearch() {
+  router.push('/route')
+}
+
 // Set map context on mount
 onMounted(async () => {
   await mapStore.setContextToHomePage()
@@ -90,13 +94,58 @@ onMounted(async () => {
 <template>
   <div class="max-w-3xl mx-auto px-4 py-6 space-y-6 " id="mapPreviewContainer__">
     <!-- Hero section -->
-    <div class="glass-card text-center py-6 px-4">
+    <div class="glass-card text-center py-6 px-4 pointer-events-auto">
       <h1 class="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-2">
         Bus Salamanca
       </h1>
-      <p class="text-gray-600 dark:text-gray-400">
+      <p class="text-gray-600 dark:text-gray-400 mb-6">
         Consulta tiempos de llegada en tiempo real
       </p>
+
+      <!-- Search Route Form -->
+      <div class="max-w-md mx-auto bg-white/50 dark:bg-gray-800/50 rounded-xl p-4 shadow-sm ring-1 ring-gray-200 dark:ring-gray-700">
+          <div class="flex flex-col gap-3">
+             <!-- Origin -->
+             <div class="relative flex items-center gap-2 bg-white dark:bg-gray-900 rounded-lg px-3 py-2 ring-1 ring-gray-200 dark:ring-gray-700 focus-within:ring-2 focus-within:ring-primary-500 transition-shadow">
+                 <UIcon name="i-lucide-circle-dot" class="w-4 h-4 text-blue-500 shrink-0" />
+                 <input 
+                    type="text" 
+                    placeholder="Tu ubicación" 
+                    readonly 
+                    class="bg-transparent border-none outline-none text-sm w-full text-gray-900 dark:text-white placeholder-gray-500 cursor-pointer"
+                    value="Tu ubicación actual"
+                 />
+                 <!-- Future: Allow changing origin -->
+             </div>
+
+             <!-- Decoration -->
+             <div class="absolute left-[34px] top-[108px] w-0.5 h-6 bg-gray-300 dark:bg-gray-600 z-0 hidden md:block"></div>
+
+             <!-- Destination -->
+             <div 
+                 class="relative flex items-center gap-2 bg-white dark:bg-gray-900 rounded-lg px-3 py-2 ring-1 ring-gray-200 dark:ring-gray-700 cursor-pointer hover:ring-2 hover:ring-primary-500 transition-shadow"
+                 @click="navigateToSearch"
+             >
+                 <UIcon name="i-lucide-map-pin" class="w-4 h-4 text-red-500 shrink-0" />
+                 <span class="text-sm text-gray-500 w-full text-left">
+                     ¿A dónde vas?
+                 </span>
+             </div>
+
+             <UButton 
+                block 
+                color="primary" 
+                size="md"
+                @click="navigateToSearch"
+             >
+                Buscar ruta
+             </UButton>
+          </div>
+      </div>
+    </div>
+    <!-- Map Preview -->
+    <div class="glass-card overflow-hidden h-64 md:h-80 relative flex flex-col pointer-events-auto">
+      <MapPreview />
     </div>
     
     <!-- Map preview spacer - ensures minimum height for map visibility -->
@@ -213,10 +262,11 @@ onMounted(async () => {
         <div 
           v-else-if="locationState === 'found' && nearbyStops.length === 0"
           key="empty"
-          class="text-center py-4"
         >
-          <UIcon name="i-lucide-map-pin-off" class="w-10 h-10 mx-auto text-gray-400 mb-3" />
-          <p class="text-gray-600 dark:text-gray-400">No hay paradas en un radio de 500m</p>
+          <div class="text-center py-4">
+            <UIcon name="i-lucide-map-pin-off" class="w-10 h-10 mx-auto text-gray-400 mb-3" />
+            <p class="text-gray-600 dark:text-gray-400">No hay paradas en un radio de 500m</p>
+          </div>
         </div>
 
         <!-- Permission denied -->

@@ -13,7 +13,7 @@ export const useBusStops = (options?: AsyncDataOptions<BusStop[]>) => {
 
 export const useBusLines = (options?: AsyncDataOptions<BusLine[]>) => {
     const busService = useBusService()
-    return useAsyncData<BusLine[]>('all-lines', () => busService.fetchLines(), {
+    return useAsyncData<BusLine[]>('all-lines-v3', () => busService.fetchLines(), {
         server: true,
         lazy: true,
         default: () => [],

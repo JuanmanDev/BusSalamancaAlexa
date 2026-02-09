@@ -6,7 +6,7 @@
  * and the store manages all map logic, data fetching, and refresh intervals internally.
  */
 
-import type { BusStop, BusVehicle, BusArrival } from '~/types/bus'
+import type { BusStop, BusVehicle, BusArrival, RouteOption } from '~/types/bus'
 
 export interface MapState {
     // Map position
@@ -33,6 +33,10 @@ export interface MapState {
     mapInstance?: any
 
     forceAnimations: boolean
+
+    // Routing
+    routeOptions: RouteOption[]
+    isRouting: boolean
 }
 
 export type PositionEventType = 'stop' | 'line' | 'multi-stop' | 'user' | 'manual'
@@ -61,6 +65,7 @@ export const useMapStore = defineStore('map', () => {
 
     // Arrivals for stop context (exposed for stop page to read)
     const arrivals = ref<BusArrival[]>([])
+    const previousArrivals = ref<BusArrival[]>([])
     const arrivalsLoading = ref(false)
     const arrivalsError = ref<string | null>(null)
     const lastUpdated = ref<Date | null>(null)
@@ -79,6 +84,16 @@ export const useMapStore = defineStore('map', () => {
 
     // Selected vehicle for following (UI state)
     const selectedVehicle = ref<BusVehicle | null>(null)
+
+    // Routing
+    const routeOptions = ref<RouteOption[]>([])
+    const isRouting = ref(false)
+
+    // Selected Route (for visualization)
+    const selectedRoute = ref<RouteOption | null>(null)
+
+    // Custom Line Paths (e.g. for Line Detail visualization)
+    const linesToDraw = ref<{ id: string; color: string; points: { lat: number; lng: number }[] }[]>([])
 
     // Map instance
     const mapInstance = shallowRef<any | null>(null)
@@ -104,12 +119,14 @@ export const useMapStore = defineStore('map', () => {
         // Reset state
         vehicles.value = []
         arrivals.value = []
+        previousArrivals.value = []
         arrivalsLoading.value = false
         arrivalsError.value = null
         highlightStopId.value = null
         highlightLineId.value = null
         highlightVehicleId.value = null
         selectedVehicle.value = null
+        linesToDraw.value = [] // Clear lines
 
         currentContext.value = null
         currentContextId.value = null
@@ -193,8 +210,18 @@ export const useMapStore = defineStore('map', () => {
         selectedVehicle.value = null
     }
 
+    function setLines(lines: { id: string; color: string; points: { lat: number; lng: number }[] }[]) {
+        linesToDraw.value = lines
+    }
+
     function followVehicle(vehicle: BusVehicle) {
         console.log('followVehicle', vehicle);
+
+        // Ensure fullscreen if not already
+        if (!isFullscreen.value) {
+            setFullscreen(true)
+        }
+
         highlightVehicleId.value = vehicle.id
         highlightStopId.value = null
         selectedVehicle.value = vehicle
@@ -227,12 +254,63 @@ export const useMapStore = defineStore('map', () => {
         }
     }
 
+    async function calculateRoutes(from: { lat: number; lng: number }, to: { lat: number; lng: number }) {
+        isRouting.value = true
+        routeOptions.value = []
+        selectedRoute.value = null
+
+        try {
+            const { findRoutes } = useRouting()
+            const routes = await findRoutes(from, to)
+            routeOptions.value = routes
+
+            if (routes.length > 0) {
+                selectRoute(routes[0]!)
+            }
+        } catch (e) {
+            console.error('Error calculating routes:', e)
+        } finally {
+            isRouting.value = false
+        }
+    }
+
+    function clearRoutes() {
+        routeOptions.value = []
+        selectedRoute.value = null
+        highlightLineId.value = null
+        linesToDraw.value = []
+        // Reset view? Optional.
+    }
+
+    function selectRoute(route: RouteOption) {
+        selectedRoute.value = route
+        highlightLineId.value = null
+        highlightStopId.value = null
+        selectedVehicle.value = null
+
+        // Collect all points to fit bounds
+        const points: { lat: number; lng: number }[] = []
+        route.segments.forEach(seg => {
+            if (seg.geometry) {
+                points.push(...seg.geometry)
+            } else {
+                points.push(seg.from.location, seg.to.location)
+            }
+        })
+
+        updatePositionWithMapPreviewContainer(
+            points.map(p => ({ lng: p.lng, lat: p.lat })),
+            { type: 'line', padding: 50 }
+        )
+    }
+
     function focusOnLine(lineId: string, lineStops: BusStop[]) {
         console.log('focusOnLine', lineId, lineStops);
         const stopsWithCoords = lineStops.filter(s => s.latitude && s.longitude)
         highlightLineId.value = lineId
         highlightStopId.value = null
-        stops.value = lineStops
+        // Do NOT filter stops.value here to allow translucency (stops.value is already set to allStops)
+
         if (stopsWithCoords.length > 0) {
             updatePositionWithMapPreviewContainer(
                 stopsWithCoords.map(s => ({ lng: s.longitude!, lat: s.latitude! })),
@@ -247,6 +325,7 @@ export const useMapStore = defineStore('map', () => {
         allStops.value = allStopsData
         highlightStopId.value = null
         highlightLineId.value = null
+        linesToDraw.value = []
 
         // Reset view to Salamanca default
         updatePosition([{ lng: -5.6635, lat: 40.9701 }], { zoom: 14, type: 'manual' })
@@ -275,6 +354,7 @@ export const useMapStore = defineStore('map', () => {
         isInteractive.value = false
         isFullscreen.value = false
         showControls.value = false
+        linesToDraw.value = []
         padding.value = { top: 0, bottom: 0, left: 0, right: 0 }
         pagePadding.value = { top: 0, bottom: 0, left: 0, right: 0 }
     }
@@ -395,9 +475,11 @@ export const useMapStore = defineStore('map', () => {
      */
     async function setContextToStopPage(stopId: string) {
         console.log('[MapStore] setContextToStopPage', stopId)
-        clearContext()
-        currentContext.value = 'stop'
-        currentContextId.value = stopId
+        if (currentContext.value !== 'stop' || currentContextId.value !== stopId) {
+            clearContext()
+            currentContext.value = 'stop'
+            currentContextId.value = stopId
+        }
 
         //setPagePaddingFromMapPreviewContainer()
 
@@ -416,6 +498,8 @@ export const useMapStore = defineStore('map', () => {
         // Fetch arrivals and extract vehicles
         await fetchArrivalsForStop(stopId)
 
+
+        clearRefreshInterval();
         // Start auto-refresh
         refreshInterval = setInterval(() => {
             if (currentContext.value === 'stop' && currentContextId.value === stopId) {
@@ -427,16 +511,62 @@ export const useMapStore = defineStore('map', () => {
     async function fetchArrivalsForStop(stopId: string) {
         const busService = useBusService()
 
+        // Store previous arrivals before fetching new ones
+        if (arrivals.value.length > 0) {
+            previousArrivals.value = [...arrivals.value]
+        }
+
         try {
             arrivalsLoading.value = arrivals.value.length === 0
             arrivalsError.value = null
 
             const fetchedArrivals = await busService.fetchArrivals(stopId)
-            arrivals.value = fetchedArrivals
+
+            // Smart merging logic
+            let finalArrivals = [...fetchedArrivals]
+
+            if (previousArrivals.value.length > 0) {
+                const now = new Date()
+                const lastUpdate = lastUpdated.value || now
+                const elapsedMinutes = (now.getTime() - lastUpdate.getTime()) / 60000
+
+                // Check for missing buses that should still be there
+                previousArrivals.value.forEach(prev => {
+                    // Only consider if it had enough time remaining (> 2 mins)
+                    // If it was < 2 mins, it might have just arrived/passed
+                    if (prev.minutesRemaining > 2) {
+                        const isStillPresent = finalArrivals.some(curr =>
+                            curr.lineId === prev.lineId &&
+                            // Match by vehicleRef if available, or roughly by time (tolerance 2 mins)
+                            (curr.vehicleRef === prev.vehicleRef ||
+                                Math.abs(curr.expectedArrivalTime.getTime() - prev.expectedArrivalTime.getTime()) < 120000)
+                        )
+
+                        if (!isStillPresent) {
+                            // Bus disappeared but should be here -> add as estimate
+                            const adjustedMinutes = Math.max(0, Math.round(prev.minutesRemaining - elapsedMinutes))
+
+                            // Only add if it still hasn't "arrived" (min > 0)
+                            if (adjustedMinutes > 0) {
+                                finalArrivals.push({
+                                    ...prev,
+                                    minutesRemaining: adjustedMinutes,
+                                    isEstimate: true
+                                })
+                            }
+                        }
+                    }
+                })
+            }
+
+            // Sort by time
+            finalArrivals.sort((a, b) => a.minutesRemaining - b.minutesRemaining)
+
+            arrivals.value = finalArrivals
 
             // Extract vehicles from arrivals
-            const arrivalVehicles = fetchedArrivals
-                .filter(a => a.location && a.vehicleRef)
+            const arrivalVehicles = finalArrivals
+                .filter(a => a.location && a.vehicleRef && !a.isEstimate)
                 .map(a => ({
                     id: a.vehicleRef!,
                     lineId: a.lineId,
@@ -449,8 +579,32 @@ export const useMapStore = defineStore('map', () => {
             vehicles.value = arrivalVehicles
             lastUpdated.value = new Date()
         } catch (e) {
-            arrivalsError.value = 'Error al cargar llegadas'
-            console.error(e)
+            console.error('Error fetching arrivals:', e)
+
+            // On error, try to use previous arrivals as estimates
+            if (previousArrivals.value.length > 0) {
+                const now = new Date()
+                const lastUpdate = lastUpdated.value || now
+                const elapsedMinutes = (now.getTime() - lastUpdate.getTime()) / 60000
+
+                const estimatedArrivals = previousArrivals.value.map(prev => {
+                    const adjustedMinutes = Math.max(0, Math.round(prev.minutesRemaining - elapsedMinutes))
+                    return {
+                        ...prev,
+                        minutesRemaining: adjustedMinutes,
+                        isEstimate: true
+                    }
+                }).filter(a => a.minutesRemaining > 0)
+
+                if (estimatedArrivals.length > 0) {
+                    arrivals.value = estimatedArrivals
+                    // Note: We don't update vehicles here to avoid showing stale positions
+                } else {
+                    arrivalsError.value = 'Error al cargar llegadas'
+                }
+            } else {
+                arrivalsError.value = 'Error al cargar llegadas'
+            }
         } finally {
             arrivalsLoading.value = false
         }
@@ -467,12 +621,13 @@ export const useMapStore = defineStore('map', () => {
 
         await nextTick();
 
-        //setPagePaddingFromMapPreviewContainer()
-
         const busService = useBusService()
 
-        // Load all stops and filter by line
+        // Load all stops
         const allStopsData = await busService.fetchStops()
+        stops.value = allStopsData // Keep ALL stops for translucency
+
+        // Filter for bounds calculation only
         const lineStops = allStopsData
             .filter(s => s.lines?.includes(lineId))
             .sort((a, b) => parseInt(a.id) - parseInt(b.id))
@@ -481,15 +636,27 @@ export const useMapStore = defineStore('map', () => {
             focusOnLine(lineId, lineStops)
         }
 
-        // Fetch vehicles for this line
-        await fetchVehiclesForLine(lineId, lineStops, busService)
+        // Fetch vehicles (All of them, let BaseMap handle dimming)
+        // We still prioritize the line vehicles for "Real-time" accuracy if we use the arrival fallback
+        // But the user wants to see others.
+        // Let's fetch ALL vehicles globally.
+        updateVehiclesGlobal(busService)
 
         // Start auto-refresh
         refreshInterval = setInterval(() => {
             if (currentContext.value === 'line' && currentContextId.value === lineId) {
-                fetchVehiclesForLine(lineId, lineStops, busService)
+                updateVehiclesGlobal(busService)
             }
         }, 10000)
+    }
+
+    async function updateVehiclesGlobal(busService: any) {
+        try {
+            const globalData = await busService.fetchVehicles()
+            vehicles.value = globalData
+        } catch (e) {
+            console.error(e)
+        }
     }
 
     async function fetchVehiclesForLine(lineId: string, lineStops: BusStop[], busService: ReturnType<typeof useBusService>) {
@@ -631,6 +798,8 @@ export const useMapStore = defineStore('map', () => {
         currentContext,
         currentContextId,
         forceAnimations,
+        routeOptions,
+        isRouting,
 
         // Actions
         setMapState,
@@ -648,6 +817,12 @@ export const useMapStore = defineStore('map', () => {
         followVehicle,
         updateFollowedVehicle,
         selectedVehicle,
+        selectedRoute,
+        selectRoute,
+        calculateRoutes,
+        clearRoutes,
+        linesToDraw,
+        setLines,
 
         // Context Handlers
         setContextToHomePage,

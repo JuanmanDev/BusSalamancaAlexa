@@ -90,12 +90,9 @@ function openInAppleMaps() {
 </script>
 
 <template>
-  <div class="max-w-3xl mx-auto flex flex-col md:block">
+  <div class="max-w-3xl mx-auto flex flex-col md:block space-y-4">
     <!-- Map Preview -->
     <MapPreview />
-
-    <!-- Content -->
-    <div class="px-4 py-6 space-y-4">
 
     <!-- Header card -->
     <div class="glass-card p-5">
@@ -117,16 +114,6 @@ function openInAppleMaps() {
           >
             {{ stopInfo?.name || `Parada ${stopId}` }}
           </h1>
-          <div class="flex items-center gap-3 mt-2 text-sm text-gray-500">
-            <span v-if="lastUpdated" class="flex items-center gap-1">
-              <UIcon 
-                name="i-lucide-refresh-cw" 
-                class="w-3.5 h-3.5"
-                :class="isRefreshing ? 'animate-spin' : ''"
-              />
-              {{ formatLastUpdated() }}
-            </span>
-          </div>
         </div>
 
         <button
@@ -163,20 +150,29 @@ function openInAppleMaps() {
         <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
           Próximas llegadas
         </h2>
-        <UButton
-          variant="ghost"
-          size="sm"
-          icon="i-lucide-refresh-cw"
-          :loading="loading || isRefreshing"
-          @click="refreshArrivals"
-        >
-          Actualizar
-        </UButton>
+
+        <div class="flex items-center gap-2">
+          <UButton
+            variant="ghost"
+            size="sm"
+            icon="i-lucide-refresh-cw"
+            :loading="loading || isRefreshing"
+            @click="refreshArrivals"
+          >
+            Actualizar
+          </UButton>
+        </div>
       </div>
       <BusArrivals
         :arrivals="arrivals"
         :loading="loading"
       />
+      
+      <span v-if="lastUpdated" class="flex items-center justify-center gap-1">
+        <span class="text-xs text-gray-500" v-if="lastUpdated">
+          Última actualización: {{ formatLastUpdated() }}
+        </span>
+      </span>
     </div>
 
     <!-- Actions -->
@@ -208,6 +204,30 @@ function openInAppleMaps() {
       </button>
     </div>
 
+    
+    <!-- Lines at this stop -->
+    <div v-if="stopInfo?.lines?.length" class="glass-card p-5">
+      <h2 class="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-3 uppercase tracking-wide">
+        Líneas de autobús disponibles
+      </h2>
+      <div class="flex flex-wrap gap-2">
+        <NuxtLink
+          v-for="lineId in stopInfo.lines"
+          :key="lineId"
+          :to="`/line/${lineId}`"
+          class="pr-3 pl-1 py-1 rounded-lg hover:scale-[1.2] transition-all"
+        >
+          <div 
+            class="w-8 h-8 rounded-md flex items-center justify-center text-white shadow-sm font-bold text-sm"
+            :class="getLineColor(lineId)"
+          >
+            {{ lineId }}
+          </div>
+        </NuxtLink>
+        
+      </div>
     </div>
+
+
   </div>
 </template>

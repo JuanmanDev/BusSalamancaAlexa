@@ -151,7 +151,8 @@ onMounted(() => {
 
 <style >
 
-/* Make the brothers, al brothers and sistesr at the same level with same parent of the element #mapPreviewContainer to be pointer-events-auto */
+/* Make the brothers, al brothers and sistesr at the same level with same parent of the element #mapPreviewContainer to be pointer-events-auto include the previous elements*/
+
 #mapPreviewContainer + *,
 #mapPreviewContainer ~ * {
   pointer-events: auto;
