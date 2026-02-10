@@ -10,6 +10,7 @@ const navItems = [
   { to: '/lines', icon: 'i-lucide-list', label: 'Líneas' },
   { to: '/stops', icon: 'i-lucide-map-pin', label: 'Paradas' },
   { to: '/map', icon: 'i-lucide-map', label: 'Mapa' },
+  { to: '/route', icon: 'i-lucide-waypoints', label: 'Ruta' },
 ]
 
 function isActive(path: string) {
@@ -21,7 +22,18 @@ function isActive(path: string) {
 const isMapPage = computed(() => route.path === '/map')
 
 // Calculate visibility for the main transition
-const showMainContent = computed(() => !(mapStore.isFullscreen && !isMapPage.value))
+const showMainContent = ref(!(mapStore.isFullscreen && !isMapPage.value))
+
+
+
+watch(() => mapStore.isFullscreen, () => {
+  showMainContent.value = !(mapStore.isFullscreen && !isMapPage.value)
+})
+
+
+watch(() => route.path, () => {
+  showMainContent.value = !(mapStore.isFullscreen && !isMapPage.value)
+})
 </script>
 
 <template>

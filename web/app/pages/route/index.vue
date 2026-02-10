@@ -7,11 +7,28 @@ const { fetchStops } = useBusService()
 const { userLocation } = useGeolocation()
 const mapStore = useMapStore()
 
-// State
-const originQuery = ref('')
-const destQuery = ref('')
-const originSelected = ref<{ id: string; name: string; type: 'user' | 'stop' | 'address' | 'map'; lat?: number; lng?: number } | null>(null)
-const destSelected = ref<{ id: string; name: string; type: 'user' | 'stop' | 'address' | 'map'; lat?: number; lng?: number } | null>(null)
+// State - Now using mapStore
+// Local refs only for inputs (v-model needs local state for typing, sync on change/blur?)
+// Or we can use computed with get/set if we want direct store binding, but debouncing search needs local query.
+const originQuery = ref(mapStore.routeOrigin?.name || '')
+const destQuery = ref(mapStore.routeDestination?.name || '')
+
+// Sync queries if store updates externally (e.g. swap)
+watch(() => mapStore.routeOrigin, (newVal) => {
+    if (newVal && newVal.name !== originQuery.value) {
+        originQuery.value = newVal.name
+    } else if (!newVal) {
+        originQuery.value = ''
+    }
+})
+
+watch(() => mapStore.routeDestination, (newVal) => {
+    if (newVal && newVal.name !== destQuery.value) {
+        destQuery.value = newVal.name
+    } else if (!newVal) {
+        destQuery.value = ''
+    }
+})
 
 // Search Results
 interface SearchResult {
@@ -32,27 +49,33 @@ const activeField = ref<'origin' | 'destination' | null>(null)
 // Load all stops once
 const allStops = ref<BusStop[]>([])
 onMounted(async () => {
+    // Set map context first!
+    mapStore.setContextToRoutePage()
+    
     allStops.value = await fetchStops()
-    // Default origin to user location if available
-    if (userLocation.value) {
-        originSelected.value = {
-            id: 'user',
-            name: 'Mi ubicación',
-            type: 'user',
-            lat: userLocation.value.lat,
-            lng: userLocation.value.lng
+    
+    // Default origin to user location if available AND not already set
+    if (!mapStore.routeOrigin) {
+        if (userLocation.value) {
+            const loc = {
+                id: 'user',
+                name: 'Mi ubicación',
+                type: 'user' as const,
+                lat: userLocation.value.lat,
+                lng: userLocation.value.lng
+            }
+            mapStore.setRouteOrigin(loc)
+            originQuery.value = 'Mi ubicación'
         }
-        originQuery.value = 'Mi ubicación'
-    } else {
-         originSelected.value = {
-            id: 'user',
-            name: 'Mi ubicación',
-            type: 'user',
-            lat: 0,
-            lng: 0
-        }
-        originQuery.value = 'Mi ubicación'
     }
+})
+
+// Ensure we leave clean state when navigating away
+onBeforeRouteLeave((to, from, next) => {
+    // If we are just picking a location, don't reset standard flags? 
+    // Actually map selection is handled via overlay, so route leave means real navigation.
+    // mapStore.setFullscreen(false) // handled by next page context usually
+    next()
 })
 
 const isPickingLocation = ref(false)
@@ -78,10 +101,10 @@ function confirmMapSelection() {
     }
 
     if (pickingField.value === 'origin') {
-        originSelected.value = location
+        mapStore.setRouteOrigin(location)
         originQuery.value = location.name
     } else {
-        destSelected.value = location
+        mapStore.setRouteDestination(location)
         destQuery.value = location.name
     }
 
@@ -96,11 +119,9 @@ function cancelMapSelection() {
 
 // Search Logic
 const performSearch = useDebounceFn(async (query: string) => {
+    // If query matches current selection, likely no need to search, but user might be typing to change
     isSearching.value = true
     const results: SearchResult[] = []
-    
-    // 0. Add "Select on Map" option always
-    // (Or maybe only when not typing? No, always good)
     
     if (!query || query.length < 2) {
         suggestions.value = [{
@@ -115,8 +136,6 @@ const performSearch = useDebounceFn(async (query: string) => {
         return
     }
 
-    // ... existing logic ...
-    
     const q = query.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
 
     // 1. Local Stops Search (Fuzzy-ish)
@@ -181,13 +200,14 @@ const performSearch = useDebounceFn(async (query: string) => {
 
 // Watchers
 watch(originQuery, (val) => {
-    if (activeField.value === 'origin' && val !== originSelected.value?.name) {
+    // Only search if user is actively typing (focused)
+    if (activeField.value === 'origin' && val !== mapStore.routeOrigin?.name) {
          performSearch(val)
     }
 })
 
 watch(destQuery, (val) => {
-    if (activeField.value === 'destination' && val !== destSelected.value?.name) {
+    if (activeField.value === 'destination' && val !== mapStore.routeDestination?.name) {
          performSearch(val)
     }
 })
@@ -206,23 +226,19 @@ function selectResult(result: SearchResult) {
         return
     }
 
+    const location = {
+        id: result.id,
+        name: result.name,
+        type: result.type as any,
+        lat: result.lat,
+        lng: result.lng
+    }
+
     if (activeField.value === 'origin') {
-        originSelected.value = {
-            id: result.id,
-            name: result.name,
-            type: result.type as any,
-            lat: result.lat,
-            lng: result.lng
-        }
+        mapStore.setRouteOrigin(location)
         originQuery.value = result.name
     } else {
-        destSelected.value = {
-            id: result.id,
-            name: result.name,
-            type: result.type as any,
-            lat: result.lat,
-            lng: result.lng
-        }
+        mapStore.setRouteDestination(location)
         destQuery.value = result.name
     }
     activeField.value = null
@@ -230,26 +246,26 @@ function selectResult(result: SearchResult) {
 }
 
 function searchRoute() {
-    if (!originSelected.value || !destSelected.value) return
+    if (!mapStore.routeOrigin || !mapStore.routeDestination) return
 
     const query: any = {}
     
     // Origin
-    if (originSelected.value.type === 'stop') {
-        query.origin = originSelected.value.id // pass ID for stops
-    } else if (originSelected.value.type === 'user') {
+    if (mapStore.routeOrigin.type === 'stop') {
+        query.origin = mapStore.routeOrigin.id // pass ID for stops
+    } else if (mapStore.routeOrigin.type === 'user') {
         query.origin = 'user'
     } else {
-        query.origin = `loc:${originSelected.value.lat},${originSelected.value.lng}`
-        query.originName = originSelected.value.name
+        query.origin = `loc:${mapStore.routeOrigin.lat},${mapStore.routeOrigin.lng}`
+        query.originName = mapStore.routeOrigin.name
     }
     
     // Destination
-    if (destSelected.value.type === 'stop') {
-        query.destination = destSelected.value.id
+    if (mapStore.routeDestination.type === 'stop') {
+        query.destination = mapStore.routeDestination.id
     } else {
-        query.destination = `loc:${destSelected.value.lat},${destSelected.value.lng}`
-        query.destinationName = destSelected.value.name
+        query.destination = `loc:${mapStore.routeDestination.lat},${mapStore.routeDestination.lng}`
+        query.destinationName = mapStore.routeDestination.name
     }
 
     router.push({
@@ -259,26 +275,26 @@ function searchRoute() {
 }
 
 function swappoints() {
-    const tempSel = originSelected.value
-    const tempQ = originQuery.value
-    
-    originSelected.value = destSelected.value
-    originQuery.value = destQuery.value
-    
-    destSelected.value = tempSel
-    destQuery.value = tempQ
+    mapStore.swapRoutePoints()
 }
 
 </script>
 
 <template>
-    <div class="h-full flex flex-col bg-gray-50 dark:bg-gray-950 min-h-screen pointer-events-auto">
-        <!-- Header -->
-        <div class="bg-white dark:bg-gray-900 shadow-sm p-4 pt-4">
+    
+  <div class="max-w-3xl mx-auto px-4 py-6 space-y-6 " id="mapPreviewContainer__">
+
+    <MapPreview />
+    
+    <!-- Main visible content wrapper -->
+    <div class="h-full flex flex-col pointer-events-auto relative z-10">
+        
+        <!-- Header Card -->
+        <div class="glass-card p-4 pt-4">
              <div class="max-w-md mx-auto relative">
                 <div class="flex items-center gap-2 mb-4">
                     <UButton icon="i-lucide-arrow-left" variant="ghost" color="neutral" @click="router.back()" />
-                    <h1 class="text-lg font-bold">Planificar Ruta</h1>
+                    <h1 class="text-lg font-bold text-gray-900 dark:text-white">Planificar Ruta</h1>
                 </div>
 
                 <div class="flex gap-3">
@@ -299,7 +315,7 @@ function swappoints() {
                             @focus="onFocus('origin')"
                          >
                             <template #trailing>
-                                <UButton v-if="originQuery && activeField === 'origin'" icon="i-lucide-x" color="neutral" variant="ghost" size="xs" @click="originQuery = ''; originSelected = null" />
+                                <UButton v-if="originQuery && activeField === 'origin'" icon="i-lucide-x" color="neutral" variant="ghost" size="xs" @click="originQuery = ''; mapStore.setRouteOrigin(null)" />
                             </template>
                          </UInput>
                          
@@ -311,7 +327,7 @@ function swappoints() {
                             @focus="onFocus('destination')"
                          >
                              <template #trailing>
-                                <UButton v-if="destQuery && activeField === 'destination'" icon="i-lucide-x" color="neutral" variant="ghost" size="xs" @click="destQuery = ''; destSelected = null" />
+                                <UButton v-if="destQuery && activeField === 'destination'" icon="i-lucide-x" color="neutral" variant="ghost" size="xs" @click="destQuery = ''; mapStore.setRouteDestination(null)" />
                             </template>
                          </UInput>
                      </div>
@@ -325,7 +341,7 @@ function swappoints() {
         </div>
 
         <!-- Suggestions List -->
-        <div class="flex-1 overflow-y-auto max-w-md mx-auto w-full p-2">
+        <div class="flex-1 overflow-y-auto max-w-md mx-auto w-full p-2 mt-4 glass-card" v-if="activeField || suggestions.length > 0">
             
             <!-- Loading -->
             <div v-if="isSearching" class="py-4 text-center text-gray-500">
@@ -338,7 +354,7 @@ function swappoints() {
                 <button 
                     v-for="item in suggestions" 
                     :key="item.id"
-                    class="w-full text-left p-3 rounded-lg hover:bg-white dark:hover:bg-gray-900 flex items-center gap-3 transition-colors active:bg-gray-100 dark:active:bg-gray-800"
+                    class="w-full text-left p-3 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 flex items-center gap-3 transition-colors active:bg-black/10 dark:active:bg-white/20"
                     @click="selectResult(item)"
                 >
                     <div class="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center shrink-0">
@@ -351,21 +367,22 @@ function swappoints() {
                 </button>
             </div>
             
-            <!-- Initial State / Recent (TODO) -->
-            <div v-else-if="!activeField" class="text-center py-10 opacity-60">
-                <div v-if="originSelected && destSelected">
-                     <UButton size="xl" block color="primary" @click="searchRoute">
-                        Buscar Ruta
-                     </UButton>
-                </div>
-            </div>
-            
             <!-- No results -->
             <div v-else-if="activeField && !isSearching && suggestions.length === 0 && (activeField === 'origin' ? originQuery : destQuery).length > 2" class="py-10 text-center text-gray-500">
                 <p>No se encontraron resultados</p>
             </div>
         </div>
+        
+        <!-- Search Button (when ready) -->
+        <div v-if="!activeField && mapStore.routeOrigin && mapStore.routeDestination" class="mt-4 flex justify-center">
+             <UButton size="xl" class="w-full max-w-md shadow-lg" color="primary" @click="searchRoute">
+                Buscar Ruta
+             </UButton>
+        </div>
+
     </div>
+    
+
 
     <!-- Map Picker Overlay - Teleported to Body to ensure it's above everything -->
     <Teleport to="body">
@@ -396,6 +413,6 @@ function swappoints() {
                 </UButton>
             </div>
         </div>
-</Teleport>
+    </Teleport>
+    </div>
 </template>
-```

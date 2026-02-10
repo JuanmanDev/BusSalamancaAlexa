@@ -92,17 +92,21 @@ watch(lineId, async (newId) => {
 })
 
 // Update Map Lines (Connect stops 1->2->3...)
-function updateMapLines() {
+async function updateMapLines() {
     if (!lineStops.value || lineStops.value.length < 2) {
-        // Only clear if we really have no stops (and thus no line)
         if (lineStops.value && lineStops.value.length === 0) {
              mapStore.setLines([])
         }
         return
     }
 
-    const linesToSet: { id: string, color: string, points: { lat: number, lng: number }[] }[] = []
     const hex = getLineColorHex(lineId.value)
+    
+    // Initial lines (Straight) - FAST RENDER
+    const initialLines: { id: string, color: string, points: { lat: number, lng: number }[] }[] = []
+    
+    // Arrays to hold points for OSRM fetching
+    const directionsToFetch: { id: string; points: { lat: number; lng: number }[] }[] = []
 
     // Strategy 1: Use explicit directions from API (Best)
     if (lineInfo.value?.directions && lineInfo.value.directions.length > 0) {
@@ -117,9 +121,16 @@ function updateMapLines() {
             })
             
             if (points.length > 1) {
-                linesToSet.push({
-                    id: `${lineId.value}-${dir.id || idx}`,
+                const lineIdPart = `${lineId.value}-${dir.id || idx}`
+                
+                initialLines.push({
+                    id: lineIdPart,
                     color: hex,
+                    points: points
+                })
+                
+                directionsToFetch.push({
+                    id: lineIdPart,
                     points: points
                 })
             }
@@ -127,7 +138,7 @@ function updateMapLines() {
     }
 
     // Strategy 2: Fallback to numeric sort (Legacy/Backup)
-    if (linesToSet.length === 0) {
+    if (initialLines.length === 0) {
         const points: { lat: number; lng: number }[] = []
         const validStops = lineStops.value.filter(s => s.latitude && s.longitude)
         
@@ -136,16 +147,67 @@ function updateMapLines() {
         })
         
         if (points.length > 1) {
-            linesToSet.push({
+            initialLines.push({
                 id: lineId.value,
                 color: hex,
                 points: points
             })
+             directionsToFetch.push({
+                    id: lineId.value,
+                    points: points
+            })
         }
     }
     
-    mapStore.setLines(linesToSet)
-    console.log('Map lines updated', linesToSet.length, 'segments')
+    // Set immediate straight lines
+    mapStore.setLines(initialLines)
+    console.log('[Line] Straight lines set')
+
+    // Fetch Realistic Geometry (Async & Non-blocking)
+    if (directionsToFetch.length > 0) {
+        // Defer to allow UI/Map to breathe
+        setTimeout(async () => {
+             try {
+                const detailedLines = await Promise.all(directionsToFetch.map(async (dir) => {
+                    // Use server-side cache/fetch
+                    // Use caching key based on line + direction + first/last stop to invalidate if route changes
+                    const cacheKey = `route-geo-${dir.id}-${dir.points.length}`
+                    
+                    // Client-side cache check (Nuxt Payload)
+                    const { data } = await useAsyncData(cacheKey, () => $fetch('/api/bus/route-geometry', {
+                        method: 'POST',
+                        body: { points: dir.points }
+                    }), {
+                        lazy: true, // Don't block hydration
+                        server: false, // Do it on client (which calls server API)
+                        immediate: true
+                    })
+                    
+                    // Wait for it if pending, or return existing
+                    let geometry = unref(data)
+                    if (!geometry) {
+                        // If standard useAsyncData doesn't return immediately (it won't if lazy), we explicitly fetch
+                         geometry = await $fetch('/api/bus/route-geometry', {
+                            method: 'POST',
+                            body: { points: dir.points }
+                        }) as { lat: number; lng: number }[]
+                    }
+
+                    return {
+                        id: dir.id,
+                        color: hex,
+                        points: geometry || dir.points
+                    }
+                }))
+                
+                // Update store with detailed lines
+                mapStore.setLines(detailedLines)
+                console.log('[Line] OSRM lines updated')
+            } catch (e) {
+                console.error('Failed to update map lines with OSRM', e)
+            }
+        }, 500) // 500ms delay to let map vehicles render first
+    }
 }
 
 // Watch stops and lineId to update lines

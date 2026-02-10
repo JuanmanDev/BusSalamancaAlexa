@@ -37,6 +37,8 @@ export interface MapState {
     // Routing
     routeOptions: RouteOption[]
     isRouting: boolean
+    routeOrigin: { id: string; name: string; type: 'user' | 'stop' | 'address' | 'map'; lat?: number; lng?: number } | null
+    routeDestination: { id: string; name: string; type: 'user' | 'stop' | 'address' | 'map'; lat?: number; lng?: number } | null
 }
 
 export type PositionEventType = 'stop' | 'line' | 'multi-stop' | 'user' | 'manual'
@@ -88,6 +90,8 @@ export const useMapStore = defineStore('map', () => {
     // Routing
     const routeOptions = ref<RouteOption[]>([])
     const isRouting = ref(false)
+    const routeOrigin = ref<{ id: string; name: string; type: 'user' | 'stop' | 'address' | 'map'; lat?: number; lng?: number } | null>(null)
+    const routeDestination = ref<{ id: string; name: string; type: 'user' | 'stop' | 'address' | 'map'; lat?: number; lng?: number } | null>(null)
 
     // Selected Route (for visualization)
     const selectedRoute = ref<RouteOption | null>(null)
@@ -115,7 +119,6 @@ export const useMapStore = defineStore('map', () => {
     function clearContext() {
         console.log('[MapStore] Clearing context:', currentContext.value)
         clearRefreshInterval()
-
         // Reset state
         vehicles.value = []
         arrivals.value = []
@@ -128,8 +131,18 @@ export const useMapStore = defineStore('map', () => {
         selectedVehicle.value = null
         linesToDraw.value = [] // Clear lines
 
+        // Clear Route Data
+        selectedRoute.value = null
+        routeOptions.value = []
+        routeOrigin.value = null
+        routeDestination.value = null
+
         currentContext.value = null
         currentContextId.value = null
+        // Do NOT clear routeOrigin/Destination here so they persist (Wait, user said "borra la información de la ruta que se vaya a realziar")
+        // So I should clear them.
+
+        isFullscreen.value = false
     }
 
     // ===== Position Actions =====
@@ -424,6 +437,7 @@ export const useMapStore = defineStore('map', () => {
         clearContext()
         currentContext.value = 'home'
 
+
         setPagePaddingFromMapPreviewContainer()
 
         const busService = useBusService()
@@ -470,9 +484,6 @@ export const useMapStore = defineStore('map', () => {
         })
     }
 
-    /**
-     * Stop detail page context: Single stop view with arrivals and vehicles
-     */
     async function setContextToStopPage(stopId: string) {
         console.log('[MapStore] setContextToStopPage', stopId)
         if (currentContext.value !== 'stop' || currentContextId.value !== stopId) {
@@ -487,10 +498,11 @@ export const useMapStore = defineStore('map', () => {
 
         // Load stop info
         const allStopsData = await busService.fetchStops()
+        stops.value = allStopsData // Keep ALL stops
+
         const stopInfo = allStopsData.find(s => s.id === stopId)
 
         if (stopInfo) {
-            stops.value = [stopInfo]
             highlightStopId.value = stopInfo.id
             focusOnStop(stopInfo)
         }
@@ -640,22 +652,105 @@ export const useMapStore = defineStore('map', () => {
         // We still prioritize the line vehicles for "Real-time" accuracy if we use the arrival fallback
         // But the user wants to see others.
         // Let's fetch ALL vehicles globally.
-        updateVehiclesGlobal(busService)
+        updateVehiclesInternal(busService, lineId, lineStops)
 
         // Start auto-refresh
         refreshInterval = setInterval(() => {
             if (currentContext.value === 'line' && currentContextId.value === lineId) {
-                updateVehiclesGlobal(busService)
+                updateVehiclesInternal(busService, lineId, lineStops)
             }
         }, 10000)
     }
 
-    async function updateVehiclesGlobal(busService: any) {
+    async function updateVehiclesInternal(busService: any, lineId?: string, lineStops?: BusStop[]) {
         try {
             const globalData = await busService.fetchVehicles()
-            vehicles.value = globalData
+            let finalVehicles = globalData
+
+            // Only update if we get data, or if we have no data yet. 
+            if (globalData.length > 0) {
+                // Good, we have data.
+            } else if (vehicles.value.length > 0) {
+                console.warn('[MapStore] Received 0 vehicles, keeping stale data to prevent flickering')
+                finalVehicles = vehicles.value // Keep stale
+            } else {
+                finalVehicles = []
+            }
+
+            // Fallback: If we are in a specific line context, ENABLE FALLBACK via arrivals if the line is missing
+            if (lineId && lineStops && lineStops.length > 0) {
+                const lineVehicles = finalVehicles.filter((v: BusVehicle) => v.lineId === lineId)
+
+                if (lineVehicles.length === 0) {
+                    console.log('[MapStore] No vehicles found for line', lineId, 'in global feed. Trying fallback...')
+                    // Try to fetch via arrivals
+                    const fallbackVehicles = await fetchVehiclesFallback(lineId, lineStops, busService)
+
+                    if (fallbackVehicles.length > 0) {
+                        console.log('[MapStore] Found', fallbackVehicles.length, 'vehicles via fallback')
+                        // Merge: Keep all global vehicles (that involve OTHER lines) + our fallback vehicles
+                        // Filter out any potential duplicates by ID just in case
+                        const existingIds = new Set(finalVehicles.map((v: BusVehicle) => v.id))
+
+                        fallbackVehicles.forEach(v => {
+                            if (!existingIds.has(v.id)) {
+                                finalVehicles.push(v)
+                            }
+                        })
+                    }
+                }
+            }
+
+            vehicles.value = finalVehicles
+
         } catch (e) {
             console.error(e)
+            // Keep stale data on error
+        }
+    }
+
+    async function updateVehiclesGlobal(busService: any) {
+        return updateVehiclesInternal(busService)
+    }
+
+    // Helper for fallback
+    async function fetchVehiclesFallback(lineId: string, lineStops: BusStop[], busService: any): Promise<BusVehicle[]> {
+        try {
+            const stopsToCheck: BusStop[] = []
+            // Check every 8th stop to be efficient but cover the line
+            const step = Math.max(1, Math.floor(lineStops.length / 8))
+
+            for (let i = 0; i < lineStops.length; i += step) {
+                stopsToCheck.push(lineStops[i]!)
+            }
+            // Always check last stop
+            if (lineStops.length > 0) {
+                stopsToCheck.push(lineStops[lineStops.length - 1]!)
+            }
+
+            const promises = stopsToCheck.map(s => busService.fetchArrivals(s.id))
+            const results = await Promise.all(promises)
+
+            const derivedVehicles = new Map<string, BusVehicle>()
+
+            results.flat().forEach((arrival: BusArrival) => {
+                if (arrival.lineId === lineId && arrival.vehicleRef && arrival.location) {
+                    derivedVehicles.set(arrival.vehicleRef, {
+                        id: arrival.vehicleRef,
+                        lineId: arrival.lineId,
+                        lineName: arrival.lineName,
+                        latitude: arrival.location.latitude,
+                        longitude: arrival.location.longitude,
+                        destination: arrival.destination,
+                        bearing: 0 // Unknown in fallback
+                    })
+                }
+            })
+
+            return Array.from(derivedVehicles.values())
+        } catch (e) {
+            console.error('Fallback fetch failed', e)
+            return []
         }
     }
 
@@ -775,6 +870,40 @@ export const useMapStore = defineStore('map', () => {
         setFullscreen(false)
     }
 
+
+    function setContextToRoutePage() {
+        console.log('[MapStore] setContextToRoutePage')
+        const previousContext = currentContext.value
+        clearContext()
+        currentContext.value = 'route'
+
+        // We do NOT want fullscreen for the route planning page itself
+        // It should look like the home page (map background + overlay)
+        setFullscreen(false)
+        isInteractive.value = false
+
+        // Only reset camera if coming from a non-map page to avoid jarring jumps
+        // But since we want to show the map background, maybe we should Ensure we have a valid view?
+        if (previousContext !== 'home' && previousContext !== 'map') {
+            updatePosition([{ lng: -5.6635, lat: 40.9701 }], { zoom: 14, type: 'manual' })
+        }
+    }
+
+    function setRouteOrigin(location: typeof routeOrigin.value) {
+        routeOrigin.value = location
+    }
+
+    function setRouteDestination(location: typeof routeDestination.value) {
+        routeDestination.value = location
+    }
+
+    function swapRoutePoints() {
+        const temp = routeOrigin.value
+        routeOrigin.value = routeDestination.value
+        routeDestination.value = temp
+    }
+
+
     return {
         // State
         center,
@@ -789,6 +918,8 @@ export const useMapStore = defineStore('map', () => {
         highlightStopId,
         highlightLineId,
         highlightVehicleId,
+        routeOrigin,
+        routeDestination,
         isInteractive,
         isFullscreen,
         showControls,
@@ -831,6 +962,10 @@ export const useMapStore = defineStore('map', () => {
         setContextToMapPage,
         setContextToStopsListPage,
         setContextToLinesListPage,
+        setContextToRoutePage,
+        setRouteOrigin,
+        setRouteDestination,
+        swapRoutePoints,
         clearContext,
     }
 })

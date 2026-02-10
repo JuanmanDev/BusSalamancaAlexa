@@ -9,11 +9,6 @@ const { fetchStops } = useBusService()
 const { userLocation } = useGeolocation()
 const mapStore = useMapStore()
 
-onUnmounted(() => {
-    // Clear route visualization when leaving results
-    mapStore.selectedRoute = null
-})
-
 const isLoading = ref(true)
 const error = ref<string | null>(null)
 const routes = ref<RouteOption[]>([])
@@ -182,11 +177,11 @@ function getSegmentColor(type: string, lineId?: string) {
                         <!-- Header: Duration + Arrival -->
                         <div class="flex justify-between items-baseline mb-2">
                              <div class="flex items-center gap-2">
-                                <span class="text-xl font-bold dark:text-white">{{ option.totalDuration }} min</span>
+                                <span class="text-xl font-bold dark:text-white">{{ Math.ceil(option.totalDuration) }} min</span>
                                 <span class="text-xs text-gray-400">({{ option.arrivalTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) }})</span>
                              </div>
                              <div class="flex items-center gap-2 text-sm text-gray-500">
-                                <span>{{ Math.round(option.walkingDistance) }}m</span>
+                                <span>{{ Math.ceil(option.walkingDistance) }}m</span>
                                 <UIcon name="i-lucide-footprints" class="w-3 h-3" />
                              </div>
                         </div>

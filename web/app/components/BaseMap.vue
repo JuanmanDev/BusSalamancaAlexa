@@ -101,7 +101,7 @@ onMounted(() => {
               'line-cap': 'round'
           },
           paint: {
-              'line-color': '#9ca3af', // Gray 400
+              'line-color': colorMode.value === 'dark' ? '#d1d5db' : '#374151', // Inverse of theme
               'line-width': 4,
               'line-dasharray': [0, 2] // Dotted/Dashed
           }
@@ -111,6 +111,7 @@ onMounted(() => {
       mapInstance.addLayer({
           id: 'route-bus',
           type: 'line',
+          // ...
           source: 'route-path',
           layout: {
               'line-join': 'round',
@@ -170,11 +171,26 @@ onMounted(() => {
 watch(mapStyle, (newStyle) => {
   if (map.value) {
     map.value.setStyle(newStyle)
+    // Re-add layers if style changes (MapLibre removes layers on style change? Yes, usually)
+    // But mapStyle defaults to style URL. 
+    // Actually, usually we need to wait for style.load before adding layers again.
+    // Ideally we shouldn't switch style URL dynamically if we can avoid it or handle "styledata" event.
+    // However, existing code does `setStyle`.
   }
+})
+
+// Update walking line color when theme changes
+watch(() => colorMode.value, (mode) => {
+    if (map.value && map.value.getLayer('route-walk')) {
+       // Inverse: Dark Theme -> Light Line, Light Theme -> Dark Line
+       const color = mode === 'dark' ? '#d1d5db' : '#374151' 
+       map.value.setPaintProperty('route-walk', 'line-color', color)
+    }
 })
 
 // Watch for interactive prop changes - enable/disable interactions
 watch(() => props.interactive, (isInteractive) => {
+    // ...
   if (!map.value) return
   
   if (isInteractive || true) {
@@ -203,29 +219,15 @@ const selectedStopData = computed(() => {
   return props.stops.find(s => s.id === mapStore.highlightStopId)
 })
 
-// New Event-based positioning system from consumers (via the store passed as props indirectly or store)
-// Actually we need the event passed in. Ideally BaseMap should be dumb or use the store. 
-// Given the previous setup, BaseMap was using props. 
-// However, the cleanest way per plan is to watch the store's event.
-// Since BaseMap is receiving props from layouts/default.vue which reads from MapStore,
-// we should add a prop for 'positionEvent' and watch it.
+const mapStore = useMapStore()
+const router = useRouter()
+// Get lines to display names in the card
+const { data: allLines } = await useBusLines() as { data: Ref<BusLine[]> }
 
-const mapStore = useMapStore() // We can use the store directly if we want, or rely on prop.
-// Using store directly inside the component makes it easier to track the event
-// without passing it through layouts. But BaseMap seemed to be "dumb" before receiving data from store.
-// Let's stick to the prop pattern if possible, OR just use the store since we are in `components/BaseMap.vue`.
-// The user plan said: "Component (`web/app/components/BaseMap.vue`): Watch `mapStore.positionEvent`"
-// So we will import the store.
-
-
+// Watch for store position events (flyTo, fitBounds)
 watch(() => mapStore.positionEvent, (event) => {
     if (!map.value || !event) return
     
-    // Logic: 
-    // Single Point vs Multi Point
-    // Map Mode (Fullscreen) vs Preview Mode
-    
-    // We can check mapStore.isFullscreen directly here too
     const isFullscreen = mapStore.isFullscreen
     const points = event.points
 
@@ -233,59 +235,34 @@ watch(() => mapStore.positionEvent, (event) => {
     
     if (isSinglePoint) {
         const point = points[0]!
-        const targetZoom = event.zoom ?? 15 // Default zoom for single point
+        const targetZoom = event.zoom ?? 15
         
-        if (isFullscreen) {
-            // Center on screen
-             map.value.flyTo({
-                center: [point.lng, point.lat],
-                zoom: targetZoom,
-                padding: 0, // No padding needed for fullscreen centering
-                duration: 2000,
-                essential: mapStore.forceAnimations,
-            })
-        } else {
-            // Preview Mode
-            // Center within the preview area defined by padding
-            // Use store padding or event padding
-            const p = event.padding ?? mapStore.padding
-            
-             map.value.flyTo({
-                center: [point.lng, point.lat],
-                zoom: targetZoom,
-                padding: p,
-                duration: 2000,
-                essential: mapStore.forceAnimations,
-            })
-        }
+        const p = isFullscreen ? 0 : (event.padding ?? mapStore.padding)
+
+        map.value.flyTo({
+            center: [point.lng, point.lat],
+            zoom: targetZoom,
+            padding: p,
+            duration: 2000,
+            essential: mapStore.forceAnimations,
+        })
     } else if (points.length > 1) {
-        // Multi Points - Fit Bounds
         const bounds = new maplibregl.LngLatBounds()
         points.forEach(p => bounds.extend([p.lng, p.lat]))
         
-        if (isFullscreen) {
-             map.value.fitBounds(bounds, {
-                padding: 50, // Loose padding
-                duration: 2000,
-                essential: mapStore.forceAnimations,
-            })
-        } else {
-            // Preview Mode - Strict padding to ensure visibility in the window slice
-             const p = event.padding ?? mapStore.padding
-             map.value.fitBounds(bounds, {
-                padding: p,
-                duration: 2000,
-                essential: mapStore.forceAnimations,
-            })
-        }
+        const p = isFullscreen ? 50 : (event.padding ?? mapStore.padding)
+        
+        map.value.fitBounds(bounds, {
+            padding: p,
+            duration: 2000,
+            essential: mapStore.forceAnimations,
+        })
     }
 }, { deep: true })
 
-// Keep watching padding for dynamic resizing (e.g. going fullscreen)
+// Keep watching padding
 watch(() => props.padding, (newPadding) => {
   if (map.value && newPadding) {
-    // If we just changed padding, we might want to re-center if tracking something?
-    // For now just update padding configuration
     map.value.setPadding(newPadding)
   }
 }, { deep: true })
@@ -295,22 +272,18 @@ watch(() => geolocation.userLocation.value, () => {
   updateUserLocation()
 }, { deep: true })
 
-// Watch for stops changes - update markers when stops array changes
+// Watch for stops changes
 watch(() => props.stops, () => {
   updateStopMarkers()
 }, { deep: true })
 
-// Watch for highlighted line changes - update markers to filter by line
-watch(() => props.highlightLineId, () => {
+// Watch for highlighted line/stop changes
+watch(() => [props.highlightLineId, props.highlightStopId], () => {
   updateStopMarkers()
+  updateVehicleMarkers()
 })
 
-// Watch for highlighted stop changes - update marker styling
-watch(() => props.highlightStopId, () => {
-  updateStopMarkers()
-})
-
-// Watch for vehicles changes - update vehicle markers
+// Watch for vehicles changes
 watch(() => props.vehicles, () => {
   updateVehicleMarkers()
 }, { deep: true })
@@ -338,7 +311,7 @@ watch([() => mapStore.selectedRoute, () => mapStore.linesToDraw], ([route, lines
                     }
                 })
             } else if (seg.type === 'bus') {
-                 const hex = getLineColorHex(seg.lineId || '0') // Use utils helper
+                 const hex = getLineColorHex(seg.lineId || '0')
                  features.push({
                     type: 'Feature',
                     properties: { type: 'bus', color: hex },
@@ -351,7 +324,7 @@ watch([() => mapStore.selectedRoute, () => mapStore.linesToDraw], ([route, lines
         })
     }
 
-    // 2. Process Custom Lines (Line Detail View)
+    // 2. Process Custom Lines
     if (lines && lines.length > 0) {
         lines.forEach(line => {
             const coords = line.points.map(p => [p.lng, p.lat])
@@ -365,46 +338,26 @@ watch([() => mapStore.selectedRoute, () => mapStore.linesToDraw], ([route, lines
             })
         })
     }
-    
-    // Setup Helper for hex/tailwind (since we used to have it inline)
-    function getLineColorHex(id: string) {
-        // Fallback if util is not available in template scope (but it is imported globally usually or we need import)
-        // We will assume `getLineColor` used in template returns class.
-        // But here we need HEX. 
-        // Quick map for safety if util import fails or to avoid adding imports just for this
-         const colorMap: Record<string, string> = {
-            'bg-blue-500': '#3b82f6', 
-            'bg-purple-500': '#a855f7',
-            'bg-green-500': '#22c55e',
-            'bg-orange-500': '#f97316',
-            'bg-pink-500': '#ec4899',
-            'bg-teal-500': '#14b8a6',
-         }
-         // Try to use the prop/global util if present
-         // Since we are in script setup, we can import `getLineColorHex` from utils!
-         // But I can't easily add import statement at top of file with `replace_file_content` if it's far away.
-         // Ill use a local helper logic that mimics the one in utils.
-         
-         const colors = ['#3B82F6', '#A855F7', '#22C55E', '#F97316', '#EC4899', '#14B8A6']
-         const idx = parseInt(id || '0') % colors.length
-         return colors[idx]
-    }
 
-    source?.setData({ type: 'FeatureCollection', features })
+    if (source) {
+        source.setData({ type: 'FeatureCollection', features })
+    }
     
-    // Update markers to apply verification
     updateStopMarkers()
     updateVehicleMarkers()
 })
 
-/**
- * Disable 3D building layers for better performance
- */
+// Helper: Get hex color for line
+function getLineColorHex(id: string) {
+    const colors = ['#3B82F6', '#A855F7', '#22C55E', '#F97316', '#EC4899', '#14B8A6']
+    const idx = parseInt(id || '0') % colors.length
+    return colors[idx]
+}
+
 function disableBuildingLayers(mapInstance: maplibregl.Map) {
   const style = mapInstance.getStyle()
   if (style?.layers) {
     style.layers.forEach(layer => {
-      // Hide fill-extrusion layers (3D buildings)
       if (layer.type === 'fill-extrusion') {
         mapInstance.setLayoutProperty(layer.id, 'visibility', 'none')
       }
@@ -415,7 +368,6 @@ function disableBuildingLayers(mapInstance: maplibregl.Map) {
 function updateStopMarkers() {
   if (!map.value || !isLoaded.value) return
   
-  // Clear existing
   stopMarkers.value.forEach(m => m.remove())
   stopMarkers.value = []
 
@@ -430,27 +382,23 @@ function updateStopMarkers() {
     // Dimming Logic
     let isDimmed = false
     if (mapStore.selectedRoute) {
-        // Is this stop part of the route segments?
         const isInRoute = mapStore.selectedRoute.segments.some(s => 
             s.from.id === stop.id || s.to.id === stop.id
         )
         isDimmed = !isInRoute
     } else if (mapStore.highlightLineId) {
-        // User requested: "Selected a line and mark stops of that line, but the rest of stops be that semi-transparent grey"
         isDimmed = !lineIds.includes(mapStore.highlightLineId)
+    } else if (mapStore.highlightStopId) {
+        isDimmed = stop.id !== mapStore.highlightStopId
     }
 
-    // Generate segmented SVG marker with line colors
     const markerSize = isSelected ? 36 : 24
     const svg = generateStopMarkerSVG(lineIds, markerSize, isSelected)
 
     const el = document.createElement('div')
     el.className = 'stop-marker'
     
-    // Container with transitions and selection ring
-    // User asked for "grey semi-transparent" for dimmed items
     const dimClasses = 'opacity-30 grayscale scale-75'
-    const normalClasses = 'opacity-100 scale-100'
     const selectedClasses = 'scale-125 z-50'
 
     el.innerHTML = `
@@ -460,9 +408,8 @@ function updateStopMarkers() {
       </div>
     `
 
-    // Click handler with fullscreen trigger
     el.addEventListener('click', (e) => {
-      e.stopPropagation() // Prevent map click
+      e.stopPropagation()
       handleStopClick(stop)
     })
 
@@ -470,32 +417,20 @@ function updateStopMarkers() {
       .setLngLat([stop.longitude, stop.latitude])
       .addTo(map.value!)
 
-    // Z-index: Selected stops highest (40), normal stops (30), buses (20)
     marker.getElement().style.zIndex = isSelected ? '40' : '30'
-
     stopMarkers.value.push(marker)
   }
 }
 
-// --- Interaction Handling ---
-
-const router = useRouter()
-// Get lines to display names in the card
-const { data: allLines } = await useBusLines() as { data: Ref<BusLine[]> }
-
 // Handle Stop Click
 function handleStopClick(stop: BusStop) {
-  // 1. Set fullscreen if not active
   if (!mapStore.isFullscreen) {
     mapStore.setFullscreen(true)
   }
-  
-  // 2. Focus and highlight
   mapStore.focusOnStop(stop)
   emit('stopClick', stop)
 }
 
-// Navigate to details
 function goToStopDetails() {
   if (mapStore.highlightStopId) {
     mapStore.setFullscreen(false)
@@ -510,14 +445,12 @@ function goToLineDetails(lineId: string) {
   router.push(`/line/${lineId}`)
 }
 
-// Get Line metadata helper
+// Helper for template
 function getLineInfo(lineId: string) {
   return allLines.value?.find(l => l.id === lineId)
 }
 
-// Setup map interaction listeners to deselect
 function setupMapListeners(mapInstance: maplibregl.Map) {
-    // Only deselect on explicit user interaction, not programmatic moves
     const onUserInteraction = () => {
         if (mapStore.highlightStopId) {
             mapStore.clearHighlight()
@@ -526,25 +459,17 @@ function setupMapListeners(mapInstance: maplibregl.Map) {
     
     mapInstance.on('dragstart', onUserInteraction)
     mapInstance.on('click', (e) => {
-        // Did we click a marker? If so, stop propagation handled in marker
-        // If we get here, it's a map click (empty space)
         if (e.defaultPrevented) return
         onUserInteraction()
     })
 
-    // Update store center/zoom on move end
     mapInstance.on('moveend', () => {
         const center = mapInstance.getCenter()
         const zoom = mapInstance.getZoom()
-        // Only update if significantly different to avoid loops/noise
-        // (Though since we don't watch store.center to flyTo, loop isn't a huge risk, but good practice)
         mapStore.center = [center.lng, center.lat]
         mapStore.zoom = zoom
     })
 }
-
-
-
 
 function updateVehicleMarkers() {
   if (!map.value || !isLoaded.value || !props.vehicles) return
@@ -553,8 +478,7 @@ function updateVehicleMarkers() {
 
   for (const vehicle of props.vehicles) {
     if (vehicle.latitude === 0 || vehicle.longitude === 0) continue
-    if (props.highlightLineId && vehicle.lineId !== props.highlightLineId) continue
-
+    
     // Dimming Logic for Vehicles
     let isDimmed = false
     if (mapStore.selectedRoute) {
@@ -564,15 +488,8 @@ function updateVehicleMarkers() {
             .map(s => s.lineId)
         isDimmed = !routeLines.includes(vehicle.lineId)
     } else if (props.highlightLineId) {
-        // If we are focusing on a line, dim other buses?
-        // Actually, usually we FILTER buses by line in the parent logic or `vehicles` prop is already filtered?
-        // Looking at logic: `if (props.highlightLineId && vehicle.lineId !== props.highlightLineId) continue`
-        // So they are hidden, not dimmed. 
-        // User said: "like when you select a line... stops be grey". 
-        // For buses, if we want to show ALL buses but dim others, we should remove the 'continue'.
-        // But usually "Focus on line" implies only seeing that line's buses.
-        // Let's keep the current behavior for buses (only show relevant ones) unless requested otherwise.
-        // However, if we validly show multiple buses, dimming logic applies.
+        // Show all vehicles, but dim those not matching the highlighted line
+        isDimmed = vehicle.lineId !== props.highlightLineId
     }
 
     currentVehicles.add(vehicle.id)
@@ -585,14 +502,25 @@ function updateVehicleMarkers() {
       animateMarker(existing.marker, existing.position, newPos)
       existing.position = newPos
       
-      // Update styling if selected state changed (e.g. if we want to show a ring)
-      // For now, we rely on CSS classes on the element which we don't update reactively here easily
-      // unless we store the element reference and manipulate classList.
+      // Update styling
       const isSelected = mapStore.selectedVehicle?.id === vehicle.id
       const el = existing.marker.getElement()
       const halo = el.querySelector('.vehicle-halo')
       const body = el.querySelector('.vehicle-body')
+      const container = el.querySelector('.group') // Wrapper
       
+      if (container) {
+          // Reset classes
+          container.className = `relative group z-10 flex flex-col items-center transition-all duration-300 ${isDimmed ? 'opacity-30 grayscale scale-75' : 'opacity-100'}`
+          // Adjust Z-Index: Normal/Dimmed Stops are 30. Selected Stops 40. 
+          // We want Buses > Dimmed Stops. 
+          // So Buses = 35. (Selected Bus = 45 maybe?)
+          // Let's set z-index on the marker element, not the inner container.
+      }
+      
+      // Update Z-Index dynamically
+      existing.marker.getElement().style.zIndex = isSelected ? '45' : '35'
+
       if (isSelected) {
           halo?.classList.remove('opacity-25', 'animate-ping')
           halo?.classList.add('opacity-100', 'ring-4', 'ring-yellow-400', 'ring-opacity-50') // Solid highlight ring
@@ -638,15 +566,19 @@ function updateVehicleMarkers() {
 
       el.addEventListener('click', (e) => {
           e.stopPropagation()
-          emit('vehicleClick', vehicle)
+          // Always fetch the LATEST vehicle data from props
+          const latest = props.vehicles?.find(v => v.id === vehicle.id) || vehicle
+          emit('vehicleClick', latest)
       })
 
       const marker = new maplibregl.Marker({ element: el })
         .setLngLat(newPos)
         .addTo(map.value!)
 
-      // Z-index for buses lower than stops
-      marker.getElement().style.zIndex = '20'
+      // Z-index: Stops (30), Selected Stops (40).
+      // We want Buses > dimmed stops (30).
+      // So Buses = 35.
+      marker.getElement().style.zIndex = '35'
 
       vehicleMarkers.value.set(vehicle.id, { marker, position: newPos })
     }
