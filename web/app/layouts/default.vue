@@ -52,7 +52,7 @@ watch(() => route.path, () => {
           :highlight-vehicle-id="mapStore.highlightVehicleId ?? undefined"
           :padding="mapStore.padding"
           @map-ready="(map: any) => mapStore.mapInstance = markRaw(map)"
-          @vehicle-click="(vehicle: any) => mapStore.followVehicle(vehicle)"
+          @vehicle-click="(vehicle: any) => mapStore.vehicleClick(vehicle)"
         />
       </ClientOnly>
     </div>

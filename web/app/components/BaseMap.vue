@@ -119,7 +119,8 @@ onMounted(() => {
           },
           paint: {
               'line-color': ['get', 'color'],
-              'line-width': 5
+              'line-width': ['coalesce', ['get', 'width'], 5],
+              'line-opacity': ['coalesce', ['get', 'opacity'], 0.8]
           }
       })
   })
@@ -555,8 +556,8 @@ function updateVehicleMarkers() {
           <!-- Bus body (Pill shape) -->
           <div class="vehicle-body relative z-10 flex items-center gap-1.5 px-2 py-1 ${lineColor} rounded-xl border-2 border-white shadow-md transition-all duration-300 group-hover:scale-110 min-w-[3rem] justify-center">
              <!-- Tiny Bus Icon -->
-             <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="text-white w-3 h-3"><path d="M8 6v6"/><path d="M15 6v6"/><path d="M2 12h19.6"/><path d="M18 18h3s.5-1.7.8-2.8c.1-.4.2-.8.2-1.2 0-.4-.1-.8-.2-1.2l-1.4-5C20.1 6.8 19.1 6 18 6H4a2 2 0 0 0-2 2v10h3"/><circle cx="7" cy="18" r="2"/><path d="M9 18h5"/><circle cx="16" cy="18" r="2"/></svg>
-             <span class="text-white font-bold text-xs leading-none">${vehicle.lineId}</span>
+             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="text-white w-5 h-5"><path d="M8 6v6"/><path d="M15 6v6"/><path d="M2 12h19.6"/><path d="M18 18h3s.5-1.7.8-2.8c.1-.4.2-.8.2-1.2 0-.4-.1-.8-.2-1.2l-1.4-5C20.1 6.8 19.1 6 18 6H4a2 2 0 0 0-2 2v10h3"/><circle cx="7" cy="18" r="2"/><path d="M9 18h5"/><circle cx="16" cy="18" r="2"/></svg>
+             <span class="text-white font-bold text-s leading-none">${vehicle.lineId}</span>
           </div>
           
           <!-- Arrow indicating direction -->
@@ -566,6 +567,7 @@ function updateVehicleMarkers() {
 
       el.addEventListener('click', (e) => {
           e.stopPropagation()
+          
           // Always fetch the LATEST vehicle data from props
           const latest = props.vehicles?.find(v => v.id === vehicle.id) || vehicle
           emit('vehicleClick', latest)

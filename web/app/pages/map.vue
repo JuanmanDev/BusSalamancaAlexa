@@ -36,6 +36,91 @@ const isRefreshing = ref(false)
 // Visibility toggles
 const showStops = ref(true)
 const showBuses = ref(true)
+const showRoutes = ref(false)
+
+// Logic for showing routes
+const { getLineGeometry } = useLineGeometry()
+let routeUpdateTimer: any = null
+
+watch([showRoutes, selectedLineIds], async ([show, ids]) => {
+  // Clear lines if toggle off or no lines selected
+  if (!show || ids.length === 0) {
+    if (mapStore.linesToDraw.length > 0) {
+         mapStore.setLines([])
+    }
+    return
+  }
+  
+  // Debounce updates
+  if (routeUpdateTimer) clearTimeout(routeUpdateTimer)
+  
+  routeUpdateTimer = setTimeout(async () => {
+      // Limit to reasonable number to prevent massive fetching if "Select All" is clicked (40+ lines)
+      // "Select All" logic sets selectedLineIds to ALL lines.
+      // We should probably show a toast or limit it. 
+      // User said "show the lines... so it could be possible to see multiples lines".
+      // We will try.
+      
+      const linesToShow = (allLines.value as any[])?.filter(l => ids.includes(l.id)) || []
+      
+      if (linesToShow.length === 0) return
+
+      // Use a generator or promise all?
+      // We will render straight lines first for all, then fetch details.
+      
+      const isMany = linesToShow.length > 5
+      const isVeryMany = linesToShow.length >= 20
+      const width = isVeryMany ? 2 : (isMany ? 3 : 5)
+      const opacity = isVeryMany ? 0.5 : (isMany ? 0.7 : 0.9)
+
+      let allSegments: { id: string, color: string, points: { lat: number, lng: number }[], width?: number, opacity?: number }[] = []
+      const fetchers: (() => Promise<any>)[] = []
+
+      // Prepare data
+      for (const line of linesToShow) {
+          // pass allStops.value to the composable if needed or let it use its own?
+          // The composable uses `useBusStops()`. If it's cached/shared, it's fine.
+          // But passing local allStops might be faster if accessible.
+          // Composable signature: getLineGeometry(lineId, lineInfo, lineStops)
+          
+          // We need stops for this line.
+          const stopsData = (allStops.value as any[]) || []
+          const lineStops = stopsData.filter(s => s.lines?.includes(line.id)).sort((a,b) => parseInt(a.id) - parseInt(b.id)) || []
+          
+          if (lineStops.length > 0) {
+             const { initial, fetchDetailed } = await getLineGeometry(line.id, line, lineStops)
+             
+             // Apply styles
+             const styledInitial = initial.map(s => ({ ...s, width, opacity }))
+             allSegments.push(...styledInitial)
+             fetchers.push(async () => {
+                 const details = await fetchDetailed()
+                 return details.map((d: any) => ({ ...d, width, opacity }))
+             })
+          }
+      }
+      
+      // 1. Draw straight lines immediately
+      mapStore.setLines([...allSegments])
+      
+      // 2. Fetch details (OSRM)
+      // We can do this in parallel but maybe rate limit? 
+      // Our server caches, so it should be fast after first run.
+      // But 40 lines * 2 directions = 80 requests. Browser might stall.
+      // We'll run them.
+      
+      try {
+          const detailResults = await Promise.all(fetchers.map(f => f()))
+          const flatDetails = detailResults.flat()
+          
+          // Re-update map
+          mapStore.setLines(flatDetails)
+      } catch (e) {
+          console.error('Error fetching details for lines', e)
+      }
+      
+  }, 500)
+}, { immediate: true })
 
 // Selected line items for USelectMenu (array for multi-select)
 const selectedLineItems = computed({
@@ -196,6 +281,7 @@ function handleStopClick(stop: BusStop) {
 
 // Handle vehicle selection
 function handleVehicleClick(vehicle: BusVehicle) {
+  return;
   selectedVehicle.value = vehicle
   selectedStop.value = null // Clear stop selection
   
@@ -205,6 +291,7 @@ function handleVehicleClick(vehicle: BusVehicle) {
 
 function centerMapWithOffset(lat: number, lng: number) {
   if (!mapStore.mapInstance) return 
+  return;
   
   const height = mapContainer.value?.clientHeight || window.innerHeight
   const offsetY = height * 0.2 // 20% height (to shift center down, so point appears up)
@@ -214,7 +301,8 @@ function centerMapWithOffset(lat: number, lng: number) {
     center: [lng, lat],
     zoom: 16,
     offset: [0, -offsetY],
-    padding: { bottom: 0, top: 0, left: 0, right: 0 }
+    padding: { bottom: 0, top: 0, left: 0, right: 0 },
+    duration: 1000
   })
 }
 
@@ -343,6 +431,11 @@ const hasUserLocation = computed(() => useGeolocation().userLocation.value !== n
             <UIcon name="i-lucide-bus" class="w-4 h-4" :class="showBuses ? 'text-green-500' : 'text-gray-400'" />
             {{ displayedVehicles.length }}
             <span class="text-xs hidden sm:inline" :class="showBuses ? 'text-gray-900 dark:text-white' : 'text-gray-400'">Buses</span>
+          </label>
+          <label class="flex items-center gap-1.5 cursor-pointer">
+            <UCheckbox v-model="showRoutes" />
+            <UIcon name="i-lucide-route" class="w-4 h-4" :class="showRoutes ? 'text-blue-500' : 'text-gray-400'" />
+            <span class="text-xs hidden sm:inline" :class="showRoutes ? 'text-gray-900 dark:text-white' : 'text-gray-400'">Rutas</span>
           </label>
         </div>
 

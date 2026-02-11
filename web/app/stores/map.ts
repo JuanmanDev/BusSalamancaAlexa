@@ -41,7 +41,7 @@ export interface MapState {
     routeDestination: { id: string; name: string; type: 'user' | 'stop' | 'address' | 'map'; lat?: number; lng?: number } | null
 }
 
-export type PositionEventType = 'stop' | 'line' | 'multi-stop' | 'user' | 'manual'
+export type PositionEventType = 'stop' | 'line' | 'multi-stop' | 'user' | 'manual' | 'vehicle'
 
 export interface MapPositionEvent {
     id: number
@@ -97,7 +97,7 @@ export const useMapStore = defineStore('map', () => {
     const selectedRoute = ref<RouteOption | null>(null)
 
     // Custom Line Paths (e.g. for Line Detail visualization)
-    const linesToDraw = ref<{ id: string; color: string; points: { lat: number; lng: number }[] }[]>([])
+    const linesToDraw = ref<{ id: string; color: string; points: { lat: number; lng: number }[]; width?: number; opacity?: number }[]>([])
 
     // Map instance
     const mapInstance = shallowRef<any | null>(null)
@@ -223,25 +223,41 @@ export const useMapStore = defineStore('map', () => {
         selectedVehicle.value = null
     }
 
-    function setLines(lines: { id: string; color: string; points: { lat: number; lng: number }[] }[]) {
+    function setLines(lines: { id: string; color: string; points: { lat: number; lng: number }[]; width?: number; opacity?: number }[]) {
         linesToDraw.value = lines
     }
 
-    function followVehicle(vehicle: BusVehicle) {
-        console.log('followVehicle', vehicle);
+    function vehicleClick(vehicle: BusVehicle) {
+        console.log('vehicleClick', vehicle);
 
         // Ensure fullscreen if not already
-        if (!isFullscreen.value) {
-            setFullscreen(true)
-        }
+        // if (!isFullscreen.value) {
+        //     // setFullscreen(true);
+        //     isFullscreen.value = true
+        //     isInteractive.value = true
+        //     showControls.value = true
+        // }
 
         highlightVehicleId.value = vehicle.id
         highlightStopId.value = null
         selectedVehicle.value = vehicle
 
+
+        positionEvent.value = {
+            id: Date.now(),
+            points: [{ lng: vehicle.longitude, lat: vehicle.latitude }],
+            zoom: 16,
+            padding: padding.value,
+            type: 'vehicle'
+        }
+        setFullscreen(true);
+
+        // updatePositionWithMapPreviewContainer(positionEvent.value.points, { ...positionEvent.value, padding: padding.value, type: 'manual' })
+
         // Fly to vehicle with zoom
         if (mapInstance.value && vehicle.latitude && vehicle.longitude) {
-            mapInstance.value.flyTo({
+            return;
+            mapInstance.value.easeTo({
                 center: [vehicle.longitude, vehicle.latitude],
                 zoom: 16,
                 duration: 2000,
@@ -945,7 +961,7 @@ export const useMapStore = defineStore('map', () => {
         setPagePadding,
         setPagePaddingFromMapPreviewContainer,
         clearHighlight,
-        followVehicle,
+        vehicleClick,
         updateFollowedVehicle,
         selectedVehicle,
         selectedRoute,
