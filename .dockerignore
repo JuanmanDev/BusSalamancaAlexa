@@ -1,0 +1,12 @@
+node_modules
+dist
+.git
+.env
+.env.*
+*.log
+
+# Web specific
+web/node_modules
+web/.nuxt
+web/.output
+web/dist
