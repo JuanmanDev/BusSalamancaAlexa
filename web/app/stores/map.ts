@@ -6,7 +6,7 @@
  * and the store manages all map logic, data fetching, and refresh intervals internally.
  */
 
-import type { BusStop, BusVehicle, BusArrival, RouteOption } from '~/types/bus'
+import type { BusStop, BusVehicle, BusArrival, RouteOption, BusLine } from '~/types/bus'
 
 export interface MapState {
     // Map position
@@ -205,11 +205,19 @@ export const useMapStore = defineStore('map', () => {
     function focusOnStop(stop: BusStop) {
         if (stop.longitude && stop.latitude) {
             highlightStopId.value = stop.id
-            highlightLineId.value = null
+
+            // If we are NOT in a line context, clear line highlight
+            // If we ARE in a line context, keep it (or ensure it matches context)
+            if (currentContext.value !== 'line') {
+                highlightLineId.value = null
+            } else if (currentContextId.value) {
+                highlightLineId.value = currentContextId.value
+            }
+
             // Don't replace stops - just highlight the selected one
             // Stops array should remain as-is so other stops stay visible
             updatePositionWithMapPreviewContainer([{ lng: stop.longitude, lat: stop.latitude }], {
-                zoom: 15,
+                zoom: 16, // Slightly closer
                 type: 'stop',
             })
             console.log('focusOnStop', stop);
@@ -218,9 +226,15 @@ export const useMapStore = defineStore('map', () => {
 
     function clearHighlight() {
         highlightStopId.value = null
-        highlightLineId.value = null
         highlightVehicleId.value = null
         selectedVehicle.value = null
+
+        // If we are in line context, restore line highlight
+        if (currentContext.value === 'line' && currentContextId.value) {
+            highlightLineId.value = currentContextId.value
+        } else {
+            highlightLineId.value = null
+        }
     }
 
     function setLines(lines: { id: string; color: string; points: { lat: number; lng: number }[]; width?: number; opacity?: number }[]) {
@@ -229,14 +243,6 @@ export const useMapStore = defineStore('map', () => {
 
     function vehicleClick(vehicle: BusVehicle) {
         console.log('vehicleClick', vehicle);
-
-        // Ensure fullscreen if not already
-        // if (!isFullscreen.value) {
-        //     // setFullscreen(true);
-        //     isFullscreen.value = true
-        //     isInteractive.value = true
-        //     showControls.value = true
-        // }
 
         highlightVehicleId.value = vehicle.id
         highlightStopId.value = null
@@ -252,18 +258,6 @@ export const useMapStore = defineStore('map', () => {
         }
         setFullscreen(true);
 
-        // updatePositionWithMapPreviewContainer(positionEvent.value.points, { ...positionEvent.value, padding: padding.value, type: 'manual' })
-
-        // Fly to vehicle with zoom
-        if (mapInstance.value && vehicle.latitude && vehicle.longitude) {
-            return;
-            mapInstance.value.easeTo({
-                center: [vehicle.longitude, vehicle.latitude],
-                zoom: 16,
-                duration: 2000,
-
-            })
-        }
     }
 
     // Update vehicle position when following
@@ -502,8 +496,18 @@ export const useMapStore = defineStore('map', () => {
 
     async function setContextToStopPage(stopId: string) {
         console.log('[MapStore] setContextToStopPage', stopId)
+
+        // Check if we are already highlighting this stop to prevent flicker
+        const preservingHighlight = highlightStopId.value === stopId
+
         if (currentContext.value !== 'stop' || currentContextId.value !== stopId) {
             clearContext()
+
+            // Restore highlight immediately if we were preserving it
+            if (preservingHighlight) {
+                highlightStopId.value = stopId
+            }
+
             currentContext.value = 'stop'
             currentContextId.value = stopId
         }
@@ -639,10 +643,15 @@ export const useMapStore = defineStore('map', () => {
     }
 
     /**
-     * Line detail page context: Show all stops on line, fetch vehicles
+     * Line detail page context: Show all stops on line, fetch vehicles, and draw route
      */
     async function setContextToLinePage(lineId: string) {
         console.log('[MapStore] setContextToLinePage', lineId)
+
+        // Prevent re-entry if already on this line (unless foreced?)
+        // If we are already on this line, we might still want to refresh vehicles but not everything else.
+        // For simplicity and robustness, currently we reset context to ensure clean state.
+
         clearContext()
         currentContext.value = 'line'
         currentContextId.value = lineId
@@ -651,9 +660,13 @@ export const useMapStore = defineStore('map', () => {
 
         const busService = useBusService()
 
-        // Load all stops
+        // 1. Load all stops
         const allStopsData = await busService.fetchStops()
-        stops.value = allStopsData // Keep ALL stops for translucency
+
+        // Abort if context changed during await
+        if (currentContextId.value !== lineId) return
+
+        stops.value = allStopsData
 
         // Filter for bounds calculation only
         const lineStops = allStopsData
@@ -664,10 +677,10 @@ export const useMapStore = defineStore('map', () => {
             focusOnLine(lineId, lineStops)
         }
 
-        // Fetch vehicles (All of them, let BaseMap handle dimming)
-        // We still prioritize the line vehicles for "Real-time" accuracy if we use the arrival fallback
-        // But the user wants to see others.
-        // Let's fetch ALL vehicles globally.
+        // 2. Fetch Line Info & Draw Geometry (Centralized Logic)
+        drawLineGeometry(lineId, lineStops, busService)
+
+        // 3. Fetch vehicles
         updateVehiclesInternal(busService, lineId, lineStops)
 
         // Start auto-refresh
@@ -676,6 +689,104 @@ export const useMapStore = defineStore('map', () => {
                 updateVehiclesInternal(busService, lineId, lineStops)
             }
         }, 10000)
+    }
+
+    async function drawLineGeometry(lineId: string, lineStops: BusStop[], busService: any) {
+        // Clear existing lines first
+        linesToDraw.value = []
+
+        try {
+            const allLines = await busService.fetchLines()
+            if (currentContextId.value !== lineId) return
+
+            const lineInfo = allLines.find((l: BusLine) => l.id === lineId)
+            const hex = getLineColorHex(lineId)
+
+            const straightLines: { id: string, color: string, points: { lat: number, lng: number }[], opacity?: number }[] = []
+            const directionsToFetch: { id: string; points: { lat: number; lng: number }[] }[] = []
+
+            // Strategy 1: Use explicit directions from API (Best)
+            if (lineInfo?.directions && lineInfo.directions.length > 0) {
+                lineInfo.directions.forEach((dir: any, idx: number) => {
+                    const points: { lat: number; lng: number }[] = []
+
+                    dir.stops.forEach((stopRef: any) => {
+                        const stop = stops.value.find(s => s.id === stopRef.id)
+                        if (stop && stop.latitude && stop.longitude) {
+                            points.push({ lat: stop.latitude, lng: stop.longitude })
+                        }
+                    })
+
+                    if (points.length > 1) {
+                        const lineIdPart = `${lineId}-${dir.id || idx}`
+                        straightLines.push({ id: lineIdPart, color: hex, points })
+                        directionsToFetch.push({ id: lineIdPart, points })
+                    }
+                })
+            }
+
+            // Strategy 2: Fallback to numeric sort if no directions
+            if (straightLines.length === 0 && lineStops.length > 1) {
+                const points: { lat: number; lng: number }[] = []
+                const validStops = lineStops.filter(s => s.latitude && s.longitude)
+                validStops.forEach(s => points.push({ lat: s.latitude!, lng: s.longitude! }))
+
+                if (points.length > 1) {
+                    straightLines.push({ id: lineId, color: hex, points })
+                    directionsToFetch.push({ id: lineId, points })
+                }
+            }
+
+            if (straightLines.length === 0) return
+
+            // Show straight lines initially with 0 opacity (or low)
+            // Actually, let's show them immediately if OSRM takes time, but standard practice is to wait a bit.
+            // Let's replicate the component logic:
+
+            // Start OSRM fetch
+            const osrmPromise = (async () => {
+                try {
+                    const detailedLines = await Promise.all(directionsToFetch.map(async (dir) => {
+                        const geometry = await $fetch('/api/bus/route-geometry', {
+                            method: 'POST',
+                            body: { points: dir.points }
+                        }) as { lat: number; lng: number }[]
+                        return { id: dir.id, color: hex, points: geometry || dir.points }
+                    }))
+                    return detailedLines
+                } catch (e) {
+                    console.error('Failed to fetch OSRM geometry', e)
+                    return null
+                }
+            })()
+
+            // Race: wait 3s max for OSRM, else show straight lines
+            const timeout = new Promise<null>(r => setTimeout(() => r(null), 3000))
+            const result = await Promise.race([osrmPromise, timeout])
+
+            if (currentContextId.value !== lineId) return
+
+            if (result) {
+                // OSRM loaded fast
+                setLines(result)
+            } else {
+                // Timeout - show straight lines
+                console.log('[MapStore] OSRM timeout, showing straight lines')
+                setLines(straightLines.map(l => ({ ...l, opacity: 0.7 })))
+
+                // Continue waiting for OSRM
+                osrmPromise.then(detailedLines => {
+                    if (currentContextId.value !== lineId) return
+                    if (detailedLines) {
+                        console.log('[MapStore] OSRM loaded late, updating lines')
+                        setLines(detailedLines)
+                    }
+                })
+            }
+
+        } catch (e) {
+            console.error('Error drawing line geometry:', e)
+        }
     }
 
     async function updateVehiclesInternal(busService: any, lineId?: string, lineStops?: BusStop[]) {
