@@ -37,6 +37,7 @@ export function useRouting() {
     const MAX_WALK_DISTANCE = 800 // meters for transfers/start/end
     const TRANSFER_PENALTY_SECONDS = 300 // 5 min penalty
     const INITIAL_WAIT_SECONDS = 300 // 5 mins avg wait
+    const BOARDING_PENALTY_SECONDS = 300 // 5 min penalty (additional cost weight)
 
     // --- State ---
     const graphNodes = ref<Map<string, Node>>(new Map())
@@ -331,18 +332,22 @@ export function useRouting() {
             if (id === endId) {
                 const path: Edge[] = []
                 let curr = endId
+                // Capture final time for accurate duration reporting
+                const finalTime = currentTime
+
                 while (curr !== startId) {
                     const rec = prev.get(curr)
                     if (!rec) return null
                     path.unshift(rec.edge)
                     curr = rec.from
                 }
-                return { path, cost }
+                return { path, cost, arrivalTime: finalTime }
             }
 
             for (const edge of getNeighbors(id)) {
                 let edgeDuration = edge.weight // seconds
                 let waitTime = 0
+                let boardingPenalty = 0
 
                 // Get previous edge to check for same-line transfer
                 const lastRecord = prev.get(id)
@@ -354,8 +359,11 @@ export function useRouting() {
                     if (isContinuingLine) {
                         // Case 1: Already on the bus. No wait.
                         waitTime = 0
+                        boardingPenalty = 0
                     } else {
                         // Case 2: Transfer or New Line. Check Schedule.
+                        boardingPenalty = BOARDING_PENALTY_SECONDS
+
                         const stopArrivals = arrivals.get(edge.from)
                         const nextArrivalTs = stopArrivals?.get(edge.lineId || '')
 
@@ -381,9 +389,15 @@ export function useRouting() {
                 }
 
                 const penalty = penalties.get(`${edge.from}|${edge.to}`) || 0
-                const totalEdgeCost = edgeDuration + waitTime + penalty
+
+                // COST: Includes artificial penalties (boarding, avoiding duplicates)
+                const totalEdgeCost = edgeDuration + waitTime + penalty + boardingPenalty
+
+                // TIME: Real elapsed time (duration + wait)
+                const totalEdgeTime = edgeDuration + waitTime
+
                 const newCost = cost + totalEdgeCost
-                const newTime = currentTime + (edgeDuration * 1000) + (waitTime * 1000)
+                const newTime = currentTime + (totalEdgeTime * 1000)
 
                 if (newCost < (dist.get(edge.to) ?? Infinity)) {
                     dist.set(edge.to, newCost)
@@ -396,13 +410,13 @@ export function useRouting() {
     }
 
     function convertToRouteOption(
-        pathData: { path: Edge[], cost: number },
+        pathData: { path: Edge[], cost: number, arrivalTime: number },
         startTime: Date,
         origin: { lat: number, lng: number, name?: string },
         dest: { lat: number, lng: number, name?: string },
         index: number
     ): RouteOption {
-        const { path, cost } = pathData
+        const { path, cost, arrivalTime } = pathData
         const segments: RouteSegment[] = []
         let currentSeg: RouteSegment | null = null
 
@@ -443,15 +457,19 @@ export function useRouting() {
         })
         if (currentSeg) segments.push(currentSeg)
 
+        const totalDurationMinutes = (arrivalTime - startTime.getTime()) / 1000 / 60
+
         return {
             id: `route-${index}-${Date.now()}`,
             segments,
-            totalDuration: Math.ceil(cost / 60),
+            totalDuration: Math.max(1, Math.ceil(totalDurationMinutes)),
             walkingDistance: Math.round(segments.filter(s => s.type === 'walk').reduce((a, b) => a + b.distance, 0)),
             transfers: Math.max(0, segments.filter(s => s.type === 'bus').length - 1),
             departureTime: startTime,
-            arrivalTime: new Date(startTime.getTime() + cost * 1000),
-            tags: cost < 1200 ? ['Rápido'] : []
+            arrivalTime: new Date(arrivalTime),
+            // Tag logic can use the "cost" (penalty included) to determine quality, or real time?
+            // "Rápido" should probably range on real time.
+            tags: totalDurationMinutes < 20 ? ['Rápido'] : []
         }
     }
 

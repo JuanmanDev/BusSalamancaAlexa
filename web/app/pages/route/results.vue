@@ -144,10 +144,15 @@ function getSegmentColor(type: string, lineId?: string) {
 </script>
 
 <template>
-    <div class="h-full flex flex-col relative pointer-events-none">
-        <!-- Floating Card -->
-        <div class="pointer-events-auto p-4 md:p-6 w-full max-w-md mx-auto md:ml-6 mt-4 md:mt-6 z-10">
-            <UCard class="shadow-xl ring-1 ring-gray-200 dark:ring-gray-700 backdrop-blur-md bg-white/90 dark:bg-gray-900/90">
+    <div class="h-full w-full relative">
+        <!-- Map Background -->
+        <MapPreview class="absolute inset-0 z-0" />
+
+        <!-- Overlay Content -->
+        <div class="h-full flex flex-col relative pointer-events-none z-10">
+            <!-- Floating Card -->
+            <div class="pointer-events-auto p-4 md:p-6 w-full max-w-md mx-auto md:ml-6 mt-4 md:mt-6">
+                <UCard class="shadow-xl ring-1 ring-gray-200 dark:ring-gray-700 backdrop-blur-md bg-white/90 dark:bg-gray-900/90 max-h-[85vh] flex flex-col">
                 <template #header>
                     <div class="flex items-center gap-3">
                         <UButton icon="i-lucide-arrow-left" variant="ghost" color="neutral" @click="router.back()" />
@@ -155,9 +160,13 @@ function getSegmentColor(type: string, lineId?: string) {
                     </div>
                 </template>
                 
-                <div v-if="isLoading" class="py-8 text-center">
-                    <LoadingSpinner />
-                    <p class="text-sm text-gray-500 mt-2">Calculando mejores rutas...</p>
+                <div v-if="isLoading" class="py-4 text-center">
+                    <RouteCalculationLoader 
+                        :origin="route.query.origin as string"
+                        :destination="route.query.destination as string"
+                        :originName="route.query.originName as string"
+                        :destinationName="route.query.destinationName as string"
+                    />
                 </div>
                 
                 <div v-else-if="error" class="py-6 text-center text-red-500">
@@ -252,6 +261,7 @@ function getSegmentColor(type: string, lineId?: string) {
             </UCard>
         </div>
     </div>
+</div>
 </template>
 
 <style scoped>

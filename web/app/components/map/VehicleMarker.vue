@@ -58,12 +58,12 @@ const lineColor = computed(() => getLineColor(props.vehicle.lineId))
 const containerClasses = computed(() => {
   switch (props.state) {
     case 'disabled':
-      return 'opacity-30 grayscale scale-75'
+      return 'opacity-40 grayscale scale-75 z-0'
     case 'highlighted':
-      return 'opacity-100 scale-110'
+      return 'opacity-100 scale-110 z-20'
     case 'enabled':
     default:
-      return 'opacity-100'
+      return 'opacity-100 z-10'
   }
 })
 
