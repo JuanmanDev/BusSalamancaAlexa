@@ -17,6 +17,12 @@ export interface MapState {
     stops: BusStop[]
     vehicles: BusVehicle[]
 
+    // Filtering & Visibility
+    filterLineIds: string[]
+    showStops: boolean
+    showVehicles: boolean
+    showRoutes: boolean
+
     // Highlighting
     highlightStopId: string | null
     highlightLineId: string | null
@@ -63,7 +69,14 @@ export const useMapStore = defineStore('map', () => {
 
     const stops = ref<BusStop[]>([])
     const allStops = ref<BusStop[]>([]) // Preserve full stops list for restoration
-    const vehicles = ref<BusVehicle[]>([])
+    const rawVehicles = ref<BusVehicle[]>([]) // Unfiltered list of all vehicles
+    const vehicles = ref<BusVehicle[]>([]) // Displayed vehicles (filtered by context)
+
+    // Visibility State
+    const filterLineIds = ref<string[]>([])
+    const showStops = ref(true)
+    const showVehicles = ref(true)
+    const showRoutes = ref(true)
 
     // Arrivals for stop context (exposed for stop page to read)
     const arrivals = ref<BusArrival[]>([])
@@ -124,15 +137,15 @@ export const useMapStore = defineStore('map', () => {
         }
     }
 
-    function clearContext() {
-        console.log('[MapStore] Clearing context:', currentContext.value)
+    function clearContext(keepVehicles = true) {
+        console.log('[MapStore] Clearing context:', currentContext.value, 'keepVehicles:', keepVehicles)
         clearRefreshInterval()
         clearVehicleInterval()
         // Reset state
-        // vehicles.value = [] // Keep vehicles visible during transitions? User wants them always.
-        // But if we switch context, we'll likely restart updates immediately.
-        // Let's NOT clear vehicles.value here to prevent flickering.
-        // vehicles.value = [] 
+        if (!keepVehicles) {
+            vehicles.value = []
+            rawVehicles.value = [] // Also clear raw if we really want to clear
+        }
         arrivals.value = []
         previousArrivals.value = []
         arrivalsLoading.value = false
@@ -142,6 +155,14 @@ export const useMapStore = defineStore('map', () => {
         highlightVehicleId.value = null
         selectedVehicle.value = null
         linesToDraw.value = [] // Clear lines
+
+        // Reset Visibility Defaults (optional, or keep persistence?)
+        // For now, let's keep them persistent across contexts or reset if context changes?
+        // User wants global map management. Let's keep them as is, or maybe reset on clear?
+        // Usually, context switches imply reset.
+        // But if I go from Map to Home, I might want to keep settings?
+        // Let's reset filterLineIds only on full clear?
+        // Actually, let's NOT reset visibility toggles here to persist them.
 
         // Clear Route Data
         selectedRoute.value = null
@@ -217,6 +238,8 @@ export const useMapStore = defineStore('map', () => {
     function focusOnStop(stop: BusStop) {
         if (stop.longitude && stop.latitude) {
             highlightStopId.value = stop.id
+            highlightVehicleId.value = null
+            selectedVehicle.value = null
 
             // If we are NOT in a line context, clear line highlight
             // If we ARE in a line context, keep it (or ensure it matches context)
@@ -278,14 +301,8 @@ export const useMapStore = defineStore('map', () => {
 
         const updated = vehiclesList.find(v => v.id === selectedVehicle.value?.id)
         if (updated) {
+            // Update the reference
             selectedVehicle.value = updated
-            // Smooth pan to new position
-            if (mapInstance.value && !mapInstance.value.isMoving()) {
-                mapInstance.value.easeTo({
-                    center: [updated.longitude, updated.latitude],
-                    duration: 2000
-                })
-            }
         }
     }
 
@@ -381,7 +398,9 @@ export const useMapStore = defineStore('map', () => {
         console.log('reset map');
         updatePosition([{ lng: -5.6635, lat: 40.9701 }], { zoom: 14, type: 'manual' })
         stops.value = []
+        allStops.value = []
         vehicles.value = []
+        rawVehicles.value = []
         arrivals.value = []
         highlightStopId.value = null
         highlightLineId.value = null
@@ -392,6 +411,15 @@ export const useMapStore = defineStore('map', () => {
         linesToDraw.value = []
         padding.value = { top: 0, bottom: 0, left: 0, right: 0 }
         pagePadding.value = { top: 0, bottom: 0, left: 0, right: 0 }
+
+        positionEvent.value = null
+
+        // Reset visibility
+        filterLineIds.value = []
+        showStops.value = true
+        showVehicles.value = true
+        showRoutes.value = true
+
         clearRefreshInterval()
         clearVehicleInterval()
     }
@@ -626,7 +654,7 @@ export const useMapStore = defineStore('map', () => {
                     destination: a.destination
                 }))
 
-            vehicles.value = arrivalVehicles
+            // vehicles.value = arrivalVehicles // DON'T OVERWRITE GLOBAL VEHICLES WITH PARTIAL ARRIVALS
             lastUpdated.value = new Date()
         } catch (e) {
             console.error('Error fetching arrivals:', e)
@@ -673,6 +701,7 @@ export const useMapStore = defineStore('map', () => {
         clearContext()
         currentContext.value = 'line'
         currentContextId.value = lineId
+        setFullscreen(false) // Force disable fullscreen to ensure zoom/pads are correct
 
         await nextTick();
 
@@ -807,14 +836,33 @@ export const useMapStore = defineStore('map', () => {
         const busService = useBusService()
         try {
             const globalData = await busService.fetchVehicles()
-            let finalVehicles = globalData
 
-            // Only update if we get data, or if we have no data yet. 
+            // Updates raw data always
             if (globalData.length > 0) {
-                vehicles.value = finalVehicles
+                rawVehicles.value = globalData
+            }
+
+            // Context-aware update of DISPLAY vehicles
+            // If we are in 'map' context, we use the centralized filter logic
+            // If we are in 'home', 'line', 'stop', we want to show relevant vehicles.
+            // But now we want to support 'show all' even there, or at least 'show relevant'.
+
+            if (currentContext.value === 'map') {
+                updateDisplay()
+                return
+            }
+
+            // For other contexts, update display vehicles directly (if not null)
+            // But wait, if context is 'line', we might want to filter by line?
+            // Actually, BaseMap takes `vehicles` prop.
+            // Let's safe-guard: if context is 'home' or 'line' or 'stop', we update provided we have data.
+
+            if (globalData.length > 0) {
+                vehicles.value = globalData
+
                 // Update followed vehicle if exists
                 if (selectedVehicle.value) {
-                    updateFollowedVehicle(finalVehicles)
+                    updateFollowedVehicle(globalData)
                 }
             } else if (vehicles.value.length > 0) {
                 console.warn('[MapStore] Received 0 vehicles, keeping stale data to prevent flickering')
@@ -854,7 +902,8 @@ export const useMapStore = defineStore('map', () => {
      */
     async function setContextToMapPage() {
         console.log('[MapStore] setContextToMapPage')
-        clearContext()
+        // Do NOT clear vehicles to prevent flicker (keepVehicles = true)
+        clearContext(true)
         currentContext.value = 'map'
 
         const busService = useBusService()
@@ -874,8 +923,8 @@ export const useMapStore = defineStore('map', () => {
         // Request location
         geolocation.requestLocation()
 
-        // Fetch vehicles
-        await fetchAllVehicles(busService)
+        // Fetch vehicles (using global logic which fills rawVehicles)
+        await updateVehiclesGlobal()
 
         // Start auto-refresh
         startGlobalVehicleUpdates()
@@ -913,7 +962,7 @@ export const useMapStore = defineStore('map', () => {
     }
 
 
-    function setContextToRoutePage() {
+    async function setContextToRoutePage() {
         console.log('[MapStore] setContextToRoutePage')
         const previousContext = currentContext.value
         clearContext()
@@ -923,6 +972,13 @@ export const useMapStore = defineStore('map', () => {
         // It should look like the home page (map background + overlay)
         setFullscreen(false)
         isInteractive.value = false
+
+        // Ensure stops are loaded (for map display)
+        const busService = useBusService()
+        if (stops.value.length === 0) {
+            const allStopsData = await busService.fetchStops()
+            stops.value = allStopsData
+        }
 
         // Only reset camera if coming from a non-map page to avoid jarring jumps
         // But since we want to show the map background, maybe we should Ensure we have a valid view?
@@ -948,6 +1004,71 @@ export const useMapStore = defineStore('map', () => {
         routeDestination.value = temp
     }
 
+    // ===== Visibility Actions =====
+
+    function toggleShowStops(value?: boolean) {
+        showStops.value = value !== undefined ? value : !showStops.value
+        updateDisplay()
+    }
+
+    function toggleShowVehicles(value?: boolean) {
+        showVehicles.value = value !== undefined ? value : !showVehicles.value
+        updateDisplay()
+    }
+
+    function toggleShowRoutes(value?: boolean) {
+        showRoutes.value = value !== undefined ? value : !showRoutes.value
+        updateDisplay()
+    }
+
+    function setFilterLineIds(ids: string[]) {
+        filterLineIds.value = ids
+        updateDisplay()
+    }
+
+    function updateDisplay() {
+        // Filter Vehicles
+        if (!showVehicles.value) {
+            vehicles.value = []
+        } else if (filterLineIds.value.length > 0) {
+            vehicles.value = rawVehicles.value.filter(v => filterLineIds.value.includes(v.id) || filterLineIds.value.includes(v.lineId))
+        } else {
+            vehicles.value = rawVehicles.value
+        }
+
+        // Update followed vehicle if hidden
+        if (selectedVehicle.value && !vehicles.value.find(v => v.id === selectedVehicle.value?.id)) {
+            selectedVehicle.value = null
+            highlightVehicleId.value = null
+        }
+
+        // Filter Stops
+        if (!showStops.value) {
+            stops.value = []
+        } else if (filterLineIds.value.length > 0) {
+            stops.value = allStops.value.filter(s =>
+                s.lines?.some(lineId => filterLineIds.value.includes(lineId))
+            )
+        } else {
+            // Restore all stops if they were loaded
+            // But checks if we are in 'stop' context where we might want only one?
+            // 'stop' context sets stops.value = allStops and uses highlighting. 
+            // So if allStops has data, use it.
+            if (allStops.value.length > 0) {
+                stops.value = allStops.value
+            }
+        }
+
+        // Filter Routes (handled by UI invoking setLines/drawLineGeometry usually)
+        // But if we want to clear them when toggled off:
+        if (!showRoutes.value) {
+            linesToDraw.value = []
+            // Note: If we want to restore them when toggled ON, we need to know what to restore.
+            // For now, the UI watcher in Map.vue re-triggers the draw logic.
+            // Ideally that logic should move here too, but step-by-step.
+        }
+    }
+
 
     return {
         // State
@@ -955,6 +1076,7 @@ export const useMapStore = defineStore('map', () => {
         zoom,
         stops,
         allStops,
+        rawVehicles,
         vehicles,
         arrivals,
         arrivalsLoading,
@@ -977,6 +1099,11 @@ export const useMapStore = defineStore('map', () => {
         routeOptions,
         isRouting,
 
+        filterLineIds,
+        showStops,
+        showVehicles,
+        showRoutes,
+
         // Actions
         setMapState,
         updatePosition,
@@ -992,6 +1119,7 @@ export const useMapStore = defineStore('map', () => {
         clearHighlight,
         vehicleClick,
         updateFollowedVehicle,
+        updateVehiclesGlobal,
         selectedVehicle,
         selectedRoute,
         selectRoute,
@@ -1012,5 +1140,11 @@ export const useMapStore = defineStore('map', () => {
         setRouteDestination,
         swapRoutePoints,
         clearContext,
+
+        toggleShowStops,
+        toggleShowVehicles,
+        toggleShowRoutes,
+        setFilterLineIds,
+        updateDisplay
     }
 })

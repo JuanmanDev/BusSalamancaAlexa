@@ -27,7 +27,7 @@ watch(
     // Cancel any running animation
     if (animationFrame) cancelAnimationFrame(animationFrame)
 
-    const duration = 2000
+    const duration = 3000
     const startTime = performance.now()
 
     function animate(now: number) {

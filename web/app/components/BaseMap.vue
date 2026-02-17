@@ -8,8 +8,9 @@ import { getLineColor, getLineColorHex } from '~/utils/bus'
 // ===== Map Configuration =====
 const MAP_CONFIG = {
   maxZoom: 18,
-  minZoom: 10,
+  minZoom: 12.5,
   defaultCenter: [-5.6635, 40.9701] as [number, number],
+  maxBounds: [[-5.80, 40.90], [-5.50, 41.05]] as [[number, number], [number, number]], // Approx Salamanca bounds
 }
 
 // Map key for useMap() composable access
@@ -141,9 +142,17 @@ function updateZoom() {
 }
 
 // ===== Map Event Handlers =====
+function onMapReady(map: maplibregl.Map) {
+  mapStore.mapInstance = map
+  map.setMaxBounds(MAP_CONFIG.maxBounds)
+  emit('mapReady', map)
+}
+
 function onMapLoad() {
   const mapRef = mapInstance.map
   if (!mapRef) return
+
+  onMapReady(mapRef)
 
   // Disable 3D buildings for performance
   const style = mapRef.getStyle()
@@ -197,6 +206,13 @@ function setupMapListeners(mapRef: maplibregl.Map) {
 
   // Track zoom for dynamic marker sizing - THROTTLED
   mapRef.on('zoom', updateZoom)
+
+  // Deselect vehicle on drag start
+  mapRef.on('dragstart', () => {
+    if (mapStore.selectedVehicle) {
+      mapStore.clearHighlight()
+    }
+  })
 }
 
 // ===== Store Position Events =====
@@ -266,7 +282,7 @@ watch(
     if (coordsChanged && !m.isMoving()) {
       m.easeTo({
         center: [vehicle.longitude, vehicle.latitude],
-        duration: 1000,
+        duration: 3000,
         essential: true // Ensure updates happen even if tab backgrounded
       })
     }
@@ -418,9 +434,42 @@ defineExpose({
               </div>
             </div>
 
+            <!-- Actions Grid -->
+            <div class="grid grid-cols-2 gap-2 mb-3" v-if="false">
+              <UButton
+                size="sm"
+                color="primary"
+                variant="soft"
+                icon="i-lucide-map-pin"
+                @click="() => {
+                  mapStore.setRouteOrigin({ id: selectedStopData!.id, name: selectedStopData!.name, type: 'stop', lat: selectedStopData!.latitude!, lng: selectedStopData!.longitude! });
+                  router.push('/route');
+                  mapStore.setFullscreen(false);
+                  mapStore.clearHighlight();
+                }"
+              >
+                Desde aquí
+              </UButton>
+              <UButton
+                 size="sm"
+                 color="primary"
+                 variant="soft"
+                 icon="i-lucide-flag"
+                 @click="() => {
+                    mapStore.setRouteDestination({ id: selectedStopData!.id, name: selectedStopData!.name, type: 'stop', lat: selectedStopData!.latitude!, lng: selectedStopData!.longitude! });
+                    router.push('/route');
+                    mapStore.setFullscreen(false);
+                    mapStore.clearHighlight();
+                 }"
+              >
+                Hasta aquí
+              </UButton>
+            </div>
+
             <UButton
               block
-              color="primary"
+              color="neutral"
+              variant="outline"
               icon="i-lucide-clock"
               @click="goToStopDetails"
             >

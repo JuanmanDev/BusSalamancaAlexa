@@ -12,6 +12,14 @@ const emit = defineEmits<{
 
 const inputRef = ref<HTMLInputElement>()
 const isOpen = ref(false)
+const metaSymbol = ref('⌘') 
+
+onMounted(() => {
+  if (typeof navigator !== 'undefined') {
+    const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0
+    metaSymbol.value = isMac ? '⌘' : 'Ctrl'
+  }
+})
 
 const busService = useBusService()
 const router = useRouter()
@@ -105,8 +113,8 @@ onMounted(() => {
     >
       <UIcon name="i-lucide-search" class="w-4 h-4" />
       <span class="hidden sm:inline">Buscar</span>
-      <kbd class="hidden md:inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-white/10 rounded text-xs">
-        <span>⌘</span><span>K</span>
+      <kbd class="hidden md:inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-white/10 rounded text-xs select-none">
+        <span class="text-xs">{{ metaSymbol }}</span><span>K</span>
       </kbd>
     </button>
 

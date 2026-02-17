@@ -18,8 +18,8 @@ function isActive(path: string) {
   return route.path.startsWith(path)
 }
 
-// Check if on fullscreen map page
-const isMapPage = computed(() => route.path === '/map')
+// Check if on fullscreen map page or route page (which keeps map bg)
+const isMapPage = computed(() => route.path === '/map' || route.path === '/route')
 
 // Calculate visibility for the main transition
 const showMainContent = ref(!(mapStore.isFullscreen && !isMapPage.value))

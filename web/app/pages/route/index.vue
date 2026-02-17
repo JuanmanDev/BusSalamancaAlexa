@@ -3,6 +3,7 @@ import { useDebounceFn } from '@vueuse/core'
 import type { BusStop } from '~/types/bus'
 
 const router = useRouter()
+const route = useRoute()
 const { fetchStops } = useBusService()
 const { userLocation } = useGeolocation()
 const mapStore = useMapStore()
@@ -54,8 +55,36 @@ onMounted(async () => {
     
     allStops.value = await fetchStops()
     
-    // Default origin to user location if available AND not already set
-    if (!mapStore.routeOrigin) {
+    // 0. Restore user location from URL if available (Persistence)
+    if (!userLocation.value && route.query.currentLat && route.query.currentLng) {
+        try {
+            const lat = parseFloat(route.query.currentLat as string)
+            const lng = parseFloat(route.query.currentLng as string)
+            if (!isNaN(lat) && !isNaN(lng)) {
+                userLocation.value = { lat, lng }
+            }
+        } catch (e) {
+            console.error('Failed to parse location from URL', e)
+        }
+    }
+
+    // Check for query params to pre-fill
+    if (route.query.origin) {
+        const originId = route.query.origin as string
+        const stop = allStops.value.find(s => s.id === originId)
+        if (stop && stop.latitude && stop.longitude) {
+             const loc = {
+                id: stop.id,
+                name: stop.name,
+                type: 'stop' as const,
+                lat: stop.latitude,
+                lng: stop.longitude
+            }
+            mapStore.setRouteOrigin(loc)
+            originQuery.value = stop.name
+        }
+    } else if (!mapStore.routeOrigin) {
+        // Default origin to user location if available AND not already set and no query param
         if (userLocation.value) {
             const loc = {
                 id: 'user',
@@ -68,7 +97,36 @@ onMounted(async () => {
             originQuery.value = 'Mi ubicación'
         }
     }
+
+    if (route.query.destination) {
+        const destId = route.query.destination as string
+        const stop = allStops.value.find(s => s.id === destId)
+        if (stop && stop.latitude && stop.longitude) {
+             const loc = {
+                id: stop.id,
+                name: stop.name,
+                type: 'stop' as const,
+                lat: stop.latitude,
+                lng: stop.longitude
+            }
+            mapStore.setRouteDestination(loc)
+            destQuery.value = stop.name
+        }
+    }
 })
+
+// Sync user location to URL for persistence
+watch(userLocation, (newLoc) => {
+    if (newLoc) {
+        router.replace({
+            query: {
+                ...route.query,
+                currentLat: newLoc.lat.toFixed(6),
+                currentLng: newLoc.lng.toFixed(6)
+            }
+        })
+    }
+}, { immediate: true })
 
 // Ensure we leave clean state when navigating away
 onBeforeRouteLeave((to, from, next) => {
@@ -82,7 +140,7 @@ const isPickingLocation = ref(false)
 const pickingField = ref<'origin' | 'destination' | null>(null)
 
 function startMapSelection(field: 'origin' | 'destination') {
-    activeField.value = null
+    activeField.value = field // Keep active field to know where to put the result
     pickingField.value = field
     isPickingLocation.value = true
     mapStore.setFullscreen(true)
@@ -116,6 +174,45 @@ function cancelMapSelection() {
     pickingField.value = null
     mapStore.setFullscreen(false)
 }
+
+// Watch for map stop clicks to select as origin/destination
+watch(() => mapStore.highlightStopId, (newStopId) => {
+    // Only if we have an active field focused (user intends to pick)
+    // OR if we are explicitly in "picking mode" (but picking mode usually implies center pin?)
+    // Let's support clicking a stop ANY time if an input is focused or we are in map picking mode.
+    
+    if (newStopId && (activeField.value || isPickingLocation.value)) {
+        const stop = allStops.value.find(s => s.id === newStopId)
+        if (stop && stop.latitude && stop.longitude) {
+             const loc = {
+                id: stop.id,
+                name: stop.name,
+                type: 'stop' as const,
+                lat: stop.latitude,
+                lng: stop.longitude
+            }
+
+            if (activeField.value === 'origin' || pickingField.value === 'origin') {
+                mapStore.setRouteOrigin(loc)
+                originQuery.value = stop.name
+            } else {
+                mapStore.setRouteDestination(loc)
+                destQuery.value = stop.name
+            }
+            
+            // Clear the map highlight so it doesn't look like we just "viewed" it
+            mapStore.clearHighlight()
+            // Close suggestions
+            suggestions.value = []
+            
+            // If we were in picking mode, exit it
+            if (isPickingLocation.value) {
+                cancelMapSelection()
+            }
+        }
+    }
+})
+
 
 // Search Logic
 const performSearch = useDebounceFn(async (query: string) => {
@@ -184,8 +281,8 @@ const performSearch = useDebounceFn(async (query: string) => {
         console.error('Nominatim error', e)
     }
     
-    // Add map option at the end too
-    results.push({
+    // 4. Add map option at the START (so it appears at bottom with flex-col-reverse)
+    results.unshift({
         id: 'map-picker',
         name: 'Seleccionar en el mapa',
         type: 'map' as any,
@@ -282,9 +379,20 @@ function swappoints() {
 
 <template>
     
-  <div class="max-w-3xl mx-auto px-4 py-6 space-y-6 " id="mapPreviewContainer__">
+  <div class="max-w-3xl mx-auto px-4 py-6 space-y-4 " id="mapPreviewContainer__">
 
     <MapPreview />
+
+
+    <!-- Beta Warning -->
+    <UAlert
+      icon="i-lucide-flask-conical"
+      color="warning"
+      variant="subtle"
+      title="Rutas en fase Beta"
+      description="Esta función es experimental y puede contener errores. Úsala con precaución y verifica siempre los horarios oficiales. Es posible que no ofrezcan la ruta óptima."
+      class="mb-4 relative z-10 shadow-lg bg-white/50 dark:bg-gray-900/50 backdrop-blur-md"
+    />
     
     <!-- Main visible content wrapper -->
     <div class="h-full flex flex-col pointer-events-auto relative z-10">
@@ -336,9 +444,22 @@ function swappoints() {
                      <div class="flex items-center">
                          <UButton icon="i-lucide-arrow-up-down" color="neutral" variant="ghost" @click="swappoints" />
                      </div>
+                     </div>
+                     
+                     <!-- Search Action -->
+                     <div class="flex items-center justify-end w-full pt-2" v-if="mapStore.routeOrigin && mapStore.routeDestination">
+                        <UButton 
+                            label="Buscar ruta" 
+                            icon="i-lucide-search"
+                            size="md"
+                            color="primary"
+                            block
+                            @click="searchRoute"
+                        />
+                     </div>
                 </div>
              </div>
-        </div>
+
 
         <!-- Suggestions List -->
         <div class="flex-1 overflow-y-auto max-w-md mx-auto w-full p-2 mt-4 glass-card" v-if="activeField || suggestions.length > 0">
@@ -414,5 +535,5 @@ function swappoints() {
             </div>
         </div>
     </Teleport>
-    </div>
+  </div>
 </template>

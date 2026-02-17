@@ -18,10 +18,8 @@ const selectedRouteId = ref<string | null>(null)
 const selectedRoute = computed(() => routes.value.find(r => r.id === selectedRouteId.value))
 
 onMounted(async () => {
-    // Use map context but DO NOT force fullscreen
-    // mapStore.setContextToMapPage() <-- This might force fullscreen if checked
-    // Instead ensure we are NOT in fullscreen
-    mapStore.setFullscreen(false)
+    // Set map context first
+    await mapStore.setContextToRoutePage()
     
     await calculateRoutes()
 })

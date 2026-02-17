@@ -177,6 +177,34 @@ function openInAppleMaps() {
 
     <!-- Actions -->
     <div class="grid grid-cols-2 gap-3">
+      <!-- Route Actions -->
+      <NuxtLink
+        :to="`/route?origin=${stopId}`"
+        class="glass-card p-4 hover:scale-[1.02] transition-all flex items-center gap-3"
+      >
+        <div class="w-10 h-10 bg-primary-100 dark:bg-primary-900/50 rounded-lg flex items-center justify-center shrink-0">
+          <UIcon name="i-lucide-map-pin" class="w-5 h-5 text-primary-600 dark:text-primary-400" />
+        </div>
+        <div class="text-left">
+          <p class="font-medium text-gray-900 dark:text-white text-sm">Desde aquí</p>
+          <p class="text-xs text-gray-500">Planificar ruta</p>
+        </div>
+      </NuxtLink>
+
+      <NuxtLink
+        :to="`/route?destination=${stopId}`"
+        class="glass-card p-4 hover:scale-[1.02] transition-all flex items-center gap-3"
+      >
+        <div class="w-10 h-10 bg-primary-100 dark:bg-primary-900/50 rounded-lg flex items-center justify-center shrink-0">
+           <UIcon name="i-lucide-flag" class="w-5 h-5 text-primary-600 dark:text-primary-400" />
+        </div>
+        <div class="text-left">
+          <p class="font-medium text-gray-900 dark:text-white text-sm">Hasta aquí</p>
+          <p class="text-xs text-gray-500">Planificar ruta</p>
+        </div>
+      </NuxtLink>
+
+      <!-- External Maps -->
       <button
         class="glass-card p-4 hover:scale-[1.02] transition-all flex items-center gap-3"
         @click="openInGoogleMaps"
