@@ -108,12 +108,16 @@ const mainTransitionName = computed(() => {
     <Transition :name="mainTransitionName">
       <main 
         v-show="showMainContent"
-        class="relative z-10 flex-1 pt-16 pb-20 md:pb-8 pointer-events-none"
+        class="relative z-10 flex flex-col flex-1 md:pb-8 pointer-events-none transition-[padding] duration-500 ease-in-out"
+        :class="{
+          'pt-16 pb-20': !mapStore.isFullscreen,
+          'pt-0 pb-0 h-screen': mapStore.isFullscreen
+        }"
       >
         <!-- Content wrapper - allows map to show in gaps -->
-        <div class="">
-          <slot />
-        </div>
+        <slot />
+        <!-- <div class="h-full">
+        </div> -->
       </main>
     </Transition>
 

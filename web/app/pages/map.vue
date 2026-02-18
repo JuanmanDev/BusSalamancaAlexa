@@ -239,9 +239,9 @@ const hasUserLocation = computed(() => useGeolocation().userLocation.value !== n
 </script>
 
 <template>
-  <div class="relative h-[calc(100vh-10rem)]]" ref="mapContainer">
+  <div class="flex flex-col justify-between flex-1 w-full" ref="mapContainer">
     <!-- Top controls -->
-    <div class="absolute top-4 left-4 right-4 z-40 flex flex-col gap-3 pointer-events-none">
+    <div class="pt-4 pointer-events-none">
       <!-- First row: Line filter and actions -->
       <div class="flex items-center justify-center gap-2 flex-wrap w-full pointer-events-none">
         <!-- Line filter with multi-select -->
@@ -342,25 +342,8 @@ const hasUserLocation = computed(() => useGeolocation().userLocation.value !== n
       </div>
     </div>
 
-    <!-- Stats -->
-    <div v-if="0" class="absolute top-24 left-4 z-40 pointer-events-none">
-      <div class="glass-card px-3 py-2 text-sm space-y-1 pointer-events-auto">
-        <div class="flex items-center gap-2 text-gray-600 dark:text-gray-400">
-          <UIcon name="i-lucide-map-pin" class="w-4 h-4" />
-          <span>{{ displayedStopsCount }} paradas</span>
-        </div>
-        <div class="flex items-center gap-2">
-          <UIcon 
-            name="i-lucide-bus" 
-            class="w-4 h-4"
-            :class="displayedVehiclesCount > 0 ? 'text-green-500' : 'text-gray-400'"
-          />
-          <span :class="displayedVehiclesCount > 0 ? 'text-green-600 dark:text-green-400' : 'text-gray-500'">
-            {{ displayedVehiclesCount }} buses
-          </span>
-        </div>
-      </div>
-    </div>
+    <!-- MapPreview -->
+    <MapPreview class="" height="flex-1 min-h-[30vh]" />
   </div>
 </template>
 

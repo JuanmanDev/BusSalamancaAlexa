@@ -947,7 +947,7 @@ export const useMapStore = defineStore('map', () => {
         // Set to full interactive mode
         setMapState({
             isInteractive: true,
-            isFullscreen: true,
+            // isFullscreen: true,
             showControls: true,
         })
 

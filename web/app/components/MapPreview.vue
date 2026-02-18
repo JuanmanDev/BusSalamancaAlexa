@@ -1,10 +1,13 @@
 <script setup lang="ts">
+const props = withDefaults(defineProps<{
+  height?: string
+}>(), {
+  height: 'h-[50vh]'
+})
+
 const mapStore = useMapStore()
 const geolocation = useGeolocation()
 const toast = useToast()
-
-
-
 const clickLocationButton = async () => {
   if (!geolocation.userLocation.value) {
     const success = await geolocation.requestLocation({ timeout: 7000 })
@@ -175,7 +178,7 @@ const toggleFullscreen = async () => {
 </script>
 
 <template>
-  <div class="relative w-full h-[50vh] pointer-events-none" id="mapPreviewContainer">
+  <div class="relative w-full pointer-events-none" :class="props.height" id="mapPreviewContainer">
     <!-- Placeholder to keep layout space when map is fullscreen/teleported -->
     <div ref="placeholder" class="absolute inset-0 pointer-events-none" :class="{ 'opacity-0': mapStore.isFullscreen }"></div>
 
@@ -190,6 +193,9 @@ const toggleFullscreen = async () => {
         ]"
         :style="containerStyle"
       >
+        <!-- Default slot for custom overlaid controls (e.g. filters) -->
+         <slot />
+
         <!-- Button container with responsive positioning -->
         <!-- Mobile: Bottom-Right -->
         <!-- Desktop: Top-Right -->
@@ -202,21 +208,10 @@ const toggleFullscreen = async () => {
               :icon="mapStore.isFullscreen ? 'i-lucide-minimize-2' : 'i-lucide-maximize-2'"
               @click="toggleFullscreen"
             >
-              <div 
-                class="grid items-center transition-[grid-template-columns] duration-500 ease-in-out" 
-                :style="{ 'grid-template-columns': mapStore.isFullscreen ? '1fr 0fr' : '0fr 1fr' }"
-              >
-                <div class="overflow-hidden min-w-0 transition-opacity duration-300" :class="mapStore.isFullscreen ? 'opacity-100' : 'opacity-0'">
-                  <span class="whitespace-nowrap px-1">
-                    Salir
-                  </span>
-                </div>
-                <div class="overflow-hidden min-w-0 transition-opacity duration-300" :class="!mapStore.isFullscreen ? 'opacity-100' : 'opacity-0'">
-                  <span class="whitespace-nowrap px-1">
-                    Ver mapa completo
-                  </span>
-                </div>
-              </div>
+              <span class="btn-label-wrap hidden sm:grid">
+                <span class="btn-label" :class="mapStore.isFullscreen ? 'label-visible' : 'label-hidden'">Salir</span>
+                <span class="btn-label" :class="!mapStore.isFullscreen ? 'label-visible' : 'label-hidden'">Ver mapa completo</span>
+              </span>
             </UButton>
           </UTooltip>
         </div>
@@ -293,6 +288,42 @@ const toggleFullscreen = async () => {
 }
 #mapPreviewContainer {
   pointer-events: none;
+}
+
+/* ─── Fullscreen button label animation ─────────────────────────────────────
+   Two labels are stacked in a single-column grid.
+   The active label expands from 0fr → 1fr; the inactive collapses to 0fr.
+   interpolate-size lets us transition to/from `auto` / `1fr` smoothly.
+   ─────────────────────────────────────────────────────────────────────────── */
+:root { interpolate-size: allow-keywords; }
+
+.btn-label-wrap {
+  /* Stack both labels in the same cell via subgrid-like overlap */
+  display: grid;
+  grid-template-columns: 1fr;   /* single column */
+  grid-template-rows: auto;
+  overflow: hidden;
+}
+
+.btn-label {
+  /* Both labels occupy the same grid cell */
+  grid-row: 1;
+  grid-column: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  transition:
+    max-width 0.45s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity   0.3s ease;
+}
+
+.label-visible {
+  max-width: 200px;   /* large enough for any label */
+  opacity: 1;
+}
+
+.label-hidden {
+  max-width: 0;
+  opacity: 0;
 }
 
 </style>
