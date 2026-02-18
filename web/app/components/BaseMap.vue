@@ -141,6 +141,19 @@ function updateZoom() {
   })
 }
 
+// Rotation/Pitch throttling
+let rotateFrame: number | null = null
+function updateCamera() {
+  if (rotateFrame) return
+  rotateFrame = requestAnimationFrame(() => {
+    if (mapInstance.map) {
+      mapStore.rotation = mapInstance.map.getBearing()
+      mapStore.pitch = mapInstance.map.getPitch()
+    }
+    rotateFrame = null
+  })
+}
+
 // ===== Map Event Handlers =====
 function onMapReady(map: maplibregl.Map) {
   mapStore.mapInstance = map
@@ -200,9 +213,17 @@ function setupMapListeners(mapRef: maplibregl.Map) {
   mapRef.on('moveend', () => {
     const center = mapRef.getCenter()
     const zoom = mapRef.getZoom()
+    const bearing = mapRef.getBearing()
+    const pitch = mapRef.getPitch()
     mapStore.center = [center.lng, center.lat]
     mapStore.zoom = zoom
+    mapStore.rotation = bearing
+    mapStore.pitch = pitch
   })
+
+  // Track rotation & pitch
+  mapRef.on('rotate', updateCamera)
+  mapRef.on('pitch', updateCamera)
 
   // Track zoom for dynamic marker sizing - THROTTLED
   mapRef.on('zoom', updateZoom)
@@ -232,6 +253,8 @@ watch(() => mapStore.positionEvent, (event) => {
     m.flyTo({
       center: [point.lng, point.lat],
       zoom: targetZoom,
+      bearing: event.bearing ?? m.getBearing(),
+      pitch: event.pitch ?? m.getPitch(),
       padding: p,
       duration: 800,
       essential: mapStore.forceAnimations,
@@ -244,6 +267,8 @@ watch(() => mapStore.positionEvent, (event) => {
 
     m.fitBounds(bounds, {
       padding: p,
+      bearing: event.bearing ?? m.getBearing(),
+      pitch: event.pitch ?? m.getPitch(),
       duration: 800,
       essential: mapStore.forceAnimations,
     })
@@ -362,26 +387,22 @@ defineExpose({
     />
 
     <!-- Stop Markers (hidden below zoom threshold) -->
-    <template v-if="currentZoom >= STOP_VISIBILITY_ZOOM">
-      <MapStopMarker
-        v-for="stop in (stops || [])"
-        :key="stop.id"
-        :stop="stop"
-        :state="getStopState(stop)"
-        @click="handleStopClick"
-      />
-    </template>
+    <MapStopMarker
+      v-for="stop in (stops || [])"
+      :key="stop.id"
+      :stop="stop"
+      :state="getStopState(stop)"
+      @click="handleStopClick"
+    />
 
     <!-- Vehicle Markers (hidden below zoom threshold) -->
-    <template v-if="currentZoom >= VEHICLE_VISIBILITY_ZOOM">
-      <MapVehicleMarker
-        v-for="vehicle in (vehicles || [])"
-        :key="vehicle.id"
-        :vehicle="vehicle"
-        :state="getVehicleState(vehicle)"
-        @click="handleVehicleClick"
-      />
-    </template>
+    <MapVehicleMarker
+      v-for="vehicle in (vehicles || [])"
+      :key="vehicle.id"
+      :vehicle="vehicle"
+      :state="getVehicleState(vehicle)"
+      @click="handleVehicleClick"
+    />
 
     <!-- User Location -->
     <MapUserLocationMarker

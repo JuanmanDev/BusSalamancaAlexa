@@ -19,20 +19,25 @@ function isActive(path: string) {
 }
 
 // Check if on fullscreen map page or route page (which keeps map bg)
-const isMapPage = computed(() => route.path === '/map' || route.path === '/route')
-
-// Calculate visibility for the main transition
-const showMainContent = ref(!(mapStore.isFullscreen && !isMapPage.value))
-
-
-
-watch(() => mapStore.isFullscreen, () => {
-  showMainContent.value = !(mapStore.isFullscreen && !isMapPage.value)
+const isMapPage = computed(() => {
+  return route.path === '/map' // Only the main map page keeps content? Actually if map page has overlays we might want to hide them too?
+  // User said: "on pages like lines id or stops id... content... stays visible although it shouldn't"
+  // So likely ONLY '/map' is truly a map page where fullscreen logic might differ, or maybe NO page should be exempt?
+  // But let's stick to user request: line/ and stop/ should NOT be considered map pages for this purpose.
 })
 
+// Hide main content (and default padding) when map is fullscreen
+// UNLESS we are currently animating out of fullscreen (isExitingFullscreen)
+const showMainContent = computed(() => {
+  if (mapStore.isExitingFullscreen) return true
+  // If isMapPage is false (line/stop), then !(true && !false) -> !(true) -> false (HIDDEN)
+  return !(mapStore.isFullscreen && !isMapPage.value)
+})
 
-watch(() => route.path, () => {
-  showMainContent.value = !(mapStore.isFullscreen && !isMapPage.value)
+const mainTransitionName = computed(() => {
+  // Use fade transition when exiting fullscreen so content appears smoothly
+  // but without layout shifts that break the map placeholder calculation.
+  return mapStore.isExitingFullscreen ? 'fade' : 'main-slide'
 })
 </script>
 
@@ -57,26 +62,28 @@ watch(() => route.path, () => {
       </ClientOnly>
     </div>
 
-    <!-- Header with blur (on top of map) -->
-    <header class="fixed top-0 left-0 right-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-white/10 shadow-sm transition-all duration-300">
-      <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
+    <Transition name="header-slide">
+      <header 
+        v-if="!mapStore.isFullscreen"
+        class="fixed top-0 left-0 right-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 shadow-sm"
+      >
+      <div class="container mx-auto px-4 h-16 flex items-center justify-between">
         <!-- Logo -->
-        <NuxtLink 
-          to="/" 
-          class="flex items-center gap-2 text-primary-600 dark:text-primary-400 hover:opacity-90 transition-opacity shrink-0"
-        >
-          <UIcon name="i-lucide-bus" class="w-7 h-7" />
-          <span class="text-xl font-bold hidden sm:inline text-gray-900 dark:text-white">Bus Salamanca</span>
+        <NuxtLink to="/" class="flex items-center gap-2 font-bold text-xl text-primary-600 dark:text-primary-400">
+          <UIcon name="i-lucide-bus" class="w-8 h-8" />
+          <span>BusSalamanca</span>
         </NuxtLink>
 
-        <!-- Desktop nav -->
-        <nav class="hidden md:flex items-center gap-1">
-          <NuxtLink
-            v-for="item in navItems"
-            :key="item.to"
+        <!-- Desktop Nav -->
+        <nav class="hidden md:flex items-center gap-6">
+          <NuxtLink 
+            v-for="item in navItems" 
+            :key="item.to" 
             :to="item.to"
-            class="flex items-center gap-2 px-4 py-2 rounded-lg text-gray-600 dark:text-gray-300 hover:text-primary-600 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-all"
-            :class="{ 'bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400': isActive(item.to) }"
+            class="flex items-center gap-2 px-3 py-2 rounded-lg transition-colors"
+            :class="isActive(item.to) 
+              ? 'text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/30 font-medium' 
+              : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800'"
           >
             <UIcon :name="item.icon" class="w-5 h-5" />
             <span>{{ item.label }}</span>
@@ -95,41 +102,29 @@ watch(() => route.path, () => {
         </div>
       </div>
     </header>
+    </Transition>
 
     <!-- Main content area -->
-    <Transition name="main-slide">
+    <Transition :name="mainTransitionName">
       <main 
         v-show="showMainContent"
         class="relative z-10 flex-1 pt-16 pb-20 md:pb-8 pointer-events-none"
       >
         <!-- Content wrapper - allows map to show in gaps -->
-        <div>
+        <div class="">
           <slot />
         </div>
       </main>
     </Transition>
 
-    <!-- Fullscreen map controls - separate from main content to stay visible -->
-    <Transition name="fade-slide-up">
-      <div
-        v-if="mapStore.isFullscreen && !isMapPage"
-        class="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 pointer-events-auto"
-      >
-        <button
-          class="glass-card px-6 py-3 flex items-center gap-2 hover:scale-105 transition-transform shadow-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700"
-          @click="mapStore.setFullscreen(false)"
-        >
-          <UIcon name="i-lucide-arrow-down" class="w-5 h-5" />
-          <span class="font-bold">Volver</span>
-        </button>
-      </div>
-    </Transition>
+
 
     <!-- Mobile bottom nav with blur -->
-    <nav 
-      v-if="!mapStore.isFullscreen"
-      class="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-t border-gray-200 dark:border-gray-800 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]"
-    >
+    <Transition name="nav-slide">
+      <nav 
+        v-if="!mapStore.isFullscreen"
+        class="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-t border-gray-200 dark:border-gray-800 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]"
+      >
       <div class="flex items-center justify-around py-2">
         <NuxtLink
           v-for="item in navItems"
@@ -145,6 +140,13 @@ watch(() => route.path, () => {
         </NuxtLink>
       </div>
     </nav>
+    </Transition>
+
+    <div class="fixed bottom-0 right-0 z-50">
+      paddings {{ mapStore.padding }}
+      rotation {{ mapStore.rotation }}
+      3d {{ mapStore.pitch }}
+    </div>
   </div>
 </template>
 
@@ -217,5 +219,27 @@ watch(() => route.path, () => {
 .main-slide-enter-from,
 .main-slide-leave-to {
   transform: translateY(100vh);
+}
+
+/* Header Slide Transition */
+.header-slide-enter-active,
+.header-slide-leave-active {
+  transition: transform 0.5s ease-in-out;
+}
+
+.header-slide-enter-from,
+.header-slide-leave-to {
+  transform: translateY(-100%);
+}
+
+/* Nav Slide Transition */
+.nav-slide-enter-active,
+.nav-slide-leave-active {
+  transition: transform 0.5s ease-in-out;
+}
+
+.nav-slide-enter-from,
+.nav-slide-leave-to {
+  transform: translateY(100%);
 }
 </style>

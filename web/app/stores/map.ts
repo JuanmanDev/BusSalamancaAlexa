@@ -12,6 +12,8 @@ export interface MapState {
     // Map position
     center: [number, number] // [lng, lat]
     zoom: number
+    rotation: number
+    pitch: number
 
     // Data to display
     stops: BusStop[]
@@ -31,6 +33,7 @@ export interface MapState {
     // Interactivity
     isInteractive: boolean
     isFullscreen: boolean
+    isExitingFullscreen: boolean
     showControls: boolean
     padding: { top: number; bottom: number; left: number; right: number }
     pagePadding: { top: number; bottom: number; left: number; right: number }
@@ -54,6 +57,8 @@ export interface MapPositionEvent {
     type: PositionEventType
     points: { lat: number; lng: number }[]
     zoom?: number
+    bearing?: number
+    pitch?: number
     padding?: { top: number; bottom: number; left: number; right: number }
 }
 
@@ -64,6 +69,8 @@ export const useMapStore = defineStore('map', () => {
     // Default center: Salamanca Plaza Mayor
     const center = ref<[number, number]>([-5.6635, 40.9701])
     const zoom = ref(14)
+    const rotation = ref(0)
+    const pitch = ref(0)
     const padding = ref({ top: 0, bottom: 0, left: 0, right: 0 })
     const pagePadding = ref({ top: 0, bottom: 0, left: 0, right: 0 })
 
@@ -92,8 +99,29 @@ export const useMapStore = defineStore('map', () => {
     const highlightLineId = ref<string | null>(null)
     const highlightVehicleId = ref<string | null>(null)
 
+    // Geolocation logic
+    const geolocation = useGeolocation()
+
+    const showUserLocationButton = computed(() => {
+        const userLoc = geolocation.userLocation.value
+        if (!userLoc) return false
+
+        // Calculate distance between user location and map center
+        // mapStore.center is [lng, lat]
+        const dist = geolocation.calculateDistance(
+            userLoc.lat,
+            userLoc.lng,
+            center.value[1],
+            center.value[0]
+        )
+
+        // Show only if distance is greater than 100 meters (0.1 km)
+        return dist > 0.1
+    })
+
     const isInteractive = ref(false)
     const isFullscreen = ref(false)
+    const isExitingFullscreen = ref(false)
     const showControls = ref(false)
     const forceAnimations = ref(true)
 
@@ -180,13 +208,15 @@ export const useMapStore = defineStore('map', () => {
 
     // ===== Position Actions =====
 
-    function updatePosition(points: { lat: number; lng: number }[], options: { zoom?: number, padding?: any, type?: PositionEventType } = {}) {
+    function updatePosition(points: { lat: number; lng: number }[], options: { zoom?: number, bearing?: number, pitch?: number, padding?: any, type?: PositionEventType } = {}) {
         console.log('updatePosition', points, options);
         positionEvent.value = {
             id: Date.now(),
             type: options.type || 'manual',
             points,
             zoom: options.zoom,
+            bearing: options.bearing,
+            pitch: options.pitch,
             padding: options.padding
         }
     }
@@ -223,7 +253,10 @@ export const useMapStore = defineStore('map', () => {
         if (state.isFullscreen !== undefined) isFullscreen.value = state.isFullscreen
         if (state.showControls !== undefined) showControls.value = state.showControls
         if (state.padding) padding.value = state.padding
+
         if (state.pagePadding) pagePadding.value = state.pagePadding
+        if (state.rotation !== undefined) rotation.value = state.rotation
+        if (state.pitch !== undefined) pitch.value = state.pitch
 
         // Legacy compatibility - try to map to event
         if (state.center) {
@@ -400,6 +433,8 @@ export const useMapStore = defineStore('map', () => {
         stops.value = []
         allStops.value = []
         vehicles.value = []
+        rotation.value = 0
+        pitch.value = 0
         rawVehicles.value = []
         arrivals.value = []
         highlightStopId.value = null
@@ -1074,6 +1109,8 @@ export const useMapStore = defineStore('map', () => {
         // State
         center,
         zoom,
+        rotation,
+        pitch,
         stops,
         allStops,
         rawVehicles,
@@ -1089,6 +1126,7 @@ export const useMapStore = defineStore('map', () => {
         routeDestination,
         isInteractive,
         isFullscreen,
+        isExitingFullscreen,
         showControls,
         padding,
         mapInstance,
@@ -1103,6 +1141,7 @@ export const useMapStore = defineStore('map', () => {
         showStops,
         showVehicles,
         showRoutes,
+        showUserLocationButton,
 
         // Actions
         setMapState,

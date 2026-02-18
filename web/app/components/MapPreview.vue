@@ -3,24 +3,7 @@ const mapStore = useMapStore()
 const geolocation = useGeolocation()
 const toast = useToast()
 
-const showUserLocationButton = computed(() => {
-  const userLoc = geolocation.userLocation.value
-  if (!userLoc) return false
-  
-  const center = mapStore.center
-  
-  // Calculate distance to current map center
-  // mapStore.center is [lng, lat]
-  const dist = geolocation.calculateDistance(
-    userLoc.lat, 
-    userLoc.lng, 
-    center[1], 
-    center[0]
-  )
-  
-  // Show only if distance is greater than 100 meters (0.1 km)
-  return dist > 0.1
-})
+
 
 const clickLocationButton = async () => {
   if (!geolocation.userLocation.value) {
@@ -99,53 +82,204 @@ onMounted(() => {
   mapStore.setPagePaddingFromMapPreviewContainer();
 })
 
+// Fullscreen FLIP Animation Logic
+const container = ref<HTMLElement | null>(null)
+const placeholder = ref<HTMLElement | null>(null)
+const isTransitioning = ref(false)
+const containerStyle = ref<Record<string, string>>({})
+
+const toggleFullscreen = async () => {
+  if (isTransitioning.value) return
+
+  const el = container.value
+  const place = placeholder.value
+  if (!el || !place) return
+
+  isTransitioning.value = true
+
+  if (!mapStore.isFullscreen) {
+    // ENTERING Fullscreen
+    // 1. Get initial position of the container
+    const rect = el.getBoundingClientRect()
+    
+    // 2. Set initial fixed position matching current spot
+    containerStyle.value = {
+      position: 'fixed',
+      top: `${rect.top}px`,
+      left: `${rect.left}px`,
+      width: `${rect.width}px`,
+      height: `${rect.height}px`,
+      zIndex: '60'
+    }
+
+    // 3. Trigger state change (Teleport happens)
+    mapStore.setFullscreen(true)
+
+    // 4. Force reflow/next tick to properly apply styles after teleport
+    await nextTick()
+    
+    // 5. Expand to full screen
+    // We use a small timeout to ensure the browser processes the initial fixed position frame
+    // before transitioning to the new fullscreen styles
+    requestAnimationFrame(() => {
+      containerStyle.value = {
+        position: 'fixed',
+        top: '0px',
+        left: '0px',
+        width: '100%',
+        height: '100%',
+        zIndex: '60'
+      }
+    })
+
+    // 6. Cleanup after transition
+    setTimeout(() => {
+      isTransitioning.value = false
+      // Keep style as is for fullscreen
+    }, 500)
+
+  } else {
+    // EXITING Fullscreen
+    
+    // 1. Signal that we are exiting, so layout shows the main content (and thus our placeholder)
+    mapStore.isExitingFullscreen = true
+    
+    // 2. Wait for layout to render placeholder
+    await nextTick()
+    
+    // 2b. Get target rect from placeholder (which should now be in the flow)
+    const targetRect = place.getBoundingClientRect()
+
+    // 3. Animate back to placeholder position
+    containerStyle.value = {
+      position: 'fixed',
+      top: `${targetRect.top}px`,
+      left: `${targetRect.left}px`,
+      width: `${targetRect.width}px`,
+      height: `${targetRect.height}px`,
+      zIndex: '60'
+    }
+
+    // 4. Wait for transition
+    setTimeout(async () => {
+      // 5. Reset state
+      mapStore.setFullscreen(false)
+      mapStore.isExitingFullscreen = false
+      isTransitioning.value = false
+      
+      // 6. Clear explicit styles so it reverts to relative layout
+      containerStyle.value = {}
+    }, 500)
+  }
+}
 </script>
 
 <template>
   <div class="relative w-full h-[50vh] pointer-events-none" id="mapPreviewContainer">
-    <!-- Map is in the background layer, so this container is just for layout and the button -->
+    <!-- Placeholder to keep layout space when map is fullscreen/teleported -->
+    <div ref="placeholder" class="absolute inset-0 pointer-events-none" :class="{ 'opacity-0': mapStore.isFullscreen }"></div>
+
+    <Teleport to="body" :disabled="!mapStore.isFullscreen">
+      <div 
+        ref="container"
+        
+        class="overflow-hidden pointer-events-none"
+        :class="[
+          mapStore.isFullscreen ? 'fixed z-[60]' : 'absolute inset-0',
+          isTransitioning ? 'transition-all duration-500 cubic-bezier(0.4, 0, 0.2, 1)' : ''
+        ]"
+        :style="containerStyle"
+      >
+        <!-- Button container with responsive positioning -->
+        <!-- Mobile: Bottom-Right -->
+        <!-- Desktop: Top-Right -->
+        <div class="absolute bottom-4 right-4 z-10 pointer-events-auto flex flex-col gap-2 transition-all duration-500">
+          <UTooltip :text="mapStore.isFullscreen ? 'Salir de pantalla completa' : 'Ver mapa completo'" :delay-duration="0">
+            <UButton
+              color="neutral"
+              variant="solid"
+              class="shadow-lg bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 transition-all duration-300"
+              :icon="mapStore.isFullscreen ? 'i-lucide-minimize-2' : 'i-lucide-maximize-2'"
+              @click="toggleFullscreen"
+            >
+              <div 
+                class="grid items-center transition-[grid-template-columns] duration-500 ease-in-out" 
+                :style="{ 'grid-template-columns': mapStore.isFullscreen ? '1fr 0fr' : '0fr 1fr' }"
+              >
+                <div class="overflow-hidden min-w-0 transition-opacity duration-300" :class="mapStore.isFullscreen ? 'opacity-100' : 'opacity-0'">
+                  <span class="whitespace-nowrap px-1">
+                    Salir
+                  </span>
+                </div>
+                <div class="overflow-hidden min-w-0 transition-opacity duration-300" :class="!mapStore.isFullscreen ? 'opacity-100' : 'opacity-0'">
+                  <span class="whitespace-nowrap px-1">
+                    Ver mapa completo
+                  </span>
+                </div>
+              </div>
+            </UButton>
+          </UTooltip>
+        </div>
     
-    <!-- Button container with responsive positioning -->
-    <!-- Mobile: Bottom-Right -->
-    <!-- Desktop: Top-Right -->
-    <div class="absolute bottom-4 right-4 z-10 pointer-events-auto">
-      <button
-        class="bg-white hover:bg-gray-100 text-gray-700 px-4 py-2 rounded-lg shadow-lg flex items-center gap-2 text-sm transition-all hover:scale-105"
-        @click="mapStore.setFullscreen(true)"
-      >
-        <UIcon name="i-lucide-maximize-2" class="w-4 h-4" />
-        <span>Ver mapa completo</span>
-      </button>
-    </div>
-
-    <!-- Zoom controls: Bottom-Left -->
-    <div class="absolute bottom-4 left-4 z-10 pointer-events-auto flex flex-row gap-2">
-      <button
-        class="bg-white hover:bg-gray-100 text-gray-700 p-2 rounded-lg shadow-lg flex items-center justify-center transition-all hover:scale-105"
-        @click="zoomOutAnimated()"
-        title="Alejar"
-      >
-        <UIcon name="i-lucide-minus" class="w-5 h-5" />
-      </button>
-      <button
-        class="bg-white hover:bg-gray-100 text-gray-700 p-2 rounded-lg shadow-lg flex items-center justify-center transition-all hover:scale-105"
-        @click="zoomInAnimated()"
-        title="Acercar"
-      >
-        <UIcon name="i-lucide-plus" class="w-5 h-5" />
-      </button>
-
-      <!-- Add another button to center on current location by the user -->
-      <button
-        v-if="showUserLocationButton"
-        class="bg-white hover:bg-gray-100 text-gray-700 p-2 rounded-lg shadow-lg flex items-center justify-center transition-all hover:scale-105"
-        @click="clickLocationButton()"
-        title="Centrar en Salamanca"
-      >
-        <UIcon name="i-lucide-map-pin" class="w-5 h-5" />
-      </button>
-
-    </div>
+        <!-- Zoom controls: Bottom-Left -->
+        <div class="absolute bottom-4 left-4 z-10 pointer-events-auto flex flex-row gap-2 transition-all duration-500">
+          <UTooltip text="Alejar" :delay-duration="0">
+            <UButton
+              color="neutral"
+              variant="solid"
+              icon="i-lucide-minus"
+              class="shadow-lg bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200"
+              @click="zoomOutAnimated()"
+            />
+          </UTooltip>
+          
+          <UTooltip text="Acercar" :delay-duration="0">
+            <UButton
+              color="neutral"
+              variant="solid"
+              icon="i-lucide-plus"
+              class="shadow-lg bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200"
+              @click="zoomInAnimated()"
+            />
+          </UTooltip>
+    
+          <!-- Add another button to center on current location by the user -->
+          <UTooltip text="Centrar en mi ubicación" v-if="mapStore.showUserLocationButton" :delay-duration="0">
+            <UButton
+              color="neutral"
+              variant="solid"
+              icon="i-lucide-map-pin"
+              class="shadow-lg bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200"
+              @click="clickLocationButton()"
+            />
+          </UTooltip>
+    
+          <!-- Reset Bearing (North) -->
+          <UTooltip text="Restablecer Norte" v-if="Math.abs(mapStore.rotation) > 5" :delay-duration="0">
+            <UButton
+              color="neutral"
+              variant="solid"
+              icon="i-lucide-compass"
+              class="shadow-lg bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200"
+              @click="mapStore.mapInstance?.easeTo({ bearing: 0, essential: true })"
+              :style="{ transform: `rotate(${mapStore.rotation * -1}deg)` }"
+            />
+          </UTooltip>
+    
+          <!-- Reset Pitch (3D) -->
+          <UTooltip text="Restablecer vista 2D" v-if="mapStore.pitch > 5" :delay-duration="0">
+            <UButton
+              color="neutral"
+              variant="solid"
+              icon="i-lucide-box"
+              class="shadow-lg bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200"
+              @click="mapStore.mapInstance?.easeTo({ pitch: 0, essential: true })"
+            />
+          </UTooltip>
+    
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
