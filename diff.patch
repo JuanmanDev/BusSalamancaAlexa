@@ -1,0 +1,1472 @@
+﻿diff --git a/web/app/components/MapPreview.vue b/web/app/components/MapPreview.vue
+index 0780562..35fda6c 100644
+--- a/web/app/components/MapPreview.vue
++++ b/web/app/components/MapPreview.vue
+@@ -1,8 +1,10 @@
+ <script setup lang="ts">
+ const props = withDefaults(defineProps<{
+   height?: string
++  isFallback?: boolean
+ }>(), {
+-  height: 'h-[50vh]'
++  height: 'h-[50vh]',
++  isFallback: false
+ })
+ 
+ const mapStore = useMapStore()
+@@ -82,7 +84,31 @@ const zoomOutAnimated = () => {
+ }
+ 
+ onMounted(() => {
++  if (!props.isFallback) {
++    mapStore.registerMapPreview()
++  }
+   mapStore.setPagePaddingFromMapPreviewContainer();
++
++  // If we're mounted while already in fullscreen (fallback MapPreview case),
++  // immediately apply fullscreen styles since the watcher won't catch it
++  if (mapStore.isFullscreen) {
++    nextTick(() => {
++      containerStyle.value = {
++        position: 'fixed',
++        top: '0px',
++        left: '0px',
++        width: '100%',
++        height: '100%',
++        zIndex: '60'
++      }
++    })
++  }
++})
++
++onUnmounted(() => {
++  if (!props.isFallback) {
++    mapStore.unregisterMapPreview()
++  }
+ })
+ 
+ // Fullscreen FLIP Animation Logic
+@@ -90,6 +116,33 @@ const container = ref<HTMLElement | null>(null)
+ const placeholder = ref<HTMLElement | null>(null)
+ const isTransitioning = ref(false)
+ const containerStyle = ref<Record<string, string>>({})
++// Track whether WE triggered the fullscreen change (vs external trigger like stop/vehicle click)
++const internalToggle = ref(false)
++
++// Watch for EXTERNAL fullscreen activations (e.g. stop/vehicle click calling setFullscreen directly)
++watch(() => mapStore.isFullscreen, (newVal) => {
++  if (internalToggle.value) {
++    // We triggered this ourselves via toggleFullscreen ΓÇö skip
++    internalToggle.value = false
++    return
++  }
++
++  if (newVal) {
++    // External entry into fullscreen ΓÇö immediately set fullscreen styles (no FLIP animation,
++    // since the element is already teleported/repositioned by the time this watcher runs)
++    containerStyle.value = {
++      position: 'fixed',
++      top: '0px',
++      left: '0px',
++      width: '100%',
++      height: '100%',
++      zIndex: '60'
++    }
++  } else {
++    // External exit from fullscreen ΓÇö reset styles
++    containerStyle.value = {}
++  }
++})
+ 
+ const toggleFullscreen = async () => {
+   if (isTransitioning.value) return
+@@ -99,6 +152,7 @@ const toggleFullscreen = async () => {
+   if (!el || !place) return
+ 
+   isTransitioning.value = true
++  internalToggle.value = true
+ 
+   if (!mapStore.isFullscreen) {
+     // ENTERING Fullscreen
+@@ -147,8 +201,10 @@ const toggleFullscreen = async () => {
+     // 1. Signal that we are exiting, so layout shows the main content (and thus our placeholder)
+     mapStore.isExitingFullscreen = true
+     
+-    // 2. Wait for layout to render placeholder
++    // 2. Wait for layout to render placeholder, then another frame for layout to settle
+     await nextTick()
++    await new Promise(resolve => requestAnimationFrame(resolve))
++    await new Promise(resolve => requestAnimationFrame(resolve))
+     
+     // 2b. Get target rect from placeholder (which should now be in the flow)
+     const targetRect = place.getBoundingClientRect()
+diff --git a/web/app/layouts/default.vue b/web/app/layouts/default.vue
+index 7559a7e..34e6852 100644
+--- a/web/app/layouts/default.vue
++++ b/web/app/layouts/default.vue
+@@ -108,9 +108,9 @@ const mainTransitionName = computed(() => {
+     <Transition :name="mainTransitionName">
+       <main 
+         v-show="showMainContent"
+-        class="relative z-10 flex flex-col flex-1 md:pb-8 pointer-events-none transition-[padding] duration-500 ease-in-out"
++        class="relative z-10 flex flex-col flex-1 pointer-events-none transition-[padding] duration-500 ease-in-out"
+         :class="{
+-          'pt-16 pb-20': !mapStore.isFullscreen,
++          'pt-16 pb-20 md:pb-0': !mapStore.isFullscreen,
+           'pt-0 pb-0 h-screen': mapStore.isFullscreen
+         }"
+       >
+@@ -121,7 +121,9 @@ const mainTransitionName = computed(() => {
+       </main>
+     </Transition>
+ 
+-
++    <!-- Fallback MapPreview for pages without their own (e.g., lines, stops lists) -->
++    <!-- Provides fullscreen controls (exit button, zoom, location) when no page-level MapPreview exists -->
++    <MapPreview v-if="mapStore.isFullscreen && !mapStore.hasPageMapPreview" :is-fallback="true" />
+ 
+     <!-- Mobile bottom nav with blur -->
+     <Transition name="nav-slide">
+diff --git a/web/app/pages/index.vue b/web/app/pages/index.vue
+index 8acb3fe..b0c9747 100644
+--- a/web/app/pages/index.vue
++++ b/web/app/pages/index.vue
+@@ -92,236 +92,242 @@ onMounted(async () => {
+ </script>
+ 
+ <template>
+-  <div class="max-w-3xl mx-auto px-4 py-6 space-y-6 " id="mapPreviewContainer__">
+-    <!-- Hero section -->
+-    <div class="glass-card text-center py-6 px-4 pointer-events-auto">
+-      <h1 class="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-2">
+-        Bus Salamanca
+-      </h1>
+-      <p class="text-gray-600 dark:text-gray-400 mb-6">
+-        Consulta tiempos de llegada en tiempo real
+-      </p>
++  <!-- Responsive layout: mobile=vertical, md+=side-by-side (map left, content right) -->
++  <div class="md:flex md:min-h-full">
++    <!-- MapPreview: inline on mobile, left sticky on desktop -->
++    <div class="md:w-1/2 lg:w-[45%] md:sticky md:top-16 md:h-[calc(100vh-4rem)] shrink-0 md:order-first">
++      <MapPreview height="h-[50vh] md:h-full" />
+     </div>
+-    
+-    <!-- Map preview spacer - ensures minimum height for map visibility -->
+-    <MapPreview />
+ 
+-    <!-- Loading state -->
+-    <div v-if="isLoading" class="glass-card p-6">
+-      <LoadingSpinner size="lg" text="Cargando datos..." />
+-    </div>
++    <!-- Content (right side on desktop, full width on mobile) -->
++    <div class="flex-1 px-4 py-6 space-y-6 pointer-events-auto" id="mapPreviewContainer__">
++      <!-- Hero section -->
++      <div class="glass-card text-center py-6 px-4">
++        <h1 class="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-2">
++          Bus Salamanca
++        </h1>
++        <p class="text-gray-600 dark:text-gray-400 mb-6">
++          Consulta tiempos de llegada en tiempo real
++        </p>
++      </div>
+ 
+-    <!-- Favorites -->
+-    <div 
+-      v-if="storage.favoriteStops.value.length > 0 || storage.favoriteLines.value.length > 0"
+-      class="glass-card p-5"
+-    >
+-      <div class="flex items-center gap-2 mb-4">
+-        <UIcon name="i-lucide-star" class="w-5 h-5 text-amber-500" />
+-        <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Favoritos</h2>
++      <!-- Loading state -->
++      <div v-if="isLoading" class="glass-card p-6">
++        <LoadingSpinner size="lg" text="Cargando datos..." />
+       </div>
+ 
+-      <!-- Favorite stops -->
+-      <div v-if="storage.favoriteStops.value.length > 0" class="mb-4">
+-        <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Paradas</h3>
+-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+-          <NuxtLink
+-            v-for="fav in storage.favoriteStops.value"
+-            :key="`stop-${fav.id}`"
+-            :to="`/stop/${fav.id}`"
+-            class="bg-white/80 dark:bg-gray-800/80 rounded-lg p-3 hover:bg-white dark:hover:bg-gray-800 transition-all"
+-            :style="{ viewTransitionName: `stop-${fav.id}` }"
+-          >
+-            <div class="flex items-center gap-3">
+-              <div class="w-10 h-10 bg-primary-100 dark:bg-primary-900/50 rounded-lg flex items-center justify-center shrink-0">
+-                <span class="font-bold text-primary-600 dark:text-primary-400 text-sm">{{ fav.id }}</span>
++      <!-- Favorites -->
++      <div 
++        v-if="storage.favoriteStops.value.length > 0 || storage.favoriteLines.value.length > 0"
++        class="glass-card p-5"
++      >
++        <div class="flex items-center gap-2 mb-4">
++          <UIcon name="i-lucide-star" class="w-5 h-5 text-amber-500" />
++          <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Favoritos</h2>
++        </div>
++
++        <!-- Favorite stops -->
++        <div v-if="storage.favoriteStops.value.length > 0" class="mb-4">
++          <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Paradas</h3>
++          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
++            <NuxtLink
++              v-for="fav in storage.favoriteStops.value"
++              :key="`stop-${fav.id}`"
++              :to="`/stop/${fav.id}`"
++              class="bg-white/80 dark:bg-gray-800/80 rounded-lg p-3 hover:bg-white dark:hover:bg-gray-800 transition-all"
++              :style="{ viewTransitionName: `stop-${fav.id}` }"
++            >
++              <div class="flex items-center gap-3">
++                <div class="w-10 h-10 bg-primary-100 dark:bg-primary-900/50 rounded-lg flex items-center justify-center shrink-0">
++                  <span class="font-bold text-primary-600 dark:text-primary-400 text-sm">{{ fav.id }}</span>
++                </div>
++                <div class="flex-1 min-w-0">
++                  <p class="font-medium text-gray-900 dark:text-white truncate text-sm">{{ fav.name }}</p>
++                </div>
++                <UIcon name="i-lucide-chevron-right" class="w-4 h-4 text-gray-400 shrink-0" />
+               </div>
+-              <div class="flex-1 min-w-0">
+-                <p class="font-medium text-gray-900 dark:text-white truncate text-sm">{{ fav.name }}</p>
++            </NuxtLink>
++          </div>
++        </div>
++
++        <!-- Favorite lines -->
++        <div v-if="storage.favoriteLines.value.length > 0">
++          <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">L├¡neas</h3>
++          <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
++            <NuxtLink
++              v-for="fav in storage.favoriteLines.value"
++              :key="`line-${fav.id}`"
++              :to="`/line/${fav.id}`"
++              class="bg-white/80 dark:bg-gray-800/80 rounded-lg p-3 hover:bg-white dark:hover:bg-gray-800 transition-all"
++              :style="{ viewTransitionName: `line-${fav.id}` }"
++            >
++              <div class="flex items-center gap-3">
++                <div 
++                  class="w-10 h-10 rounded-lg flex items-center justify-center text-white shadow-sm shrink-0"
++                  :class="getLineColor(fav.id)"
++                >
++                  <span class="text-lg font-bold">{{ fav.id }}</span>
++                </div>
++                <p class="text-xs text-gray-500 truncate flex-1">{{ fav.name }}</p>
+               </div>
+-              <UIcon name="i-lucide-chevron-right" class="w-4 h-4 text-gray-400 shrink-0" />
+-            </div>
+-          </NuxtLink>
++            </NuxtLink>
++          </div>
+         </div>
+       </div>
+ 
+-      <!-- Favorite lines -->
+-      <div v-if="storage.favoriteLines.value.length > 0">
+-        <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">L├¡neas</h3>
+-        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+-          <NuxtLink
+-            v-for="fav in storage.favoriteLines.value"
+-            :key="`line-${fav.id}`"
+-            :to="`/line/${fav.id}`"
+-            class="bg-white/80 dark:bg-gray-800/80 rounded-lg p-3 hover:bg-white dark:hover:bg-gray-800 transition-all"
+-            :style="{ viewTransitionName: `line-${fav.id}` }"
++      <!-- Nearby stops section with animations -->
++      <div class="glass-card p-5 overflow-hidden">
++        <Transition name="height-fade" mode="out-in">
++          <!-- Location loading state -->
++          <div 
++            v-if="locationState === 'locating'"
++            key="loading"
++            class="text-center py-4"
+           >
+-            <div class="flex items-center gap-3">
+-              <div 
+-                class="w-10 h-10 rounded-lg flex items-center justify-center text-white shadow-sm shrink-0"
+-                :class="getLineColor(fav.id)"
+-              >
+-                <span class="text-lg font-bold">{{ fav.id }}</span>
++            <div class="flex flex-col items-center justify-center gap-3">
++              <div class="relative">
++                <UIcon 
++                  name="i-lucide-navigation" 
++                  class="w-10 h-10 text-primary-500 animate-bounce"
++                />
++                <div class="absolute inset-0 w-10 h-10 rounded-full bg-primary-500/30 animate-ping" />
+               </div>
+-              <p class="text-xs text-gray-500 truncate flex-1">{{ fav.name }}</p>
++              <p class="text-gray-600 dark:text-gray-400 font-medium">
++                Obteniendo ubicaci├│n...
++              </p>
+             </div>
+-          </NuxtLink>
+-        </div>
+-      </div>
+-    </div>
++          </div>
+ 
+-    <!-- Nearby stops section with animations -->
+-    <div class="glass-card p-5 overflow-hidden">
+-      <Transition name="height-fade" mode="out-in">
+-        <!-- Location loading state -->
+-        <div 
+-          v-if="locationState === 'locating'"
+-          key="loading"
+-          class="text-center py-4"
+-        >
+-          <div class="flex flex-col items-center justify-center gap-3">
+-            <div class="relative">
+-              <UIcon 
+-                name="i-lucide-navigation" 
+-                class="w-10 h-10 text-primary-500 animate-bounce"
+-              />
+-              <div class="absolute inset-0 w-10 h-10 rounded-full bg-primary-500/30 animate-ping" />
++          <!-- Nearby stops list -->
++          <div 
++            v-else-if="locationState === 'found' && nearbyStops.length > 0"
++            key="list"
++          >
++            <div class="flex items-center gap-2 mb-4">
++              <UIcon name="i-lucide-navigation" class="w-5 h-5 text-primary-500" />
++              <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Paradas cercanas</h2>
++              <span class="text-xs text-gray-500">(m├ís cercanas primero)</span>
++            </div>
++            <BusStops
++              :stops="nearbyStops"
++              :show-distance="true"
++              :show-favorite="true"
++              :show-lines="true"
++              @select="goToStop"
++              @toggle-favorite="toggleFavoriteStop"
++            />
++          </div>
++
++          <!-- No nearby stops found -->
++          <div 
++            v-else-if="locationState === 'found' && nearbyStops.length === 0"
++            key="empty"
++          >
++            <div class="text-center py-4">
++              <UIcon name="i-lucide-map-pin-off" class="w-10 h-10 mx-auto text-gray-400 mb-3" />
++              <p class="text-gray-600 dark:text-gray-400">No hay paradas en un radio de 500m</p>
+             </div>
+-            <p class="text-gray-600 dark:text-gray-400 font-medium">
+-              Obteniendo ubicaci├│n...
++          </div>
++
++          <!-- Permission denied -->
++          <div 
++            v-else-if="locationState === 'denied'"
++            key="denied"
++            class="text-center py-4"
++          >
++            <UIcon name="i-lucide-x-circle" class="w-10 h-10 mx-auto text-red-500 mb-3" />
++            <h3 class="font-semibold text-gray-900 dark:text-white mb-2">Acceso denegado</h3>
++            <p class="text-sm text-gray-600 dark:text-gray-400">
++              Activa el permiso de ubicaci├│n en tu navegador
+             </p>
+           </div>
+-        </div>
+ 
+-        <!-- Nearby stops list -->
+-        <div 
+-          v-else-if="locationState === 'found' && nearbyStops.length > 0"
+-          key="list"
+-        >
+-          <div class="flex items-center gap-2 mb-4">
+-            <UIcon name="i-lucide-navigation" class="w-5 h-5 text-primary-500" />
+-            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Paradas cercanas</h2>
+-            <span class="text-xs text-gray-500">(m├ís cercanas primero)</span>
++          <!-- Request location button -->
++          <div 
++            v-else
++            key="request"
++            class="text-center py-4"
++          >
++            <UIcon name="i-lucide-map-pin" class="w-10 h-10 mx-auto text-primary-500 mb-3" />
++            <h3 class="font-semibold text-gray-900 dark:text-white mb-2">Activa tu ubicaci├│n</h3>
++            <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
++              Encuentra las paradas m├ís cercanas
++            </p>
++            <UButton icon="i-lucide-navigation" @click="handleRequestLocation">
++              Activar ubicaci├│n
++            </UButton>
+           </div>
+-          <BusStops
+-            :stops="nearbyStops"
+-            :show-distance="true"
+-            :show-favorite="true"
+-            :show-lines="true"
+-            @select="goToStop"
+-            @toggle-favorite="toggleFavoriteStop"
+-          />
+-        </div>
++        </Transition>
++      </div>
+ 
+-        <!-- No nearby stops found -->
+-        <div 
+-          v-else-if="locationState === 'found' && nearbyStops.length === 0"
+-          key="empty"
+-        >
+-          <div class="text-center py-4">
+-            <UIcon name="i-lucide-map-pin-off" class="w-10 h-10 mx-auto text-gray-400 mb-3" />
+-            <p class="text-gray-600 dark:text-gray-400">No hay paradas en un radio de 500m</p>
++      <!-- Recent -->
++      <div v-if="enhancedRecents.length > 0" class="glass-card p-5">
++        <div class="flex items-center justify-between mb-4">
++          <div class="flex items-center gap-2">
++            <UIcon name="i-lucide-clock" class="w-5 h-5 text-gray-400" />
++            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Recientes</h2>
+           </div>
++          <button 
++            class="text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
++            @click="storage.clearRecents"
++          >
++            Limpiar
++          </button>
+         </div>
+-
+-        <!-- Permission denied -->
+-        <div 
+-          v-else-if="locationState === 'denied'"
+-          key="denied"
+-          class="text-center py-4"
+-        >
+-          <UIcon name="i-lucide-x-circle" class="w-10 h-10 mx-auto text-red-500 mb-3" />
+-          <h3 class="font-semibold text-gray-900 dark:text-white mb-2">Acceso denegado</h3>
+-          <p class="text-sm text-gray-600 dark:text-gray-400">
+-            Activa el permiso de ubicaci├│n en tu navegador
+-          </p>
++        <div class="space-y-2">
++          <NuxtLink
++            v-for="recent in enhancedRecents"
++            :key="`${recent.type}-${recent.id}`"
++            :to="recent.type === 'stop' ? `/stop/${recent.id}` : `/line/${recent.id}`"
++            class="flex items-center gap-3 bg-white/80 dark:bg-gray-800/80 rounded-lg px-4 py-3 hover:bg-white dark:hover:bg-gray-800 transition-all"
++          >
++            <div 
++              v-if="recent.type === 'line'"
++              class="w-10 h-10 rounded-lg flex items-center justify-center text-white shadow-sm shrink-0"
++              :class="getLineColor(recent.id)"
++            >
++              <span class="font-bold">{{ recent.id }}</span>
++            </div>
++            <div 
++              v-else
++              class="w-10 h-10 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center shrink-0"
++            >
++              <UIcon name="i-lucide-map-pin" class="w-5 h-5 text-gray-500" />
++            </div>
++            <div class="flex-1 min-w-0">
++              <p class="text-sm font-medium text-gray-900 dark:text-white truncate">
++                {{ recent.type === 'stop' ? recent.destination : recent.name }}
++              </p>
++              <p class="text-xs text-gray-500 truncate">
++                {{ recent.type === 'stop' ? `Parada ${recent.id}` : `L├¡nea ${recent.id}` }}
++              </p>
++            </div>
++            <UIcon name="i-lucide-chevron-right" class="w-4 h-4 text-gray-400 shrink-0" />
++          </NuxtLink>
+         </div>
++      </div>
+ 
+-        <!-- Request location button -->
+-        <div 
+-          v-else
+-          key="request"
+-          class="text-center py-4"
++      <!-- Quick actions -->
++      <div class="grid grid-cols-2 gap-4">
++        <NuxtLink
++          to="/lines"
++          class="bg-gradient-to-br from-primary-500 to-primary-600 rounded-xl p-6 text-white shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all"
+         >
+-          <UIcon name="i-lucide-map-pin" class="w-10 h-10 mx-auto text-primary-500 mb-3" />
+-          <h3 class="font-semibold text-gray-900 dark:text-white mb-2">Activa tu ubicaci├│n</h3>
+-          <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+-            Encuentra las paradas m├ís cercanas
+-          </p>
+-          <UButton icon="i-lucide-navigation" @click="handleRequestLocation">
+-            Activar ubicaci├│n
+-          </UButton>
+-        </div>
+-      </Transition>
+-    </div>
++          <UIcon name="i-lucide-route" class="w-8 h-8 mb-3" />
++          <h3 class="font-semibold">Todas las l├¡neas</h3>
++          <p class="text-sm text-white/80">Ver itinerarios</p>
++        </NuxtLink>
+ 
+-    <!-- Recent -->
+-    <div v-if="enhancedRecents.length > 0" class="glass-card p-5">
+-      <div class="flex items-center justify-between mb-4">
+-        <div class="flex items-center gap-2">
+-          <UIcon name="i-lucide-clock" class="w-5 h-5 text-gray-400" />
+-          <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Recientes</h2>
+-        </div>
+-        <button 
+-          class="text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+-          @click="storage.clearRecents"
+-        >
+-          Limpiar
+-        </button>
+-      </div>
+-      <div class="space-y-2">
+         <NuxtLink
+-          v-for="recent in enhancedRecents"
+-          :key="`${recent.type}-${recent.id}`"
+-          :to="recent.type === 'stop' ? `/stop/${recent.id}` : `/line/${recent.id}`"
+-          class="flex items-center gap-3 bg-white/80 dark:bg-gray-800/80 rounded-lg px-4 py-3 hover:bg-white dark:hover:bg-gray-800 transition-all"
++          to="/map"
++          class="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl p-6 text-white shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all"
+         >
+-          <div 
+-            v-if="recent.type === 'line'"
+-            class="w-10 h-10 rounded-lg flex items-center justify-center text-white shadow-sm shrink-0"
+-            :class="getLineColor(recent.id)"
+-          >
+-            <span class="font-bold">{{ recent.id }}</span>
+-          </div>
+-          <div 
+-            v-else
+-            class="w-10 h-10 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center shrink-0"
+-          >
+-            <UIcon name="i-lucide-map-pin" class="w-5 h-5 text-gray-500" />
+-          </div>
+-          <div class="flex-1 min-w-0">
+-            <p class="text-sm font-medium text-gray-900 dark:text-white truncate">
+-              {{ recent.type === 'stop' ? recent.destination : recent.name }}
+-            </p>
+-            <p class="text-xs text-gray-500 truncate">
+-              {{ recent.type === 'stop' ? `Parada ${recent.id}` : `L├¡nea ${recent.id}` }}
+-            </p>
+-          </div>
+-          <UIcon name="i-lucide-chevron-right" class="w-4 h-4 text-gray-400 shrink-0" />
++          <UIcon name="i-lucide-map" class="w-8 h-8 mb-3" />
++          <h3 class="font-semibold">Ver mapa</h3>
++          <p class="text-sm text-white/80">Paradas y buses</p>
+         </NuxtLink>
+       </div>
+     </div>
+-
+-    <!-- Quick actions -->
+-    <div class="grid grid-cols-2 gap-4">
+-      <NuxtLink
+-        to="/lines"
+-        class="bg-gradient-to-br from-primary-500 to-primary-600 rounded-xl p-6 text-white shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all"
+-      >
+-        <UIcon name="i-lucide-route" class="w-8 h-8 mb-3" />
+-        <h3 class="font-semibold">Todas las l├¡neas</h3>
+-        <p class="text-sm text-white/80">Ver itinerarios</p>
+-      </NuxtLink>
+-
+-      <NuxtLink
+-        to="/map"
+-        class="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl p-6 text-white shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all"
+-      >
+-        <UIcon name="i-lucide-map" class="w-8 h-8 mb-3" />
+-        <h3 class="font-semibold">Ver mapa</h3>
+-        <p class="text-sm text-white/80">Paradas y buses</p>
+-      </NuxtLink>
+-    </div>
+   </div>
+ </template>
+ 
+diff --git a/web/app/pages/line/[id].vue b/web/app/pages/line/[id].vue
+index cfb6932..a5ebe94 100644
+--- a/web/app/pages/line/[id].vue
++++ b/web/app/pages/line/[id].vue
+@@ -13,15 +13,17 @@ const { data: allLines, status: linesStatus } = await useBusLines()
+ 
+ const { data: allStops, status: stopsStatus } = await useBusStops()
+ 
+-const lineInfo = computed(() => 
+-  allLines.value?.find(l => l.id === lineId.value)
+-)
++const lineInfo = computed(() => {
++  const lines = allLines.value as BusLine[] | null
++  return lines?.find(l => l.id === lineId.value)
++})
+ 
+ // Stops on this line - filter by stops that include this lineId
+ const lineStops = computed((): BusStop[] => {
+-  if (!allStops.value) return []
++  const stops = allStops.value as BusStop[] | null
++  if (!stops) return []
+   
+-  const filtered = allStops.value.filter(s => {
++  const filtered = stops.filter(s => {
+     if (!s.lines || !Array.isArray(s.lines)) return false
+     return s.lines.includes(lineId.value)
+   })
+@@ -77,30 +79,29 @@ onMounted(async () => {
+     storage.addRecent('line', lineId.value, lineInfo.value.name)
+   }
+   await mapStore.setContextToLinePage(lineId.value)
++  
++  // Ensure we fetch stops if not present (for the computed)
++  const stops = allStops.value as BusStop[] | null
++  if (!stops || stops.length === 0) {
++    const busService = useBusService()
++    allStops.value = (await busService.fetchStops()) as any
++  }
+ })
+ 
+ // Handle line ID changes (navigation between lines)
+ watch(lineId, async (newId) => {
+-  const line = allLines.value?.find(l => l.id === newId)
++  const lines = allLines.value as BusLine[] | null
++  const line = lines?.find(l => l.id === newId)
+   if (line) {
+     storage.addRecent('line', newId, line.name)
+-  } else {
+-    console.error(`L├¡nea ${newId} no encontrada`)
+   }
+   await mapStore.setContextToLinePage(newId)
+-})
+ 
+-onMounted(async () => {
+-  if (lineInfo.value) {
+-    storage.addRecent('line', lineId.value, lineInfo.value.name)
+-  }
+-  // This clears context (and lines), fetches stops, vehicles AND draws the route line
+-  await mapStore.setContextToLinePage(lineId.value)
+-  
+   // Ensure we fetch stops if not present (for the computed)
+-  if (!allStops.value || allStops.value.length === 0) {
+-      const busService = useBusService()
+-      allStops.value = await busService.fetchStops()
++  const stops2 = allStops.value as BusStop[] | null
++  if (!stops2 || stops2.length === 0) {
++    const busService = useBusService()
++    allStops.value = (await busService.fetchStops()) as any
+   }
+ })
+ 
+@@ -110,144 +111,147 @@ const isLoading = computed(() =>
+ </script>
+ 
+ <template>
+-  <div class="max-w-3xl mx-auto flex flex-col md:block">
+-    <!-- Map Preview (Order 1 on Mobile, 2 on Desktop handled via classes mainly but here we want content first on desktop, map first on mobile) -->
+-    <!-- Mobile: Map (Top) -> Content
+-      Desktop: Content -> Map (Bottom)
+-    -->
+-    <MapPreview />
+-
+-    <!-- Content -->
+-    <div class="px-4 py-6 space-y-4">
+-
+-      <!-- Loading -->
+-      <div v-if="isLoading" class="glass-card p-6">
+-        <LoadingSpinner size="lg" text="Cargando l├¡nea..." />
+-      </div>
++  <!-- Responsive layout: mobile=vertical, md+=side-by-side (map left, content right) -->
++  <div class="md:flex md:min-h-full">
++    <!-- MapPreview: inline on mobile, left sticky on desktop -->
++    <div class="md:w-1/2 lg:w-[45%] md:sticky md:top-16 md:h-[calc(100vh-4rem)] shrink-0 md:order-first">
++      <MapPreview height="h-[50vh] md:h-full" />
++    </div>
+ 
+-      <template v-else>
+-        <!-- Header card -->
+-        <div class="glass-card p-5">
+-          <!-- Breadcrumb -->
+-          <div class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 mb-3 relative">
+-            <NuxtLink to="/lines" class="hover:text-primary-500 transition-colors">L├¡neas</NuxtLink>
+-            <UIcon name="i-lucide-chevron-right" class="w-4 h-4" />
+-            <span>L├¡nea {{ lineId }}</span>
+-
+-            <button
+-              class="p-3 rounded-xl transition-all bg-white/80 dark:bg-gray-800/80 hover:bg-white dark:hover:bg-gray-800 shrink-0 absolute right-0 top-0"
+-              :class="isFavorite ? 'text-amber-500' : 'text-gray-400'"
+-              @click="toggleFavorite"
+-            >
+-              <UIcon 
+-                name="i-lucide-star"
+-                :class="isFavorite ? 'fill-current' : ''"
+-                class="w-5 h-5"
+-              />
+-            </button>
+-          </div>
++    <!-- Content (right side on desktop) -->
++    <div class="flex-1 flex flex-col pointer-events-auto">
++      <!-- Content -->
++      <div class="px-4 py-4 space-y-4 flex-1 flex flex-col">
+ 
+-          <!-- Line info -->
+-          <div class="flex items-start gap-4">
+-            <div 
+-              class="w-16 h-16 rounded-2xl flex items-center justify-center text-white shadow-lg shrink-0"
+-              :class="getLineColor(lineId)"
+-              :style="{ viewTransitionName: `line-${lineId}` }"
+-            >
+-              <span 
+-                class="text-3xl font-bold"
+-                :style="{ viewTransitionName: `line-number-${lineId}` }"
++        <!-- Loading -->
++        <div v-if="isLoading" class="glass-card p-6">
++          <LoadingSpinner size="lg" text="Cargando l├¡nea..." />
++        </div>
++
++        <template v-else>
++          <!-- Header card -->
++          <div class="glass-card p-5">
++            <!-- Breadcrumb -->
++            <div class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 mb-3 relative">
++              <NuxtLink to="/lines" class="hover:text-primary-500 transition-colors">L├¡neas</NuxtLink>
++              <UIcon name="i-lucide-chevron-right" class="w-4 h-4" />
++              <span>L├¡nea {{ lineId }}</span>
++
++              <button
++                class="p-3 rounded-xl transition-all bg-white/80 dark:bg-gray-800/80 hover:bg-white dark:hover:bg-gray-800 shrink-0 absolute right-0 top-0"
++                :class="isFavorite ? 'text-amber-500' : 'text-gray-400'"
++                @click="toggleFavorite"
+               >
+-                {{ lineId }}
+-              </span>
++                <UIcon 
++                  name="i-lucide-star"
++                  :class="isFavorite ? 'fill-current' : ''"
++                  class="w-5 h-5"
++                />
++              </button>
+             </div>
+ 
+-            <div class="flex-1 min-w-0">
+-              <template v-if="routeParts">
++            <!-- Line info -->
++            <div class="flex items-start gap-4">
++              <div 
++                class="w-16 h-16 rounded-2xl flex items-center justify-center text-white shadow-lg shrink-0"
++                :class="getLineColor(lineId)"
++                :style="{ viewTransitionName: `line-${lineId}` }"
++              >
++                <span 
++                  class="text-3xl font-bold"
++                  :style="{ viewTransitionName: `line-number-${lineId}` }"
++                >
++                  {{ lineId }}
++                </span>
++              </div>
++
++              <div class="flex-1 min-w-0">
++                <template v-if="routeParts">
++                  <p 
++                    class="text-xl font-bold text-gray-900 dark:text-white"
++                    :style="{ viewTransitionName: `line-name-${lineId}` }"
++                  >
++                    {{ routeParts.origin }}
++                  </p>
++                  <div class="flex items-center gap-2 text-gray-500 dark:text-gray-400">
++                    <UIcon name="i-lucide-arrow-right" class="w-4 h-4 shrink-0" />
++                    <p class="truncate">{{ routeParts.destination }}</p>
++                  </div>
++                </template>
+                 <p 
++                  v-else
+                   class="text-xl font-bold text-gray-900 dark:text-white"
+-                  :style="{ viewTransitionName: `line-name-${lineId}` }"
+                 >
+-                  {{ routeParts.origin }}
++                  {{ lineInfo?.name || `L├¡nea ${lineId}` }}
+                 </p>
+-                <div class="flex items-center gap-2 text-gray-500 dark:text-gray-400">
+-                  <UIcon name="i-lucide-arrow-right" class="w-4 h-4 shrink-0" />
+-                  <p class="truncate">{{ routeParts.destination }}</p>
+-                </div>
+-              </template>
+-              <p 
+-                v-else
+-                class="text-xl font-bold text-gray-900 dark:text-white"
+-              >
+-                {{ lineInfo?.name || `L├¡nea ${lineId}` }}
+-              </p>
+-
+-              <!-- Stats -->
+-              <div class="flex items-center gap-4 mt-3 text-sm">
+-                <div class="flex items-center gap-1.5 text-gray-600 dark:text-gray-400">
+-                  <UIcon name="i-lucide-map-pin" class="w-4 h-4" />
+-                  <span>{{ lineStops.length }} paradas</span>
+-                </div>
+-                <div class="flex items-center gap-1.5">
+-                  <UIcon 
+-                    name="i-lucide-bus" 
+-                    class="w-4 h-4"
+-                    :class="lineVehicles.length > 0 ? 'text-green-500' : 'text-gray-400'"
+-                  />
+-                  <span :class="lineVehicles.length > 0 ? 'text-green-600 dark:text-green-400 font-medium' : 'text-gray-500'">
+-                    {{ lineVehicles.length }} {{ lineVehicles.length === 1 ? 'bus activo' : 'buses activos' }}
+-                  </span>
+-                  <UIcon 
+-                    v-if="isRefreshing"
+-                    name="i-lucide-refresh-cw" 
+-                    class="w-3.5 h-3.5 text-gray-400 animate-spin"
+-                  />
++
++                <!-- Stats -->
++                <div class="flex items-center gap-4 mt-3 text-sm">
++                  <div class="flex items-center gap-1.5 text-gray-600 dark:text-gray-400">
++                    <UIcon name="i-lucide-map-pin" class="w-4 h-4" />
++                    <span>{{ lineStops.length }} paradas</span>
++                  </div>
++                  <div class="flex items-center gap-1.5">
++                    <UIcon 
++                      name="i-lucide-bus" 
++                      class="w-4 h-4"
++                      :class="lineVehicles.length > 0 ? 'text-green-500' : 'text-gray-400'"
++                    />
++                    <span :class="lineVehicles.length > 0 ? 'text-green-600 dark:text-green-400 font-medium' : 'text-gray-500'">
++                      {{ lineVehicles.length }} {{ lineVehicles.length === 1 ? 'bus activo' : 'buses activos' }}
++                    </span>
++                    <UIcon 
++                      v-if="isRefreshing"
++                      name="i-lucide-refresh-cw" 
++                      class="w-3.5 h-3.5 text-gray-400 animate-spin"
++                    />
++                  </div>
+                 </div>
+               </div>
+-            </div>
+ 
++            </div>
+           </div>
+-        </div>
+ 
+-        <!-- Stops list -->
+-        <div class="glass-card p-5">
+-          <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+-            <UIcon name="i-lucide-list" class="w-5 h-5 text-primary-500" />
+-            Paradas de la l├¡nea ({{ lineStops.length }})
+-          </h2>
++          <!-- Stops list -->
++          <div class="glass-card p-5 flex-1 flex flex-col md:min-h-0">
++            <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
++              <UIcon name="i-lucide-list" class="w-5 h-5 text-primary-500" />
++              Paradas de la l├¡nea ({{ lineStops.length }})
++            </h2>
+ 
+-          <div v-if="lineStops.length === 0" class="text-center py-8 text-gray-500">
+-            <UIcon name="i-lucide-map-pin-off" class="w-10 h-10 mx-auto mb-3 opacity-50" />
+-            <p>No se encontraron paradas para esta l├¡nea</p>
+-          </div>
++            <div v-if="lineStops.length === 0" class="text-center py-8 text-gray-500">
++              <UIcon name="i-lucide-map-pin-off" class="w-10 h-10 mx-auto mb-3 opacity-50" />
++              <p>No se encontraron paradas para esta l├¡nea</p>
++            </div>
+ 
+-          <div v-else class="space-y-2 max-h-96 overflow-y-auto">
+-            <button
+-              v-for="(stop, index) in lineStops"
+-              :key="stop.id"
+-              class="w-full flex items-center gap-3 p-3 bg-white/80 dark:bg-gray-800/80 rounded-lg hover:bg-white dark:hover:bg-gray-800 transition-all text-left"
+-              @click="goToStop(stop)"
+-            >
+-              <!-- Stop number in route -->
+-              <div class="w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-900/50 flex items-center justify-center shrink-0">
+-                <span class="text-sm font-bold text-primary-600 dark:text-primary-400">
+-                  {{ index + 1 }}
+-                </span>
+-              </div>
++            <div v-else class="space-y-2 max-h-96 md:max-h-none flex-1 overflow-y-auto">
++              <button
++                v-for="(stop, index) in lineStops"
++                :key="stop.id"
++                class="w-full flex items-center gap-3 p-3 bg-white/80 dark:bg-gray-800/80 rounded-lg hover:bg-white dark:hover:bg-gray-800 transition-all text-left"
++                @click="goToStop(stop)"
++              >
++                <!-- Stop number in route -->
++                <div class="w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-900/50 flex items-center justify-center shrink-0">
++                  <span class="text-sm font-bold text-primary-600 dark:text-primary-400">
++                    {{ index + 1 }}
++                  </span>
++                </div>
+ 
+-              <div class="flex-1 min-w-0">
+-                <p class="font-medium text-gray-900 dark:text-white truncate">
+-                  {{ stop.name }}
+-                </p>
+-                <p class="text-xs text-gray-500">Parada {{ stop.id }}</p>
+-              </div>
++                <div class="flex-1 min-w-0">
++                  <p class="font-medium text-gray-900 dark:text-white truncate">
++                    {{ stop.name }}
++                  </p>
++                  <p class="text-xs text-gray-500">Parada {{ stop.id }}</p>
++                </div>
+ 
+-              <UIcon name="i-lucide-chevron-right" class="w-4 h-4 text-gray-400 shrink-0" />
+-            </button>
++                <UIcon name="i-lucide-chevron-right" class="w-4 h-4 text-gray-400 shrink-0" />
++              </button>
++            </div>
+           </div>
+-        </div>
+ 
+-      </template>
++        </template>
++      </div>
+     </div>
+   </div>
+ </template>
+diff --git a/web/app/pages/lines.vue b/web/app/pages/lines.vue
+index ed73a44..5170116 100644
+--- a/web/app/pages/lines.vue
++++ b/web/app/pages/lines.vue
+@@ -44,7 +44,7 @@ onMounted(() => {
+ </script>
+ 
+ <template>
+-  <div class="max-w-3xl mx-auto px-4 py-6 space-y-4 pointer-events-auto">
++  <div class="max-w-4xl md:ml-auto px-4 py-6 space-y-4 pointer-events-auto">
+     <!-- Header -->
+     <div class="glass-card p-5">
+       <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-1">
+diff --git a/web/app/pages/map.vue b/web/app/pages/map.vue
+index 8ea8e08..e7faa03 100644
+--- a/web/app/pages/map.vue
++++ b/web/app/pages/map.vue
+@@ -171,8 +171,8 @@ async function fetchVehicles() {
+ }
+ 
+ // Set map context on mount
+-onMounted(async () => {
+-    await mapStore.setContextToMapPage()
++onMounted(() => {
++  mapStore.setContextToMapPage()
+ })
+ 
+ // Update store with filtered data for the map component
+diff --git a/web/app/pages/route/index.vue b/web/app/pages/route/index.vue
+index 2c0ca7f..9c13f55 100644
+--- a/web/app/pages/route/index.vue
++++ b/web/app/pages/route/index.vue
+@@ -49,9 +49,10 @@ const activeField = ref<'origin' | 'destination' | null>(null)
+ 
+ // Load all stops once
+ const allStops = ref<BusStop[]>([])
++
+ onMounted(async () => {
+-    // Set map context first!
+-    mapStore.setContextToRoutePage()
++    // Set map context on mount
++    await mapStore.setContextToRoutePage()
+     
+     allStops.value = await fetchStops()
+     
+@@ -379,7 +380,7 @@ function swappoints() {
+ 
+ <template>
+     
+-  <div class="max-w-3xl mx-auto px-4 py-6 space-y-4 " id="mapPreviewContainer__">
++  <div class="max-w-4xl mx-auto px-4 py-6 space-y-4 " id="mapPreviewContainer__">
+ 
+     <MapPreview />
+ 
+diff --git a/web/app/pages/route/results.vue b/web/app/pages/route/results.vue
+index e03fd6c..312ecc5 100644
+--- a/web/app/pages/route/results.vue
++++ b/web/app/pages/route/results.vue
+@@ -18,9 +18,8 @@ const selectedRouteId = ref<string | null>(null)
+ const selectedRoute = computed(() => routes.value.find(r => r.id === selectedRouteId.value))
+ 
+ onMounted(async () => {
+-    // Set map context first
++    // Set map context on mount
+     await mapStore.setContextToRoutePage()
+-    
+     await calculateRoutes()
+ })
+ 
+diff --git a/web/app/pages/stop/[id].vue b/web/app/pages/stop/[id].vue
+index 9ffa0a2..924bfb1 100644
+--- a/web/app/pages/stop/[id].vue
++++ b/web/app/pages/stop/[id].vue
+@@ -1,4 +1,6 @@
+ <script setup lang="ts">
++import type { BusStop } from '~/types/bus'
++
+ const route = useRoute()
+ const storage = useStorage()
+ const mapStore = useMapStore()
+@@ -6,15 +8,12 @@ const mapStore = useMapStore()
+ const stopId = computed(() => route.params.id as string)
+ 
+ // Load stop info from cached data
+-const { data: allStops } = await useAsyncData(
+-  'all-stops',
+-  () => useBusService().fetchStops(),
+-  { server: true }  
+-)
++const { data: allStops } = await useBusStops()
+ 
+-const stopInfo = computed(() => 
+-  allStops.value?.find(s => s.id === stopId.value)
+-)
++const stopInfo = computed(() => {
++  const stops = allStops.value as BusStop[] | null
++  return stops?.find(s => s.id === stopId.value)
++})
+ 
+ // Set page meta
+ useSeoMeta({
+@@ -39,7 +38,8 @@ onMounted(async () => {
+ 
+ // Handle stop ID changes (navigation between stops)
+ watch(stopId, async (newId) => {
+-  const stop = allStops.value?.find(s => s.id === newId)
++  const stops = allStops.value as BusStop[] | null
++  const stop = stops?.find(s => s.id === newId)
+   if (stop) {
+     storage.addRecent('stop', newId, stop.name)
+   }
+@@ -90,172 +90,176 @@ function openInAppleMaps() {
+ </script>
+ 
+ <template>
+-  <div class="max-w-3xl mx-auto flex flex-col md:block space-y-4">
+-    <!-- Map Preview -->
+-    <MapPreview />
++  <!-- Responsive layout: mobile=vertical, md+=side-by-side (map left, content right) -->
++  <div class="md:flex md:min-h-full">
++    <!-- MapPreview: inline on mobile, left sticky on desktop -->
++    <div class="md:w-1/2 lg:w-[45%] md:sticky md:top-16 md:h-[calc(100vh-4rem)] shrink-0 md:order-first">
++      <MapPreview height="h-[50vh] md:h-full" />
++    </div>
+ 
+-    <!-- Header card -->
+-    <div class="glass-card p-5">
+-      <!-- Breadcrumb -->
+-      <div class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 mb-2">
+-        <NuxtLink to="/stops" class="hover:text-primary-500 transition-colors">
+-          Paradas
+-        </NuxtLink>
+-        <UIcon name="i-lucide-chevron-right" class="w-4 h-4" />
+-        <span :style="{ viewTransitionName: `stop-${stopId}` }">{{ stopId }}</span>
+-      </div>
++    <!-- Content (right side on desktop) -->
++    <div class="flex-1 flex flex-col md:justify-end space-y-4 px-4 py-4 pointer-events-auto">
++
++      <!-- Header card -->
++      <div class="glass-card p-5">
++        <div class="grid grid-cols-[1fr_auto] grid-rows-[auto_auto] gap-x-4">
++          <!-- Breadcrumb: top-left -->
++          <div class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
++            <NuxtLink to="/stops" class="hover:text-primary-500 transition-colors">
++              Paradas
++            </NuxtLink>
++            <UIcon name="i-lucide-chevron-right" class="w-4 h-4" />
++            <span :style="{ viewTransitionName: `stop-${stopId}` }">{{ stopId }}</span>
++          </div>
++
++          <!-- Favorite star: right column, spanning both rows -->
++          <button
++            class="row-span-2 self-center p-3 rounded-xl transition-all bg-white/80 dark:bg-gray-800/80 hover:bg-white dark:hover:bg-gray-800"
++            :class="isFavorite ? 'text-amber-500' : 'text-gray-400'"
++            @click="toggleFavorite"
++          >
++            <UIcon 
++              name="i-lucide-star"
++              :class="isFavorite ? 'fill-current' : ''"
++              class="w-6 h-6"
++            />
++          </button>
+ 
+-      <!-- Title -->
+-      <div class="flex items-start justify-between gap-4">
+-        <div>
++          <!-- Stop name: bottom-left -->
+           <h1 
+-            class="text-xl font-bold text-gray-900 dark:text-white"
++            class="text-xl font-bold text-gray-900 dark:text-white mt-1"
+             :style="{ viewTransitionName: `stop-name-${stopId}` }"
+           >
+             {{ stopInfo?.name || `Parada ${stopId}` }}
+           </h1>
+         </div>
+-
+-        <button
+-          class="p-3 rounded-xl transition-all bg-white/80 dark:bg-gray-800/80 hover:bg-white dark:hover:bg-gray-800"
+-          :class="isFavorite ? 'text-amber-500' : 'text-gray-400'"
+-          @click="toggleFavorite"
+-        >
+-          <UIcon 
+-            name="i-lucide-star"
+-            :class="isFavorite ? 'fill-current' : ''"
+-            class="w-5 h-5"
+-          />
+-        </button>
+       </div>
+-    </div>
+ 
+-    <!-- Error -->
+-    <div 
+-      v-if="error"
+-      class="glass-card p-4 border-l-4 border-red-500"
+-    >
+-      <div class="flex items-center gap-3 text-red-600 dark:text-red-400">
+-        <UIcon name="i-lucide-alert-circle" class="w-5 h-5 shrink-0" />
+-        <span class="flex-1">{{ error }}</span>
+-        <UButton size="sm" variant="ghost" @click="refreshArrivals">
+-          Reintentar
+-        </UButton>
+-      </div>
+-    </div>
+-
+-    <!-- Arrivals -->
+-    <div class="glass-card p-5">
+-      <div class="flex items-center justify-between mb-4">
+-        <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+-          Pr├│ximas llegadas
+-        </h2>
+-
+-        <div class="flex items-center gap-2">
+-          <UButton
+-            variant="ghost"
+-            size="sm"
+-            icon="i-lucide-refresh-cw"
+-            :loading="loading || isRefreshing"
+-            @click="refreshArrivals"
+-          >
+-            Actualizar
++      <!-- Error -->
++      <div 
++        v-if="error"
++        class="glass-card p-4 border-l-4 border-red-500"
++      >
++        <div class="flex items-center gap-3 text-red-600 dark:text-red-400">
++          <UIcon name="i-lucide-alert-circle" class="w-5 h-5 shrink-0" />
++          <span class="flex-1">{{ error }}</span>
++          <UButton size="sm" variant="ghost" @click="refreshArrivals">
++            Reintentar
+           </UButton>
+         </div>
+       </div>
+-      <BusArrivals
+-        :arrivals="arrivals"
+-        :loading="loading"
+-      />
+-      
+-      <span v-if="lastUpdated" class="flex items-center justify-center gap-1">
+-        <span class="text-xs text-gray-500" v-if="lastUpdated">
+-          ├Ültima actualizaci├│n: {{ formatLastUpdated() }}
+-        </span>
+-      </span>
+-    </div>
+ 
+-    <!-- Actions -->
+-    <div class="grid grid-cols-2 gap-3">
+-      <!-- Route Actions -->
+-      <NuxtLink
+-        :to="`/route?origin=${stopId}`"
+-        class="glass-card p-4 hover:scale-[1.02] transition-all flex items-center gap-3"
+-      >
+-        <div class="w-10 h-10 bg-primary-100 dark:bg-primary-900/50 rounded-lg flex items-center justify-center shrink-0">
+-          <UIcon name="i-lucide-map-pin" class="w-5 h-5 text-primary-600 dark:text-primary-400" />
+-        </div>
+-        <div class="text-left">
+-          <p class="font-medium text-gray-900 dark:text-white text-sm">Desde aqu├¡</p>
+-          <p class="text-xs text-gray-500">Planificar ruta</p>
+-        </div>
+-      </NuxtLink>
++      <!-- Arrivals -->
++      <div class="glass-card p-5">
++        <div class="flex items-center justify-between mb-4">
++          <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
++            Pr├│ximas llegadas
++          </h2>
+ 
+-      <NuxtLink
+-        :to="`/route?destination=${stopId}`"
+-        class="glass-card p-4 hover:scale-[1.02] transition-all flex items-center gap-3"
+-      >
+-        <div class="w-10 h-10 bg-primary-100 dark:bg-primary-900/50 rounded-lg flex items-center justify-center shrink-0">
+-           <UIcon name="i-lucide-flag" class="w-5 h-5 text-primary-600 dark:text-primary-400" />
+-        </div>
+-        <div class="text-left">
+-          <p class="font-medium text-gray-900 dark:text-white text-sm">Hasta aqu├¡</p>
+-          <p class="text-xs text-gray-500">Planificar ruta</p>
+-        </div>
+-      </NuxtLink>
+-
+-      <!-- External Maps -->
+-      <button
+-        class="glass-card p-4 hover:scale-[1.02] transition-all flex items-center gap-3"
+-        @click="openInGoogleMaps"
+-      >
+-        <div class="w-10 h-10 bg-blue-100 dark:bg-blue-900/50 rounded-lg flex items-center justify-center shrink-0">
+-          <UIcon name="i-lucide-navigation" class="w-5 h-5 text-blue-600 dark:text-blue-400" />
+-        </div>
+-        <div class="text-left">
+-          <p class="font-medium text-gray-900 dark:text-white text-sm">Google Maps</p>
+-          <p class="text-xs text-gray-500">C├│mo llegar</p>
++          <div class="flex items-center gap-2">
++            <UButton
++              variant="ghost"
++              size="sm"
++              icon="i-lucide-refresh-cw"
++              :loading="loading || isRefreshing"
++              @click="refreshArrivals"
++            >
++              Actualizar
++            </UButton>
++          </div>
+         </div>
+-      </button>
++        <BusArrivals
++          :arrivals="arrivals"
++          :loading="loading"
++        />
++        
++        <span v-if="lastUpdated" class="flex items-center justify-center gap-1">
++          <span class="text-xs text-gray-500" v-if="lastUpdated">
++            ├Ültima actualizaci├│n: {{ formatLastUpdated() }}
++          </span>
++        </span>
++      </div>
+ 
+-      <button
+-        class="glass-card p-4 hover:scale-[1.02] transition-all flex items-center gap-3"
+-        @click="openInAppleMaps"
+-      >
+-        <div class="w-10 h-10 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center shrink-0">
+-          <UIcon name="i-lucide-map" class="w-5 h-5 text-gray-600 dark:text-gray-400" />
+-        </div>
+-        <div class="text-left">
+-          <p class="font-medium text-gray-900 dark:text-white text-sm">Apple Maps</p>
+-          <p class="text-xs text-gray-500">C├│mo llegar</p>
+-        </div>
+-      </button>
+-    </div>
++      <!-- Actions -->
++      <div class="grid grid-cols-2 gap-3">
++        <!-- Route Actions -->
++        <NuxtLink
++          :to="`/route?origin=${stopId}`"
++          class="glass-card p-4 hover:scale-[1.02] transition-all flex items-center gap-3"
++        >
++          <div class="w-10 h-10 bg-primary-100 dark:bg-primary-900/50 rounded-lg flex items-center justify-center shrink-0">
++            <UIcon name="i-lucide-map-pin" class="w-5 h-5 text-primary-600 dark:text-primary-400" />
++          </div>
++          <div class="text-left">
++            <p class="font-medium text-gray-900 dark:text-white text-sm">Desde aqu├¡</p>
++            <p class="text-xs text-gray-500">Planificar ruta</p>
++          </div>
++        </NuxtLink>
+ 
+-    
+-    <!-- Lines at this stop -->
+-    <div v-if="stopInfo?.lines?.length" class="glass-card p-5">
+-      <h2 class="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-3 uppercase tracking-wide">
+-        L├¡neas de autob├║s disponibles
+-      </h2>
+-      <div class="flex flex-wrap gap-2">
+         <NuxtLink
+-          v-for="lineId in stopInfo.lines"
+-          :key="lineId"
+-          :to="`/line/${lineId}`"
+-          class="pr-3 pl-1 py-1 rounded-lg hover:scale-[1.2] transition-all"
++          :to="`/route?destination=${stopId}`"
++          class="glass-card p-4 hover:scale-[1.02] transition-all flex items-center gap-3"
+         >
+-          <div 
+-            class="w-8 h-8 rounded-md flex items-center justify-center text-white shadow-sm font-bold text-sm"
+-            :class="getLineColor(lineId)"
+-          >
+-            {{ lineId }}
++          <div class="w-10 h-10 bg-primary-100 dark:bg-primary-900/50 rounded-lg flex items-center justify-center shrink-0">
++             <UIcon name="i-lucide-flag" class="w-5 h-5 text-primary-600 dark:text-primary-400" />
++          </div>
++          <div class="text-left">
++            <p class="font-medium text-gray-900 dark:text-white text-sm">Hasta aqu├¡</p>
++            <p class="text-xs text-gray-500">Planificar ruta</p>
+           </div>
+         </NuxtLink>
+-        
+-      </div>
+-    </div>
+ 
++        <!-- External Maps -->
++        <button
++          class="glass-card p-4 hover:scale-[1.02] transition-all flex items-center gap-3"
++          @click="openInGoogleMaps"
++        >
++          <div class="w-10 h-10 bg-blue-100 dark:bg-blue-900/50 rounded-lg flex items-center justify-center shrink-0">
++            <UIcon name="i-lucide-navigation" class="w-5 h-5 text-blue-600 dark:text-blue-400" />
++          </div>
++          <div class="text-left">
++            <p class="font-medium text-gray-900 dark:text-white text-sm">Google Maps</p>
++            <p class="text-xs text-gray-500">C├│mo llegar</p>
++          </div>
++        </button>
++
++        <button
++          class="glass-card p-4 hover:scale-[1.02] transition-all flex items-center gap-3"
++          @click="openInAppleMaps"
++        >
++          <div class="w-10 h-10 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center shrink-0">
++            <UIcon name="i-lucide-map" class="w-5 h-5 text-gray-600 dark:text-gray-400" />
++          </div>
++          <div class="text-left">
++            <p class="font-medium text-gray-900 dark:text-white text-sm">Apple Maps</p>
++            <p class="text-xs text-gray-500">C├│mo llegar</p>
++          </div>
++        </button>
++      </div>
+ 
++      
++      <!-- Lines at this stop -->
++      <div v-if="stopInfo?.lines?.length" class="glass-card p-5">
++        <h2 class="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-3 uppercase tracking-wide">
++          L├¡neas de autob├║s disponibles
++        </h2>
++        <div class="flex flex-wrap gap-2">
++          <NuxtLink
++            v-for="lineId in stopInfo.lines"
++            :key="lineId"
++            :to="`/line/${lineId}`"
++            class="pr-3 pl-1 py-1 rounded-lg hover:scale-[1.2] transition-all"
++          >
++            <div 
++              class="w-8 h-8 rounded-md flex items-center justify-center text-white shadow-sm font-bold text-sm"
++              :class="getLineColor(lineId)"
++            >
++              {{ lineId }}
++            </div>
++          </NuxtLink>
++          
++        </div>
++      </div>
++    </div>
+   </div>
+ </template>
+diff --git a/web/app/pages/stops.vue b/web/app/pages/stops.vue
+index dad065d..cffb9cd 100644
+--- a/web/app/pages/stops.vue
++++ b/web/app/pages/stops.vue
+@@ -67,7 +67,6 @@ function toggleFavorite(stop: { id: string; name: string }) {
+ // Set map context on mount
+ onMounted(() => {
+   mapStore.setContextToStopsListPage()
+-  
+   if (showNearby.value) {
+     geolocation.requestLocation()
+   }
+@@ -75,7 +74,7 @@ onMounted(() => {
+ </script>
+ 
+ <template>
+-  <div class="max-w-3xl mx-auto px-4 py-6 space-y-4 pointer-events-auto">
++  <div class="max-w-4xl md:ml-auto px-4 py-6 space-y-4 pointer-events-auto">
+     <!-- Header -->
+     <div class="glass-card p-5">
+       <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-1">
+diff --git a/web/app/stores/map.ts b/web/app/stores/map.ts
+index 27dd728..111ef17 100644
+--- a/web/app/stores/map.ts
++++ b/web/app/stores/map.ts
+@@ -125,6 +125,9 @@ export const useMapStore = defineStore('map', () => {
+     const showControls = ref(false)
+     const forceAnimations = ref(true)
+ 
++    // Track whether the current page has its own MapPreview component
++    const hasPageMapPreview = ref(false)
++
+     // Selected vehicle for following (UI state)
+     const selectedVehicle = ref<BusVehicle | null>(null)
+ 
+@@ -475,11 +478,28 @@ export const useMapStore = defineStore('map', () => {
+     }
+ 
+     function setPagePaddingFromMapPreviewContainer() {
++        if (typeof document === 'undefined') return // SSR guard
+         const mapPreviewContainer = document.getElementById('mapPreviewContainer')
+ 
+         let paddingValue = { top: 0, bottom: 0, left: 0, right: 0 };
+         if (!isFullscreen.value && mapPreviewContainer) {
++            const rect = mapPreviewContainer.getBoundingClientRect()
++            const isDesktopSideBySide = window.innerWidth >= 768
++
++            if (isDesktopSideBySide) {
++                // Desktop: MapPreview is on the left side (sticky)
++                // Map padding should center content within the MapPreview area
++                const headerHeight = 64
++                pagePadding.value = {
++                    top: headerHeight,
++                    bottom: 20,
++                    left: 20,
++                    right: window.innerWidth - rect.right + 20
++                }
++                return
++            }
+ 
++            // Mobile: vertical layout
+             if (currentContext.value === 'home') {
+                 paddingValue = { top: 0, bottom: 0, left: 0, right: 0 };
+             } else {
+@@ -494,13 +514,11 @@ export const useMapStore = defineStore('map', () => {
+                 return;
+             }
+             // get the position of the mapPreviewContainer relative to the parent
+-            const rect = mapPreviewContainer.getBoundingClientRect()
+             const windowHeight = window.innerHeight
+ 
+             // paddings
+             const topPadding = rect.top + window.scrollY;
+             const bottomPadding = windowHeight - rect.bottom;
+-            console.log('windowHeight', windowHeight, 'rect.bottom', rect.bottom);
+ 
+             if (topPadding < 0) return;
+             if (bottomPadding < 0) return;
+@@ -591,7 +609,7 @@ export const useMapStore = defineStore('map', () => {
+             currentContextId.value = stopId
+         }
+ 
+-        //setPagePaddingFromMapPreviewContainer()
++        setPagePaddingFromMapPreviewContainer()
+ 
+         const busService = useBusService()
+ 
+@@ -739,6 +757,7 @@ export const useMapStore = defineStore('map', () => {
+         setFullscreen(false) // Force disable fullscreen to ensure zoom/pads are correct
+ 
+         await nextTick();
++        setPagePaddingFromMapPreviewContainer()
+ 
+         const busService = useBusService()
+ 
+@@ -1105,6 +1124,15 @@ export const useMapStore = defineStore('map', () => {
+     }
+ 
+ 
++    // ===== MapPreview Registration =====
++    function registerMapPreview() {
++        hasPageMapPreview.value = true
++    }
++
++    function unregisterMapPreview() {
++        hasPageMapPreview.value = false
++    }
++
+     return {
+         // State
+         center,
+@@ -1128,6 +1156,7 @@ export const useMapStore = defineStore('map', () => {
+         isFullscreen,
+         isExitingFullscreen,
+         showControls,
++        hasPageMapPreview,
+         padding,
+         mapInstance,
+         positionEvent,
+@@ -1184,6 +1213,8 @@ export const useMapStore = defineStore('map', () => {
+         toggleShowVehicles,
+         toggleShowRoutes,
+         setFilterLineIds,
+-        updateDisplay
++        updateDisplay,
++        registerMapPreview,
++        unregisterMapPreview
+     }
+ })

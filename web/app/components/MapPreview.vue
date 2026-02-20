@@ -1,8 +1,10 @@
 <script setup lang="ts">
 const props = withDefaults(defineProps<{
   height?: string
+  isFallback?: boolean
 }>(), {
-  height: 'h-[50vh]'
+  height: 'h-[50vh]',
+  isFallback: false
 })
 
 const mapStore = useMapStore()
@@ -82,7 +84,31 @@ const zoomOutAnimated = () => {
 }
 
 onMounted(() => {
+  if (!props.isFallback) {
+    mapStore.registerMapPreview()
+  }
   mapStore.setPagePaddingFromMapPreviewContainer();
+
+  // If we're mounted while already in fullscreen (fallback MapPreview case),
+  // immediately apply fullscreen styles since the watcher won't catch it
+  if (mapStore.isFullscreen) {
+    nextTick(() => {
+      containerStyle.value = {
+        position: 'fixed',
+        top: '0px',
+        left: '0px',
+        width: '100%',
+        height: '100%',
+        zIndex: '60'
+      }
+    })
+  }
+})
+
+onUnmounted(() => {
+  if (!props.isFallback) {
+    mapStore.unregisterMapPreview()
+  }
 })
 
 // Fullscreen FLIP Animation Logic
@@ -90,6 +116,33 @@ const container = ref<HTMLElement | null>(null)
 const placeholder = ref<HTMLElement | null>(null)
 const isTransitioning = ref(false)
 const containerStyle = ref<Record<string, string>>({})
+// Track whether WE triggered the fullscreen change (vs external trigger like stop/vehicle click)
+const internalToggle = ref(false)
+
+// Watch for EXTERNAL fullscreen activations (e.g. stop/vehicle click calling setFullscreen directly)
+watch(() => mapStore.isFullscreen, (newVal) => {
+  if (internalToggle.value) {
+    // We triggered this ourselves via toggleFullscreen — skip
+    internalToggle.value = false
+    return
+  }
+
+  if (newVal) {
+    // External entry into fullscreen — immediately set fullscreen styles (no FLIP animation,
+    // since the element is already teleported/repositioned by the time this watcher runs)
+    containerStyle.value = {
+      position: 'fixed',
+      top: '0px',
+      left: '0px',
+      width: '100%',
+      height: '100%',
+      zIndex: '60'
+    }
+  } else {
+    // External exit from fullscreen — reset styles
+    containerStyle.value = {}
+  }
+})
 
 const toggleFullscreen = async () => {
   if (isTransitioning.value) return
@@ -99,6 +152,7 @@ const toggleFullscreen = async () => {
   if (!el || !place) return
 
   isTransitioning.value = true
+  internalToggle.value = true
 
   if (!mapStore.isFullscreen) {
     // ENTERING Fullscreen
@@ -147,8 +201,10 @@ const toggleFullscreen = async () => {
     // 1. Signal that we are exiting, so layout shows the main content (and thus our placeholder)
     mapStore.isExitingFullscreen = true
     
-    // 2. Wait for layout to render placeholder
+    // 2. Wait for layout to render placeholder, then another frame for layout to settle
     await nextTick()
+    await new Promise(resolve => requestAnimationFrame(resolve))
+    await new Promise(resolve => requestAnimationFrame(resolve))
     
     // 2b. Get target rect from placeholder (which should now be in the flow)
     const targetRect = place.getBoundingClientRect()

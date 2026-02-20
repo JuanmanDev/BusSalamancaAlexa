@@ -125,6 +125,9 @@ export const useMapStore = defineStore('map', () => {
     const showControls = ref(false)
     const forceAnimations = ref(true)
 
+    // Track whether the current page has its own MapPreview component
+    const hasPageMapPreview = ref(false)
+
     // Selected vehicle for following (UI state)
     const selectedVehicle = ref<BusVehicle | null>(null)
 
@@ -475,11 +478,34 @@ export const useMapStore = defineStore('map', () => {
     }
 
     function setPagePaddingFromMapPreviewContainer() {
+        if (typeof document === 'undefined') return // SSR guard
+
+        if (isFullscreen.value) {
+            pagePadding.value = { top: 0, bottom: 0, left: 0, right: 0 }
+            return
+        }
+
         const mapPreviewContainer = document.getElementById('mapPreviewContainer')
 
         let paddingValue = { top: 0, bottom: 0, left: 0, right: 0 };
         if (!isFullscreen.value && mapPreviewContainer) {
+            const rect = mapPreviewContainer.getBoundingClientRect()
+            const isDesktopSideBySide = window.innerWidth >= 768
 
+            if (isDesktopSideBySide) {
+                // Desktop: MapPreview is on the left side (sticky)
+                // Map padding should center content within the MapPreview area
+                const headerHeight = 64
+                pagePadding.value = {
+                    top: headerHeight,
+                    bottom: 20,
+                    left: 20,
+                    right: window.innerWidth - rect.right + 20
+                }
+                return
+            }
+
+            // Mobile: vertical layout
             if (currentContext.value === 'home') {
                 paddingValue = { top: 0, bottom: 0, left: 0, right: 0 };
             } else {
@@ -494,13 +520,11 @@ export const useMapStore = defineStore('map', () => {
                 return;
             }
             // get the position of the mapPreviewContainer relative to the parent
-            const rect = mapPreviewContainer.getBoundingClientRect()
             const windowHeight = window.innerHeight
 
             // paddings
             const topPadding = rect.top + window.scrollY;
             const bottomPadding = windowHeight - rect.bottom;
-            console.log('windowHeight', windowHeight, 'rect.bottom', rect.bottom);
 
             if (topPadding < 0) return;
             if (bottomPadding < 0) return;
@@ -591,7 +615,7 @@ export const useMapStore = defineStore('map', () => {
             currentContextId.value = stopId
         }
 
-        //setPagePaddingFromMapPreviewContainer()
+        setPagePaddingFromMapPreviewContainer()
 
         const busService = useBusService()
 
@@ -739,6 +763,7 @@ export const useMapStore = defineStore('map', () => {
         setFullscreen(false) // Force disable fullscreen to ensure zoom/pads are correct
 
         await nextTick();
+        setPagePaddingFromMapPreviewContainer()
 
         const busService = useBusService()
 
@@ -1105,6 +1130,15 @@ export const useMapStore = defineStore('map', () => {
     }
 
 
+    // ===== MapPreview Registration =====
+    function registerMapPreview() {
+        hasPageMapPreview.value = true
+    }
+
+    function unregisterMapPreview() {
+        hasPageMapPreview.value = false
+    }
+
     return {
         // State
         center,
@@ -1128,6 +1162,7 @@ export const useMapStore = defineStore('map', () => {
         isFullscreen,
         isExitingFullscreen,
         showControls,
+        hasPageMapPreview,
         padding,
         mapInstance,
         positionEvent,
@@ -1184,6 +1219,8 @@ export const useMapStore = defineStore('map', () => {
         toggleShowVehicles,
         toggleShowRoutes,
         setFilterLineIds,
-        updateDisplay
+        updateDisplay,
+        registerMapPreview,
+        unregisterMapPreview
     }
 })

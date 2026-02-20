@@ -34,11 +34,6 @@ const showMainContent = computed(() => {
   return !(mapStore.isFullscreen && !isMapPage.value)
 })
 
-const mainTransitionName = computed(() => {
-  // Use fade transition when exiting fullscreen so content appears smoothly
-  // but without layout shifts that break the map placeholder calculation.
-  return mapStore.isExitingFullscreen ? 'fade' : 'main-slide'
-})
 </script>
 
 <template>
@@ -64,7 +59,7 @@ const mainTransitionName = computed(() => {
 
     <Transition name="header-slide">
       <header 
-        v-if="!mapStore.isFullscreen"
+        v-show="showMainContent"
         class="fixed top-0 left-0 right-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 shadow-sm"
       >
       <div class="container mx-auto px-4 h-16 flex items-center justify-between">
@@ -105,28 +100,25 @@ const mainTransitionName = computed(() => {
     </Transition>
 
     <!-- Main content area -->
-    <Transition :name="mainTransitionName">
       <main 
-        v-show="showMainContent"
-        class="relative z-10 flex flex-col flex-1 md:pb-8 pointer-events-none transition-[padding] duration-500 ease-in-out"
+        class="relative z-10 flex flex-col flex-1 pointer-events-none transition-all duration-500 ease-in-out"
         :class="{
-          'pt-16 pb-20': !mapStore.isFullscreen,
-          'pt-0 pb-0 h-screen': mapStore.isFullscreen
+          'pt-16 pb-20 md:pb-0 opacity-100 translate-y-0 visible': showMainContent,
+          'pt-0 pb-0 h-screen opacity-0 translate-y-4 invisible overflow-hidden': !showMainContent
         }"
       >
         <!-- Content wrapper - allows map to show in gaps -->
         <slot />
-        <!-- <div class="h-full">
-        </div> -->
       </main>
-    </Transition>
 
-
+    <!-- Fallback MapPreview for pages without their own (e.g., lines, stops lists) -->
+    <!-- Provides fullscreen controls (exit button, zoom, location) when no page-level MapPreview exists -->
+    <MapPreview v-if="mapStore.isFullscreen && !mapStore.hasPageMapPreview" :is-fallback="true" />
 
     <!-- Mobile bottom nav with blur -->
     <Transition name="nav-slide">
       <nav 
-        v-if="!mapStore.isFullscreen"
+        v-show="showMainContent"
         class="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-t border-gray-200 dark:border-gray-800 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]"
       >
       <div class="flex items-center justify-around py-2">
@@ -146,16 +138,20 @@ const mainTransitionName = computed(() => {
     </nav>
     </Transition>
 
-    <div class="fixed bottom-0 right-0 z-50">
+    <!-- <div class="fixed bottom-0 right-0 z-50">
       paddings {{ mapStore.padding }}
       rotation {{ mapStore.rotation }}
       3d {{ mapStore.pitch }}
-    </div>
+    </div> -->
   </div>
 </template>
 
 <style>
 @reference "tailwindcss";
+
+html {
+  overflow-y: scroll;
+}
 
 /* Glass card utility */
 .glass-card {

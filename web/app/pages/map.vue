@@ -171,8 +171,8 @@ async function fetchVehicles() {
 }
 
 // Set map context on mount
-onMounted(async () => {
-    await mapStore.setContextToMapPage()
+onMounted(() => {
+  mapStore.setContextToMapPage()
 })
 
 // Update store with filtered data for the map component

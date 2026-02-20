@@ -49,9 +49,10 @@ const activeField = ref<'origin' | 'destination' | null>(null)
 
 // Load all stops once
 const allStops = ref<BusStop[]>([])
+
 onMounted(async () => {
-    // Set map context first!
-    mapStore.setContextToRoutePage()
+    // Set map context on mount
+    await mapStore.setContextToRoutePage()
     
     allStops.value = await fetchStops()
     
@@ -378,27 +379,29 @@ function swappoints() {
 </script>
 
 <template>
-    
-  <div class="max-w-3xl mx-auto px-4 py-6 space-y-4 " id="mapPreviewContainer__">
+  <div class="md:flex md:min-h-full">
+    <!-- MapPreview: inline on mobile, left sticky on desktop -->
+    <div class="md:flex-1 md:sticky md:top-16 md:h-[calc(100vh-4rem)] shrink-0 md:order-first z-0">
+      <MapPreview height="h-[50vh] md:h-full" />
+    </div>
 
-    <MapPreview />
-
-
-    <!-- Beta Warning -->
-    <UAlert
-      icon="i-lucide-flask-conical"
-      color="warning"
-      variant="subtle"
-      title="Rutas en fase Beta"
-      description="Esta función es experimental y puede contener errores. Úsala con precaución y verifica siempre los horarios oficiales. Es posible que no ofrezcan la ruta óptima."
-      class="mb-4 relative z-10 shadow-lg bg-white/50 dark:bg-gray-900/50 backdrop-blur-md"
-    />
-    
-    <!-- Main visible content wrapper -->
-    <div class="h-full flex flex-col pointer-events-auto relative z-10">
-        
-        <!-- Header Card -->
-        <div class="glass-card p-4 pt-4">
+    <!-- Content (right side on desktop) -->
+    <div class="w-full md:w-[400px] lg:w-[450px] shrink-0 px-4 py-6 space-y-4 pointer-events-auto flex flex-col relative z-10">
+      <!-- Beta Warning -->
+      <UAlert
+        icon="i-lucide-flask-conical"
+        color="warning"
+        variant="subtle"
+        title="Rutas en fase Beta"
+        description="Esta función es experimental y puede contener errores. Úsala con precaución y verifica siempre los horarios oficiales. Es posible que no ofrezcan la ruta óptima."
+        class="mb-4 relative z-10 shadow-lg bg-white/50 dark:bg-gray-900/50 backdrop-blur-md"
+      />
+      
+      <!-- Main visible content wrapper -->
+      <div class="h-full flex flex-col relative z-10">
+          
+          <!-- Header Card -->
+          <div class="glass-card p-4 pt-4">
              <div class="max-w-md mx-auto relative">
                 <div class="flex items-center gap-2 mb-4">
                     <UButton icon="i-lucide-arrow-left" variant="ghost" color="neutral" @click="router.back()" />
@@ -535,5 +538,6 @@ function swappoints() {
             </div>
         </div>
     </Teleport>
+  </div>
   </div>
 </template>
