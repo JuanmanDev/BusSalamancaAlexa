@@ -15,9 +15,9 @@ const clickLocationButton = async () => {
     const success = await geolocation.requestLocation({ timeout: 7000 })
     
     if (success && geolocation.userLocation.value) {
-      const loc = geolocation.userLocation.value
+      const loc = geolocation.userLocation.value as any
       mapStore.mapInstance?.flyTo({
-        center: [loc.lng, loc.lat],
+        center: [loc.lng || loc.longitude, loc.lat || loc.latitude],
         zoom: 15,
         duration: 2000,
         essential: mapStore.forceAnimations
@@ -47,10 +47,10 @@ const clickLocationButton = async () => {
     }
   } else {
     // Already have location, just fly there
-    const loc = geolocation.userLocation.value
+    const loc = geolocation.userLocation.value as any
     if (loc) {
         mapStore.mapInstance?.flyTo({
-          center: [loc.lng, loc.lat],
+          center: [loc.lng || loc.longitude, loc.lat || loc.latitude],
           zoom: 15,
           duration: 2000,
           essential: mapStore.forceAnimations
@@ -85,11 +85,15 @@ const zoomOutAnimated = () => {
 
 onMounted(() => {
   if (!props.isFallback) {
-    mapStore.registerMapPreview()
+    if (placeholder.value && placeholder.value.parentElement) {
+       mapStore.registerMapPreview(placeholder.value.parentElement)
+    } else {
+       mapStore.registerMapPreview()
+    }
   }
   mapStore.setPagePaddingFromMapPreviewContainer();
 
-  // If we're mounted while already in fullscreen (fallback MapPreview case),
+  // If we're mounted while already in fullscreen (fallback MapPreview case or during navigation),
   // immediately apply fullscreen styles since the watcher won't catch it
   if (mapStore.isFullscreen) {
     nextTick(() => {
@@ -107,7 +111,11 @@ onMounted(() => {
 
 onUnmounted(() => {
   if (!props.isFallback) {
-    mapStore.unregisterMapPreview()
+    if (placeholder.value && placeholder.value.parentElement) {
+       mapStore.unregisterMapPreview(placeholder.value.parentElement)
+    } else {
+       mapStore.unregisterMapPreview()
+    }
   }
 })
 
@@ -144,6 +152,8 @@ watch(() => mapStore.isFullscreen, (newVal) => {
   }
 })
 
+let preFullscreenRect: DOMRect | null = null
+
 const toggleFullscreen = async () => {
   if (isTransitioning.value) return
 
@@ -158,6 +168,10 @@ const toggleFullscreen = async () => {
     // ENTERING Fullscreen
     // 1. Get initial position of the container
     const rect = el.getBoundingClientRect()
+    // Cache the pristine DOM rect before any layout changes occur.
+    // This perfectly captures the flex dimensions, media query heights, and paddings
+    // to act as the target for our exit animation later.
+    preFullscreenRect = rect
     
     // 2. Set initial fixed position matching current spot
     containerStyle.value = {
@@ -175,41 +189,70 @@ const toggleFullscreen = async () => {
     // 4. Force reflow/next tick to properly apply styles after teleport
     await nextTick()
     
-    // 5. Expand to full screen
-    // We use a small timeout to ensure the browser processes the initial fixed position frame
-    // before transitioning to the new fullscreen styles
-    requestAnimationFrame(() => {
-      containerStyle.value = {
-        position: 'fixed',
-        top: '0px',
-        left: '0px',
-        width: '100%',
-        height: '100%',
-        zIndex: '60'
-      }
-    })
+    // Disable transitions temporarily to snap to starting position
+    el.style.transition = 'none'
+    void el.offsetWidth
+    
+    // Enable CSS transition directly on DOM
+    el.style.transition = 'all 500ms cubic-bezier(0.4, 0, 0.2, 1)'
+    
+    // 5. Expand to full screen smoothly
+    containerStyle.value = {
+      position: 'fixed',
+      top: '0px',
+      left: '0px',
+      width: `${window.innerWidth}px`,
+      height: `${window.innerHeight}px`,
+      zIndex: '60'
+    }
 
     // 6. Cleanup after transition
     setTimeout(() => {
       isTransitioning.value = false
-      // Keep style as is for fullscreen
+      el.style.transition = ''
+      // Remove explicit px dimensions and rely exclusively on CSS classes (`fixed inset-0`)
+      // to handle window resizing natively while in fullscreen.
+      containerStyle.value = {}
     }, 500)
 
   } else {
     // EXITING Fullscreen
-    
-    // 1. Signal that we are exiting, so layout shows the main content (and thus our placeholder)
+    isTransitioning.value = true
     mapStore.isExitingFullscreen = true
-    
-    // 2. Wait for layout to render placeholder, then another frame for layout to settle
-    await nextTick()
-    await new Promise(resolve => requestAnimationFrame(resolve))
-    await new Promise(resolve => requestAnimationFrame(resolve))
-    
-    // 2b. Get target rect from placeholder (which should now be in the flow)
-    const targetRect = place.getBoundingClientRect()
+    internalToggle.value = false
 
-    // 3. Animate back to placeholder position
+    const currentRect = el.getBoundingClientRect()
+    
+    // Ensure Teleport is kept alive during transition
+    isTransitioning.value = true
+    mapStore.isExitingFullscreen = true
+    internalToggle.value = false
+    
+    // 1. Instantly lock element to its exact current fullscreen viewport position
+    containerStyle.value = {
+      position: 'fixed',
+      top: `${currentRect.top}px`,
+      left: `${currentRect.left}px`,
+      width: `${currentRect.width}px`,
+      height: `${currentRect.height}px`,
+      zIndex: '60'
+    }
+
+    // Wait for Vue to apply the inline styles and keep Teleport alive
+    await nextTick()
+    
+    const targetRect = preFullscreenRect || place.getBoundingClientRect()
+    
+    // 2. Disable transitions so the lock applies instantly without animating
+    el.style.transition = 'none'
+    
+    // 3. Force browser reflow to physically paint the locked start position
+    void el.offsetWidth
+    
+    // 4. Enable CSS transitions directly on the DOM node to bypass Vue reactivity batching delays
+    el.style.transition = 'all 500ms cubic-bezier(0.4, 0, 0.2, 1)'
+
+    // 5. Update reactive state to target dimensions, triggering the CSS transition smoothly
     containerStyle.value = {
       position: 'fixed',
       top: `${targetRect.top}px`,
@@ -219,14 +262,15 @@ const toggleFullscreen = async () => {
       zIndex: '60'
     }
 
-    // 4. Wait for transition
-    setTimeout(async () => {
-      // 5. Reset state
+    // Wait for the CSS transition of both the Container and <main> to finish
+    setTimeout(() => {
+      // 6. Reset states and strip manual transition overrides
+      el.style.transition = ''
       mapStore.setFullscreen(false)
       mapStore.isExitingFullscreen = false
       isTransitioning.value = false
       
-      // 6. Clear explicit styles so it reverts to relative layout
+      // 7. Clear explicit styles so the component drops back into its static relative DOM wrapper
       containerStyle.value = {}
     }, 500)
   }
@@ -238,14 +282,13 @@ const toggleFullscreen = async () => {
     <!-- Placeholder to keep layout space when map is fullscreen/teleported -->
     <div ref="placeholder" class="absolute inset-0 pointer-events-none" :class="{ 'opacity-0': mapStore.isFullscreen }"></div>
 
-    <Teleport to="body" :disabled="!mapStore.isFullscreen">
+    <Teleport to="body" :disabled="!mapStore.isFullscreen && !isTransitioning">
       <div 
         ref="container"
         
         class="overflow-hidden pointer-events-none"
         :class="[
-          mapStore.isFullscreen ? 'fixed z-[60]' : 'absolute inset-0',
-          isTransitioning ? 'transition-all duration-500 cubic-bezier(0.4, 0, 0.2, 1)' : ''
+          mapStore.isFullscreen ? 'fixed z-[60] inset-0' : 'absolute inset-0'
         ]"
         :style="containerStyle"
       >
@@ -255,7 +298,7 @@ const toggleFullscreen = async () => {
         <!-- Button container with responsive positioning -->
         <!-- Mobile: Bottom-Right -->
         <!-- Desktop: Top-Right -->
-        <div class="absolute bottom-4 right-4 z-10 pointer-events-auto flex flex-col gap-2 transition-all duration-500">
+        <div class="absolute bottom-4 right-4 z-10 pointer-events-auto flex flex-col gap-2">
           <UTooltip :text="mapStore.isFullscreen ? 'Salir de pantalla completa' : 'Ver mapa completo'" :delay-duration="0">
             <UButton
               color="neutral"

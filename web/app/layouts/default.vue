@@ -34,6 +34,11 @@ const showMainContent = computed(() => {
   return !(mapStore.isFullscreen && !isMapPage.value)
 })
 
+const showHeaderAndNav = computed(() => {
+  if (mapStore.isExitingFullscreen) return true
+  return !mapStore.isFullscreen
+})
+
 </script>
 
 <template>
@@ -59,14 +64,14 @@ const showMainContent = computed(() => {
 
     <Transition name="header-slide">
       <header 
-        v-show="showMainContent"
+        v-show="showHeaderAndNav"
         class="fixed top-0 left-0 right-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 shadow-sm"
       >
-      <div class="container mx-auto px-4 h-16 flex items-center justify-between">
+      <div class="mx-auto md:px-4 h-16 flex items-center justify-between">
         <!-- Logo -->
         <NuxtLink to="/" class="flex items-center gap-2 font-bold text-xl text-primary-600 dark:text-primary-400">
           <UIcon name="i-lucide-bus" class="w-8 h-8" />
-          <span>BusSalamanca</span>
+          <span class="hidden sm:inline md:hidden lg:inline">BusSalamanca</span>
         </NuxtLink>
 
         <!-- Desktop Nav -->
@@ -103,22 +108,21 @@ const showMainContent = computed(() => {
       <main 
         class="relative z-10 flex flex-col flex-1 pointer-events-none transition-all duration-500 ease-in-out"
         :class="{
-          'pt-16 pb-20 md:pb-0 opacity-100 translate-y-0 visible': showMainContent,
-          'pt-0 pb-0 h-screen opacity-0 translate-y-4 invisible overflow-hidden': !showMainContent
+          'pt-16 pb-20 md:pb-0': showHeaderAndNav,
+          'pt-0 pb-0': !showHeaderAndNav,
+          'opacity-100 translate-y-0 visible': showMainContent,
+          'h-screen opacity-0 translate-y-4 invisible overflow-hidden': !showMainContent
         }"
       >
         <!-- Content wrapper - allows map to show in gaps -->
         <slot />
       </main>
 
-    <!-- Fallback MapPreview for pages without their own (e.g., lines, stops lists) -->
-    <!-- Provides fullscreen controls (exit button, zoom, location) when no page-level MapPreview exists -->
-    <MapPreview v-if="mapStore.isFullscreen && !mapStore.hasPageMapPreview" :is-fallback="true" />
-
+    <!-- Fallback MapPreview removed to avoid duplicated button glitches on fullscreen toggle -->
     <!-- Mobile bottom nav with blur -->
     <Transition name="nav-slide">
       <nav 
-        v-show="showMainContent"
+        v-show="showHeaderAndNav"
         class="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-t border-gray-200 dark:border-gray-800 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]"
       >
       <div class="flex items-center justify-around py-2">
@@ -138,10 +142,13 @@ const showMainContent = computed(() => {
     </nav>
     </Transition>
 
-    <!-- <div class="fixed bottom-0 right-0 z-50">
+    <!-- <div class="fixed bottom-0 right-0 z-50 bg-black/50 text-white p-2 text-xs">
       paddings {{ mapStore.padding }}
+      pagePadding {{ mapStore.pagePadding }}
       rotation {{ mapStore.rotation }}
       3d {{ mapStore.pitch }}
+      context {{ mapStore.currentContext }}
+      fs {{ mapStore.isFullscreen }}
     </div> -->
   </div>
 </template>

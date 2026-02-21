@@ -8,9 +8,10 @@ import { getLineColor, getLineColorHex } from '~/utils/bus'
 // ===== Map Configuration =====
 const MAP_CONFIG = {
   maxZoom: 18,
-  minZoom: 12.5,
+  minZoom: 11, // allow further zooming out for smoother flyTo
   defaultCenter: [-5.6635, 40.9701] as [number, number],
-  maxBounds: [[-5.80, 40.90], [-5.50, 41.05]] as [[number, number], [number, number]], // Approx Salamanca bounds
+  // Expanded maxBounds significantly to prevent flyTo animation aborts when user is nearby but outside the box
+  maxBounds: [[-6.50, 40.20], [-4.80, 41.80]] as [[number, number], [number, number]], 
 }
 
 // Map key for useMap() composable access
@@ -248,14 +249,17 @@ watch(() => mapStore.positionEvent, (event) => {
   if (isSinglePoint) {
     const point = points[0]!
     const targetZoom = event.zoom ?? 15
-    const p = isFullscreen ? 0 : (event.padding ?? mapStore.padding)
+
+    // We DO NOT pass `padding` here.
+    // Why? Because MapLibre's `flyTo` completely disables the global map padding (which accounts for our UI layout)
+    // if you pass ANY padding value to it. By leaving it undefined, it will respect `mapStore.pagePadding` naturally
+    // and center the point precisely in the visible portion of the MapPreview!
 
     m.flyTo({
       center: [point.lng, point.lat],
       zoom: targetZoom,
       bearing: event.bearing ?? m.getBearing(),
       pitch: event.pitch ?? m.getPitch(),
-      padding: p,
       duration: 800,
       essential: mapStore.forceAnimations,
     })
@@ -263,10 +267,36 @@ watch(() => mapStore.positionEvent, (event) => {
     const bounds = new maplibregl.LngLatBounds()
     points.forEach(p => bounds.extend([p.lng, p.lat]))
 
-    const p = isFullscreen ? 50 : (event.padding ?? mapStore.padding)
+    // For fitBounds, passing `padding` completely overrides the map's default padding (set via `setPadding`).
+    // So to keep our routes centered in the visible left portion of the screen (excluding the right-side card),
+    // we MUST provide the full padding layout, plus the 50px buffer room.
+    const basePadding = isFullscreen ? { top: 0, bottom: 0, left: 0, right: 0 } : (mapStore.pagePadding)
+    
+    // We get the extra margin needed (usually 50px) + an absolute minimum of 20px extra padding
+    // so points don't graze the edge of the viewport.
+    const EXTRA_EDGE_BUFFER = 20;
+    
+    let extraTop = 50 + EXTRA_EDGE_BUFFER, extraBottom = 50 + EXTRA_EDGE_BUFFER, extraLeft = 50 + EXTRA_EDGE_BUFFER, extraRight = 50 + EXTRA_EDGE_BUFFER
+    if (event.padding) {
+        if (typeof event.padding === 'number') {
+            extraTop = extraBottom = extraLeft = extraRight = event.padding + EXTRA_EDGE_BUFFER
+        } else {
+            extraTop = (event.padding.top ?? 50) + EXTRA_EDGE_BUFFER
+            extraBottom = (event.padding.bottom ?? 50) + EXTRA_EDGE_BUFFER
+            extraLeft = (event.padding.left ?? 50) + EXTRA_EDGE_BUFFER
+            extraRight = (event.padding.right ?? 50) + EXTRA_EDGE_BUFFER
+        }
+    }
+
+    const finalPadding = {
+        top: basePadding.top + extraTop,
+        bottom: basePadding.bottom + extraBottom,
+        left: basePadding.left + extraLeft,
+        right: basePadding.right + extraRight,
+    }
 
     m.fitBounds(bounds, {
-      padding: p,
+      padding: finalPadding,
       bearing: event.bearing ?? m.getBearing(),
       pitch: event.pitch ?? m.getPitch(),
       duration: 800,
@@ -417,7 +447,7 @@ defineExpose({
     <Transition name="slide-up">
       <div
         v-if="selectedStopData"
-        class="fixed bottom-6 left-4 right-4 z-[60] md:left-1/2 md:-translate-x-1/2 md:w-96"
+        class="fixed bottom-6 left-4 right-4 z-[60] md:left-1/2 md:-translate-x-1/2 md:w-96 mb-10 md:mb-0"
       >
         <UCard :ui="{ body: 'p-0', root: 'ring-1 ring-gray-200 dark:ring-gray-800' }">
           <div class="p-4">
@@ -507,7 +537,7 @@ defineExpose({
     <Transition name="slide-up">
       <div
         v-if="mapStore.selectedVehicle && mapStore.isFullscreen"
-        class="fixed bottom-6 left-4 right-4 z-[60] md:left-1/2 md:-translate-x-1/2 md:w-96"
+        class="fixed bottom-6 left-4 right-4 z-[60] md:left-1/2 md:-translate-x-1/2 md:w-96  mb-10 md:mb-0"
       >
         <UCard :ui="{ body: 'p-0', root: 'ring-1 ring-gray-200 dark:ring-gray-800' }">
           <!-- Header colored strip with dynamic color -->

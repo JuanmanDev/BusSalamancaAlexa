@@ -173,7 +173,7 @@ function openInAppleMaps() {
         />
         
         <span v-if="lastUpdated" class="flex items-center justify-center gap-1">
-          <span class="text-xs text-gray-500" v-if="lastUpdated">
+          <span class="text-xs text-gray-500 mt-2" v-if="lastUpdated">
             Última actualización: {{ formatLastUpdated() }}
           </span>
         </span>

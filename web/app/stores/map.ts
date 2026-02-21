@@ -50,7 +50,7 @@ export interface MapState {
     routeDestination: { id: string; name: string; type: 'user' | 'stop' | 'address' | 'map'; lat?: number; lng?: number } | null
 }
 
-export type PositionEventType = 'stop' | 'line' | 'multi-stop' | 'user' | 'manual' | 'vehicle'
+export type PositionEventType = 'stop' | 'line' | 'multi-stop' | 'user' | 'manual' | 'vehicle' | 'route'
 
 export interface MapPositionEvent {
     id: number
@@ -224,22 +224,21 @@ export const useMapStore = defineStore('map', () => {
         }
     }
 
-    function updatePositionWithMapPreviewContainer(points: { lat: number; lng: number }[], options: { zoom?: number, padding?: any, type?: PositionEventType } = {}) {
+    async function updatePositionWithMapPreviewContainer(points: { lat: number; lng: number }[], options: { zoom?: number, padding?: any, type?: PositionEventType } = {}) {
         console.log('updatePositionWithMapPreviewContainer', points, options);
 
-        let paddingValue = { top: 20, bottom: 20, left: 20, right: 20 };
-        if (!isFullscreen.value) {
-            paddingValue = pagePadding.value
-        }
+        await nextTick(); // Wait for any DOM changes to settle (like exiting fullscreen) before reading rect
+        setPagePaddingFromMapPreviewContainer();
 
-        console.log('updatePositionWithMapPreviewContainer padding', paddingValue);
+        // We only pass explicit padding. The global page padding is handled by the map instance automatically!
+        const explicitPadding = options.padding ?? { top: 50, bottom: 50, left: 50, right: 50 }
 
         positionEvent.value = {
             id: Date.now(),
             type: options.type || 'manual',
             points,
             zoom: options.zoom,
-            padding: paddingValue
+            padding: explicitPadding
         }
     }
 
@@ -485,55 +484,29 @@ export const useMapStore = defineStore('map', () => {
             return
         }
 
-        const mapPreviewContainer = document.getElementById('mapPreviewContainer')
-
-        let paddingValue = { top: 0, bottom: 0, left: 0, right: 0 };
-        if (!isFullscreen.value && mapPreviewContainer) {
+        // Use the explicitly registered element, or fallback to query if none
+        const mapPreviewContainer = activeMapPreviewElement.value || document.getElementById('mapPreviewContainer')
+        if (mapPreviewContainer) {
             const rect = mapPreviewContainer.getBoundingClientRect()
-            const isDesktopSideBySide = window.innerWidth >= 768
-
-            if (isDesktopSideBySide) {
-                // Desktop: MapPreview is on the left side (sticky)
-                // Map padding should center content within the MapPreview area
-                const headerHeight = 64
-                pagePadding.value = {
-                    top: headerHeight,
-                    bottom: 20,
-                    left: 20,
-                    right: window.innerWidth - rect.right + 20
-                }
-                return
-            }
-
-            // Mobile: vertical layout
-            if (currentContext.value === 'home') {
-                paddingValue = { top: 0, bottom: 0, left: 0, right: 0 };
-            } else {
-                // set the top padding to the height of the appheader
-                pagePadding.value.top = 64;
-                // Bottom is 50vh - top
-                const windowHeight = window.innerHeight / 2;
-                pagePadding.value.bottom = windowHeight - 64 + 20;
-                pagePadding.value.left = 20;
-                pagePadding.value.right = 20;
-
-                return;
-            }
-            // get the position of the mapPreviewContainer relative to the parent
+            const clientWidth = document.documentElement.clientWidth
             const windowHeight = window.innerHeight
 
-            // paddings
-            const topPadding = rect.top + window.scrollY;
-            const bottomPadding = windowHeight - rect.bottom;
+            // Prevent invalid calculations if element is hidden/mid-transition
+            if (rect.width === 0 && rect.height === 0) return;
 
-            if (topPadding < 0) return;
-            if (bottomPadding < 0) return;
+            // Padding is the area of the screen OUTSIDE the MapPreview container.
+            // mapRef is fixed inset-0, so it covers the whole screen.
+            const topPadding = Math.max(0, rect.top);
+            const bottomPadding = Math.max(0, windowHeight - rect.bottom);
+            const leftPadding = Math.max(0, rect.left);
+            const rightPadding = Math.max(0, clientWidth - rect.right); // clientWidth avoids scrollbar math bugs!
 
+            // Add 20px inner padding so markers don't touch the edges of the visible MapPreview window
             pagePadding.value = {
-                top: topPadding,
-                bottom: bottomPadding,
-                left: 20,
-                right: 20
+                top: topPadding + 20,
+                bottom: bottomPadding + 20,
+                left: leftPadding + 20,
+                right: rightPadding + 20
             }
         }
     }
@@ -574,18 +547,10 @@ export const useMapStore = defineStore('map', () => {
     async function updateMapToUserLocation(allStopsData: BusStop[], geolocation: ReturnType<typeof useGeolocation>) {
         if (!geolocation.userLocation.value) return
 
-        const closeStops = geolocation.getNearbyStops(allStopsData, 2000).slice(0, 15)
-
         const points = [{
             lng: geolocation.userLocation.value.lng,
             lat: geolocation.userLocation.value.lat
         }]
-
-        closeStops.forEach(stop => {
-            if (stop.longitude && stop.latitude) {
-                points.push({ lng: stop.longitude, lat: stop.latitude })
-            }
-        })
 
         // await new Promise(resolve => setTimeout(resolve, 1000))
         await new Promise(resolve => setTimeout(resolve, 10))
@@ -593,7 +558,7 @@ export const useMapStore = defineStore('map', () => {
         stops.value = allStopsData
 
         updatePositionWithMapPreviewContainer(points, {
-            zoom: 9,
+            zoom: 15,
         })
     }
 
@@ -1131,12 +1096,39 @@ export const useMapStore = defineStore('map', () => {
 
 
     // ===== MapPreview Registration =====
-    function registerMapPreview() {
-        hasPageMapPreview.value = true
+    const activeMapPreviewElement = ref<HTMLElement | null>(null)
+
+    let ro: ResizeObserver | null = null;
+    if (typeof window !== 'undefined' && window.ResizeObserver) {
+        ro = new ResizeObserver(() => {
+            if (hasPageMapPreview.value && !isFullscreen.value) {
+                setPagePaddingFromMapPreviewContainer();
+            }
+        });
     }
 
-    function unregisterMapPreview() {
-        hasPageMapPreview.value = false
+    function registerMapPreview(el?: HTMLElement) {
+        hasPageMapPreview.value = true
+        if (el) {
+            activeMapPreviewElement.value = el
+            if (ro) {
+                ro.disconnect()
+                ro.observe(el)
+            }
+        }
+    }
+
+    function unregisterMapPreview(el?: HTMLElement) {
+        if (el && activeMapPreviewElement.value === el) {
+            activeMapPreviewElement.value = null
+            if (ro) ro.disconnect()
+            // Don't set hasPageMapPreview to false here, because another MapPreview might have just mounted
+            // We'll let the mounting MapPreview handle the state, or we could check if active is null
+            hasPageMapPreview.value = false
+        } else if (!el) {
+            hasPageMapPreview.value = false
+            if (ro) ro.disconnect()
+        }
     }
 
     return {
@@ -1164,6 +1156,7 @@ export const useMapStore = defineStore('map', () => {
         showControls,
         hasPageMapPreview,
         padding,
+        pagePadding,
         mapInstance,
         positionEvent,
         currentContext,
@@ -1221,6 +1214,7 @@ export const useMapStore = defineStore('map', () => {
         setFilterLineIds,
         updateDisplay,
         registerMapPreview,
-        unregisterMapPreview
+        unregisterMapPreview,
+        activeMapPreviewElement,
     }
 })
