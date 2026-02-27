@@ -191,7 +191,8 @@ const toggleFullscreen = async () => {
     }
 
     // 3. Trigger state change (Teleport happens)
-    mapStore.setFullscreen(true)
+    // Skip immediate position update — we defer it to AFTER the FLIP animation
+    mapStore.setFullscreen(true, true)
 
     // 4. Force reflow/next tick to properly apply styles after teleport
     await nextTick()
@@ -213,27 +214,34 @@ const toggleFullscreen = async () => {
       zIndex: '60'
     }
 
-    // 6. Cleanup after transition
-    setTimeout(() => {
+    // 6. Cleanup after FLIP transition, then re-center map content
+    setTimeout(async () => {
       isTransitioning.value = false
       el.style.transition = ''
       // Remove explicit px dimensions and rely exclusively on CSS classes (`fixed inset-0`)
       // to handle window resizing natively while in fullscreen.
       containerStyle.value = {}
+
+      // 7. Re-center map content with fullscreen padding.
+      //    Now that the container is fully expanded, trigger a smooth flyTo
+      //    so the points of interest animate to the center of the full viewport.
+      await nextTick()
+      if (mapStore.positionEvent) {
+        mapStore.updatePositionWithMapPreviewContainer(
+          mapStore.positionEvent.points,
+          { ...mapStore.positionEvent, type: 'manual' }
+        )
+      }
     }, 500)
 
   } else {
     // EXITING Fullscreen
     isTransitioning.value = true
     mapStore.isExitingFullscreen = true
-    internalToggle.value = false
+    // Mark as internal so the watcher skips when setFullscreen(false) fires
+    internalToggle.value = true
 
     const currentRect = el.getBoundingClientRect()
-    
-    // Ensure Teleport is kept alive during transition
-    isTransitioning.value = true
-    mapStore.isExitingFullscreen = true
-    internalToggle.value = false
     
     // 1. Instantly lock element to its exact current fullscreen viewport position
     containerStyle.value = {
@@ -269,8 +277,8 @@ const toggleFullscreen = async () => {
       zIndex: '60'
     }
 
-    // Wait for the CSS transition of both the Container and <main> to finish
-    setTimeout(() => {
+    // Wait for the CSS transition to finish
+    setTimeout(async () => {
       // 6. Reset states and strip manual transition overrides
       el.style.transition = ''
       mapStore.setFullscreen(false)
@@ -279,6 +287,17 @@ const toggleFullscreen = async () => {
       
       // 7. Clear explicit styles so the component drops back into its static relative DOM wrapper
       containerStyle.value = {}
+
+      // 8. Re-center the map content with the restored page padding.
+      //    Wait for DOM to settle so the MapPreview container is back in its layout
+      //    position and padding calculation is accurate.
+      await nextTick()
+      if (mapStore.positionEvent) {
+        mapStore.updatePositionWithMapPreviewContainer(
+          mapStore.positionEvent.points,
+          { ...mapStore.positionEvent, type: 'manual' }
+        )
+      }
     }, 500)
   }
 }
@@ -305,7 +324,7 @@ const toggleFullscreen = async () => {
         <!-- Button container with responsive positioning -->
         <!-- Mobile: Bottom-Right -->
         <!-- Desktop: Top-Right -->
-        <div class="absolute bottom-4 right-4 z-10 pointer-events-auto flex flex-col gap-2">
+        <div class="absolute bottom-4 right-0 mr-4 z-10 pointer-events-auto flex flex-col gap-2">
           <UTooltip :text="mapStore.isFullscreen ? 'Salir de pantalla completa' : 'Ver mapa completo'" :delay-duration="0">
             <UButton
               color="neutral"

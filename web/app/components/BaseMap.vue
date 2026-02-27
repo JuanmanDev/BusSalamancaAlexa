@@ -252,10 +252,11 @@ watch(() => mapStore.positionEvent, (event) => {
   const m = mapInstance.map
   if (!m || !event) return
 
-  // Reset MapLibre's persistent internal padding to zero.
-  // flyTo/fitBounds apply their padding parameter as a PERSISTENT offset,
-  // so we must clear the old one first to avoid stale values between navigations.
-  m.setPadding({ top: 0, bottom: 0, left: 0, right: 0 })
+  console.log('positionEvent', event)
+
+  // NOTE: Do NOT reset setPadding here. MapLibre's flyTo/fitBounds natively
+  // interpolate the padding parameter from old→new during animation. Resetting
+  // to zero first causes an instant visual jump that kills the smooth transition.
 
   const points = event.points
   const isSinglePoint = points.length === 1
@@ -265,6 +266,19 @@ watch(() => mapStore.positionEvent, (event) => {
 
     // Use centralized padding calculation — no inline buffers needed
     const finalPadding = mapStore.getEffectivePadding()
+
+    console.log('finalPadding', finalPadding)
+
+    // point.lng += 0.00001
+    console.log('flying to', {
+      center: [point.lng, point.lat],
+      zoom: event.zoom,
+      padding: finalPadding,
+      bearing: event.bearing ?? m.getBearing(),
+      pitch: event.pitch ?? m.getPitch(),
+      duration: 800,
+      essential: mapStore.forceAnimations,
+    })
 
     m.flyTo({
       center: [point.lng, point.lat],
@@ -276,6 +290,9 @@ watch(() => mapStore.positionEvent, (event) => {
       essential: mapStore.forceAnimations,
     })
   } else if (points.length > 1) {
+
+      m.setPadding({ top: 0, bottom: 0, left: 0, right: 0 })
+
     const bounds = new maplibregl.LngLatBounds()
     points.forEach(p => bounds.extend([p.lng, p.lat]))
 
@@ -303,8 +320,8 @@ watch(
     const m = mapInstance.map
     if (!m) return
 
-    // Reset persistent padding before animation
-    m.setPadding({ top: 0, bottom: 0, left: 0, right: 0 })
+    // NOTE: padding is handled by the flyTo/easeTo padding parameter,
+    // which smoothly interpolates from old→new. No manual setPadding reset needed.
     const finalPadding = mapStore.getEffectivePadding()
 
     // Case 1: Switched to a DIFFERENT vehicle -> Fly to it
@@ -337,7 +354,11 @@ watch(
 // ===== Stop/Vehicle Handlers =====
 function handleStopClick(stop: BusStop) {
   if (!mapStore.isFullscreen) {
-    mapStore.setFullscreen(true)
+    mapStore.setFullscreen(true, true) // skip position update — focusOnStop handles it
+  }
+  // Clear any active line context so the stop takes full visual priority
+  if (mapStore.highlightLineId) {
+    mapStore.clearHighlight()
   }
   mapStore.focusOnStop(stop)
   emit('stopClick', stop)

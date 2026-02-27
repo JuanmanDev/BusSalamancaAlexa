@@ -161,6 +161,10 @@ export const useMapStore = defineStore('map', () => {
     let refreshInterval: ReturnType<typeof setInterval> | null = null
     let vehicleInterval: ReturnType<typeof setInterval> | null = null
 
+    // Track whether the general-view map animation has already played.
+    // Prevents repeating the fly-to animation on every navigation between home/lines/stops.
+    let generalViewPositioned = false
+
     // ===== Internal Helpers =====
 
     function clearRefreshInterval() {
@@ -227,6 +231,12 @@ export const useMapStore = defineStore('map', () => {
         lastPositionUpdateTime = Date.now()
     }
 
+    /** Reset debounce so the next position update fires immediately. */
+    function resetPositionDebounce() {
+        if (positionUpdateTimeout) clearTimeout(positionUpdateTimeout)
+        lastPositionUpdateTime = 0
+    }
+
     function updatePosition(points: { lat: number; lng: number }[], options: { zoom?: number, bearing?: number, pitch?: number, padding?: any, type?: PositionEventType } = {}) {
         console.log('updatePosition', points, options);
         const payload = {
@@ -267,8 +277,12 @@ export const useMapStore = defineStore('map', () => {
 
         const now = Date.now()
         if (now - lastPositionUpdateTime < 800) {
-            if (positionUpdateTimeout) clearTimeout(positionUpdateTimeout)
-            positionUpdateTimeout = setTimeout(() => executePositionUpdate(payload), 800 - (now - lastPositionUpdateTime))
+            // Last-wins: cancel pending update and schedule the newest one
+            if (positionUpdateTimeout) {
+                clearTimeout(positionUpdateTimeout)
+                console.log('updatePositionWithMapPreviewContainer cleared timeout');
+            }
+            positionUpdateTimeout = setTimeout(() => executePositionUpdate(payload), 100)
         } else {
             executePositionUpdate(payload)
         }
@@ -308,13 +322,10 @@ export const useMapStore = defineStore('map', () => {
             highlightVehicleId.value = null
             selectedVehicle.value = null
 
-            // If we are NOT in a line context, clear line highlight
-            // If we ARE in a line context, keep it (or ensure it matches context)
-            if (currentContext.value !== 'line') {
-                highlightLineId.value = null
-            } else if (currentContextId.value) {
-                highlightLineId.value = currentContextId.value
-            }
+            // Always clear line highlight when focusing on a single stop.
+            // The stop takes full visual priority (SRP).
+            highlightLineId.value = null
+            linesToDraw.value = []
 
             // Don't replace stops - just highlight the selected one
             // Stops array should remain as-is so other stops stay visible
@@ -452,14 +463,15 @@ export const useMapStore = defineStore('map', () => {
         updatePosition([{ lng: -5.6635, lat: 40.9701 }], { zoom: 14, type: 'manual' })
     }
 
-    function setFullscreen(value: boolean) {
+    function setFullscreen(value: boolean, skipPositionUpdate = false) {
         isFullscreen.value = value
         isInteractive.value = value
         showControls.value = value
 
-        // Retrigger last position event to adjust layout (padding) if needed
-        // No explicit padding override — getEffectivePadding() in BaseMap will recalculate
-        if (positionEvent.value) {
+        // Only re-trigger position when ENTERING fullscreen (to adjust padding).
+        // Exiting defers to the destination page's context setter.
+        // Skipped when the caller handles positioning itself (e.g., focusOnStop).
+        if (value && !skipPositionUpdate && positionEvent.value) {
             updatePositionWithMapPreviewContainer(positionEvent.value.points, { ...positionEvent.value, type: 'manual' })
         }
     }
@@ -605,7 +617,6 @@ export const useMapStore = defineStore('map', () => {
         clearContext()
         currentContext.value = 'home'
 
-
         setPagePaddingFromMapPreviewContainer()
 
         const busService = useBusService()
@@ -614,25 +625,31 @@ export const useMapStore = defineStore('map', () => {
         // Load all stops
         const allStopsData = await busService.fetchStops()
         stops.value = allStopsData
+        allStops.value = allStopsData
 
-        // Try to get user location and update map
-        let locationFound = !!geolocation.userLocation.value
-        if (!locationFound && !geolocation.permissionDenied.value) {
-            locationFound = await geolocation.requestLocation()
-            if (!locationFound && geolocation.isTooFar.value) {
-                useToast().add({
-                    title: 'Ubicación lejana',
-                    description: 'Estás a más de 15km de Salamanca. Mostrando vista general.',
-                    icon: 'i-lucide-map-pin-off',
-                    color: 'warning'
-                })
+        // Only animate the map on the FIRST visit to a general-view page.
+        // Subsequent navigations (home→lines→home) just refresh data.
+        if (!generalViewPositioned) {
+            // Try to get user location and update map
+            let locationFound = !!geolocation.userLocation.value
+            if (!locationFound && !geolocation.permissionDenied.value) {
+                locationFound = await geolocation.requestLocation()
+                if (!locationFound && geolocation.isTooFar.value) {
+                    useToast().add({
+                        title: 'Ubicación lejana',
+                        description: 'Estás a más de 15km de Salamanca. Mostrando vista general.',
+                        icon: 'i-lucide-map-pin-off',
+                        color: 'warning'
+                    })
+                }
             }
-        }
 
-        if (locationFound) {
-            await updateMapToUserLocation(allStopsData, geolocation)
-        } else {
-            showAllStops(allStopsData)
+            if (locationFound) {
+                await updateMapToUserLocation(allStopsData, geolocation)
+            } else {
+                showAllStops(allStopsData)
+            }
+            generalViewPositioned = true
         }
 
         startGlobalVehicleUpdates()
@@ -646,11 +663,7 @@ export const useMapStore = defineStore('map', () => {
             lat: geolocation.userLocation.value.lat
         }]
 
-        // await new Promise(resolve => setTimeout(resolve, 1000))
-        await new Promise(resolve => setTimeout(resolve, 10))
-
-        stops.value = allStopsData
-
+        // Stops are already set by the caller — only trigger the position update
         updatePositionWithMapPreviewContainer(points, {
             zoom: 15,
         })
@@ -658,6 +671,9 @@ export const useMapStore = defineStore('map', () => {
 
     async function setContextToStopPage(stopId: string) {
         console.log('[MapStore] setContextToStopPage', stopId)
+
+        // Reset debounce so focusOnStop position always fires immediately
+        resetPositionDebounce()
 
         // Check if we are already highlighting this stop to prevent flicker
         const preservingHighlight = highlightStopId.value === stopId
@@ -811,6 +827,9 @@ export const useMapStore = defineStore('map', () => {
      */
     async function setContextToLinePage(lineId: string) {
         console.log('[MapStore] setContextToLinePage', lineId)
+
+        // Reset debounce so focusOnLine position always fires immediately
+        resetPositionDebounce()
 
         // Prevent re-entry if already on this line (unless foreced?)
         // If we are already on this line, we might still want to refresh vehicles but not everything else.
@@ -1075,30 +1094,34 @@ export const useMapStore = defineStore('map', () => {
         setPagePaddingFromMapPreviewContainer()
 
         const busService = useBusService()
-        const geolocation = useGeolocation()
 
         // Load all stops
         const allStopsData = await busService.fetchStops()
         stops.value = allStopsData
+        allStops.value = allStopsData
 
-        // Try to get user location and update map
-        let locationFound = !!geolocation.userLocation.value
-        if (!locationFound && !geolocation.permissionDenied.value) {
-            locationFound = await geolocation.requestLocation()
-            if (!locationFound && geolocation.isTooFar.value) {
-                useToast().add({
-                    title: 'Ubicación lejana',
-                    description: 'Estás a más de 15km de Salamanca. Mostrando vista general.',
-                    icon: 'i-lucide-map-pin-off',
-                    color: 'warning'
-                })
+        // Only animate on first visit to a general-view page
+        if (!generalViewPositioned) {
+            const geolocation = useGeolocation()
+            let locationFound = !!geolocation.userLocation.value
+            if (!locationFound && !geolocation.permissionDenied.value) {
+                locationFound = await geolocation.requestLocation()
+                if (!locationFound && geolocation.isTooFar.value) {
+                    useToast().add({
+                        title: 'Ubicación lejana',
+                        description: 'Estás a más de 15km de Salamanca. Mostrando vista general.',
+                        icon: 'i-lucide-map-pin-off',
+                        color: 'warning'
+                    })
+                }
             }
-        }
 
-        if (locationFound) {
-            await updateMapToUserLocation(allStopsData, geolocation)
-        } else {
-            showAllStops(allStopsData)
+            if (locationFound) {
+                await updateMapToUserLocation(allStopsData, geolocation)
+            } else {
+                showAllStops(allStopsData)
+            }
+            generalViewPositioned = true
         }
 
         startGlobalVehicleUpdates()
@@ -1116,30 +1139,34 @@ export const useMapStore = defineStore('map', () => {
         setPagePaddingFromMapPreviewContainer()
 
         const busService = useBusService()
-        const geolocation = useGeolocation()
 
         // Load all stops
         const allStopsData = await busService.fetchStops()
         stops.value = allStopsData
+        allStops.value = allStopsData
 
-        // Try to get user location and update map
-        let locationFound = !!geolocation.userLocation.value
-        if (!locationFound && !geolocation.permissionDenied.value) {
-            locationFound = await geolocation.requestLocation()
-            if (!locationFound && geolocation.isTooFar.value) {
-                useToast().add({
-                    title: 'Ubicación lejana',
-                    description: 'Estás a más de 15km de Salamanca. Mostrando vista general.',
-                    icon: 'i-lucide-map-pin-off',
-                    color: 'warning'
-                })
+        // Only animate on first visit to a general-view page
+        if (!generalViewPositioned) {
+            const geolocation = useGeolocation()
+            let locationFound = !!geolocation.userLocation.value
+            if (!locationFound && !geolocation.permissionDenied.value) {
+                locationFound = await geolocation.requestLocation()
+                if (!locationFound && geolocation.isTooFar.value) {
+                    useToast().add({
+                        title: 'Ubicación lejana',
+                        description: 'Estás a más de 15km de Salamanca. Mostrando vista general.',
+                        icon: 'i-lucide-map-pin-off',
+                        color: 'warning'
+                    })
+                }
             }
-        }
 
-        if (locationFound) {
-            await updateMapToUserLocation(allStopsData, geolocation)
-        } else {
-            showAllStops(allStopsData)
+            if (locationFound) {
+                await updateMapToUserLocation(allStopsData, geolocation)
+            } else {
+                showAllStops(allStopsData)
+            }
+            generalViewPositioned = true
         }
 
         startGlobalVehicleUpdates()
