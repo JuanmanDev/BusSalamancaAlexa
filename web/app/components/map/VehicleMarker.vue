@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { MglMarker } from '@indoorequal/vue-maplibre-gl'
+import { useNow } from '@vueuse/core'
 import type { BusVehicle } from '~/types/bus'
 import { getLineColor } from '~/utils/bus'
 
@@ -68,6 +69,11 @@ const containerClasses = computed(() => {
 })
 
 const isHighlighted = computed(() => props.state === 'highlighted')
+
+const now = useNow({ interval: 1000 })
+const dataAge = computed(() => props.vehicle.timestamp ? now.value.getTime() - props.vehicle.timestamp : 0)
+const isDelayed = computed(() => dataAge.value > 7000)
+const isStale = computed(() => dataAge.value > 30000)
 </script>
 
 <template>
@@ -88,7 +94,7 @@ const isHighlighted = computed(() => props.state === 'highlighted')
               lineColor,
               isHighlighted
                 ? 'opacity-100 ring-4 ring-yellow-400 ring-opacity-50'
-                : 'animate-ping opacity-25'
+                : (isDelayed ? 'opacity-0' : 'animate-ping opacity-25')
             ]"
           />
 
@@ -111,6 +117,10 @@ const isHighlighted = computed(() => props.state === 'highlighted')
               <circle cx="16" cy="18" r="2"/>
             </svg>
             <span class="text-white font-bold text-s leading-none">{{ vehicle.lineId }}</span>
+            <!-- Stale icon overlay -->
+            <div v-if="isStale" class="absolute -top-1 -right-1 bg-red-500 rounded-full border border-white flex items-center justify-center p-0.5 shadow-sm">
+                <UIcon name="i-lucide-alert-triangle" class="w-2.5 h-2.5 text-white" />
+            </div>
           </div>
         </div>
       </div>

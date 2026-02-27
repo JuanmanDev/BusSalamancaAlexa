@@ -44,6 +44,7 @@ interface SearchResult {
 }
 
 const suggestions = ref<SearchResult[]>([])
+const selectedOverlayStop = ref<any>(null)
 const isSearching = ref(false)
 const activeField = ref<'origin' | 'destination' | null>(null)
 
@@ -168,6 +169,10 @@ function confirmMapSelection() {
     }
 
     cancelMapSelection()
+    
+    if (mapStore.routeOrigin && mapStore.routeDestination) {
+        searchRoute()
+    }
 }
 
 function cancelMapSelection() {
@@ -196,9 +201,13 @@ watch(() => mapStore.highlightStopId, (newStopId) => {
             if (activeField.value === 'origin' || pickingField.value === 'origin') {
                 mapStore.setRouteOrigin(loc)
                 originQuery.value = stop.name
-            } else {
+                selectedOverlayStop.value = null
+            } else if (activeField.value === 'destination' || pickingField.value === 'destination') {
                 mapStore.setRouteDestination(loc)
                 destQuery.value = stop.name
+                selectedOverlayStop.value = null
+            } else {
+                selectedOverlayStop.value = stop
             }
             
             // Clear the map highlight so it doesn't look like we just "viewed" it
@@ -209,6 +218,10 @@ watch(() => mapStore.highlightStopId, (newStopId) => {
             // If we were in picking mode, exit it
             if (isPickingLocation.value) {
                 cancelMapSelection()
+            }
+            
+            if (mapStore.routeOrigin && mapStore.routeDestination) {
+                searchRoute()
             }
         }
     }
@@ -495,6 +508,67 @@ function swappoints() {
             <div v-else-if="activeField && !isSearching && suggestions.length === 0 && (activeField === 'origin' ? originQuery : destQuery).length > 2" class="py-10 text-center text-gray-500">
                 <p>No se encontraron resultados</p>
             </div>
+        </div>
+        
+        <!-- Stop Overlay Card -->
+        <div v-if="selectedOverlayStop" class="relative z-20 mt-4 mx-4">
+             <UCard :ui="{ body: 'p-4', root: 'shadow-lg border-2 border-primary/20 backdrop-blur-md bg-white/90 dark:bg-gray-900/90' }">
+                 <div class="flex items-start justify-between mb-3">
+                     <div class="flex items-center gap-2">
+                         <UIcon name="i-lucide-bus" class="w-5 h-5 text-primary-500" />
+                         <div>
+                             <h3 class="font-bold text-gray-900 dark:text-white leading-none">{{ selectedOverlayStop.name }}</h3>
+                             <p class="text-xs text-gray-500 mt-1">Parada {{ selectedOverlayStop.id }}</p>
+                         </div>
+                     </div>
+                     <UButton icon="i-lucide-x" color="neutral" variant="ghost" size="xs" @click="selectedOverlayStop = null" />
+                 </div>
+                 
+                 <div class="flex gap-2">
+                     <UButton 
+                        size="sm" 
+                        color="neutral" 
+                        block 
+                        class="flex-1 shadow-sm border border-gray-200 dark:border-gray-800"
+                        @click="() => {
+                            mapStore.setRouteOrigin({
+                                id: selectedOverlayStop.id,
+                                name: selectedOverlayStop.name,
+                                type: 'stop',
+                                lat: selectedOverlayStop.latitude,
+                                lng: selectedOverlayStop.longitude
+                            });
+                            originQuery = selectedOverlayStop.name;
+                            selectedOverlayStop = null;
+                            if (mapStore.routeOrigin && mapStore.routeDestination) searchRoute();
+                        }"
+                     >
+                         <UIcon name="i-lucide-circle" class="w-4 h-4 text-blue-500" />
+                         Desde aquí
+                     </UButton>
+                     <UButton 
+                        size="sm" 
+                        color="neutral" 
+                        block 
+                        class="flex-1 shadow-sm border border-gray-200 dark:border-gray-800"
+                        @click="() => {
+                            mapStore.setRouteDestination({
+                                id: selectedOverlayStop.id,
+                                name: selectedOverlayStop.name,
+                                type: 'stop',
+                                lat: selectedOverlayStop.latitude,
+                                lng: selectedOverlayStop.longitude
+                            });
+                            destQuery = selectedOverlayStop.name;
+                            selectedOverlayStop = null;
+                            if (mapStore.routeOrigin && mapStore.routeDestination) searchRoute();
+                        }"
+                     >
+                         <UIcon name="i-lucide-map-pin" class="w-4 h-4 text-red-500" />
+                         Llegar aquí
+                     </UButton>
+                 </div>
+             </UCard>
         </div>
         
         <!-- Search Button (when ready) -->

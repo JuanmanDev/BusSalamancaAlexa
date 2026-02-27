@@ -31,6 +31,13 @@ const clickLocationButton = async () => {
           color: 'error',
           icon: 'i-lucide-alert-circle'
         })
+      } else if (geolocation.isTooFar.value) {
+        toast.add({
+          title: 'Ubicación lejana',
+          description: 'Estás a más de 15km de Salamanca.',
+          color: 'warning',
+          icon: 'i-lucide-map-pin-off'
+        })
       } else {
         // Timeout or other error
         const msg = geolocation.locationError.value === 'Request timeout' 
@@ -41,7 +48,7 @@ const clickLocationButton = async () => {
           title: 'Error de ubicación',
           description: msg,
           color: 'warning',
-          icon: 'i-lucide-map-pin-off'
+          icon: 'i-lucide-alert-triangle'
         })
       }
     }
@@ -91,7 +98,7 @@ onMounted(() => {
        mapStore.registerMapPreview()
     }
   }
-  mapStore.setPagePaddingFromMapPreviewContainer();
+  //mapStore.setPagePaddingFromMapPreviewContainer();
 
   // If we're mounted while already in fullscreen (fallback MapPreview case or during navigation),
   // immediately apply fullscreen styles since the watcher won't catch it
@@ -307,9 +314,13 @@ const toggleFullscreen = async () => {
               :icon="mapStore.isFullscreen ? 'i-lucide-minimize-2' : 'i-lucide-maximize-2'"
               @click="toggleFullscreen"
             >
-              <span class="btn-label-wrap hidden sm:grid">
-                <span class="btn-label" :class="mapStore.isFullscreen ? 'label-visible' : 'label-hidden'">Salir</span>
-                <span class="btn-label" :class="!mapStore.isFullscreen ? 'label-visible' : 'label-hidden'">Ver mapa completo</span>
+              <span class="hidden sm:flex items-center">
+                <span class="label-anim" :class="mapStore.isFullscreen ? 'label-visible' : 'label-hidden'">
+                  <span class="label-inner">Salir</span>
+                </span>
+                <span class="label-anim" :class="!mapStore.isFullscreen ? 'label-visible' : 'label-hidden'">
+                  <span class="label-inner">Ver mapa completo</span>
+                </span>
               </span>
             </UButton>
           </UTooltip>
@@ -390,39 +401,26 @@ const toggleFullscreen = async () => {
 }
 
 /* ─── Fullscreen button label animation ─────────────────────────────────────
-   Two labels are stacked in a single-column grid.
-   The active label expands from 0fr → 1fr; the inactive collapses to 0fr.
-   interpolate-size lets us transition to/from `auto` / `1fr` smoothly.
+   We use modern CSS Grid 0fr to 1fr transitions to smoothly animate the physical layout width
+   of the button container alongside the text fading.
    ─────────────────────────────────────────────────────────────────────────── */
-:root { interpolate-size: allow-keywords; }
-
-.btn-label-wrap {
-  /* Stack both labels in the same cell via subgrid-like overlap */
+.label-anim {
   display: grid;
-  grid-template-columns: 1fr;   /* single column */
-  grid-template-rows: auto;
-  overflow: hidden;
+  transition: grid-template-columns 0.45s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
 }
 
-.btn-label {
-  /* Both labels occupy the same grid cell */
-  grid-row: 1;
-  grid-column: 1;
-  white-space: nowrap;
-  overflow: hidden;
-  transition:
-    max-width 0.45s cubic-bezier(0.4, 0, 0.2, 1),
-    opacity   0.3s ease;
-}
-
-.label-visible {
-  max-width: 200px;   /* large enough for any label */
+.label-anim.label-visible {
+  grid-template-columns: 1fr;
   opacity: 1;
 }
 
-.label-hidden {
-  max-width: 0;
+.label-anim.label-hidden {
+  grid-template-columns: 0fr;
   opacity: 0;
 }
 
+.label-inner {
+  white-space: nowrap;
+  overflow: hidden;
+}
 </style>

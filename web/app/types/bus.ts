@@ -45,6 +45,7 @@ export interface BusVehicle {
     bearing?: number
     delay?: number
     destination?: string
+    timestamp?: number
 }
 
 export interface FavoriteItem {

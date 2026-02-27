@@ -44,7 +44,14 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="max-w-4xl md:ml-auto px-4 py-6 space-y-4 pointer-events-auto">
+  <div class="md:flex md:min-h-full relative">
+    <!-- MapPreview: hidden on mobile, left sticky on desktop -->
+    <div class="hidden md:block md:flex-1 md:sticky md:top-16 md:h-[calc(100vh-4rem)] shrink-0 md:order-first z-0">
+      <MapPreview height="h-[50vh] md:h-full" />
+    </div>
+
+    <!-- Content (right side on desktop, full width on mobile) -->
+    <div class="w-full md:w-[400px] lg:w-[450px] shrink-0 px-4 py-6 space-y-4 pointer-events-auto relative z-10 ml-auto" id="mapPreviewContainer__">
     <!-- Header -->
     <div class="glass-card p-5">
       <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-1">
@@ -72,6 +79,7 @@ onMounted(() => {
         @select="goToLine"
         @toggle-favorite="toggleFavorite"
       />
+    </div>
     </div>
   </div>
 </template>

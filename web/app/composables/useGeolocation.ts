@@ -9,6 +9,11 @@ export function useGeolocation() {
     const isLocating = ref(false)
     const locationError = ref<string | null>(null)
     const permissionDenied = ref(false)
+    const isTooFar = ref(false)
+
+    // Salamanca Center coordinates
+    const SALAMANCA_CENTER = { lat: 40.9650, lng: -5.6640 }
+    const MAX_DISTANCE_KM = 15
 
     async function requestLocation(options?: PositionOptions): Promise<boolean> {
         if (import.meta.server) return false
@@ -26,6 +31,16 @@ export function useGeolocation() {
 
             navigator.geolocation.getCurrentPosition(
                 (position) => {
+                    const dist = calculateDistance(position.coords.latitude, position.coords.longitude, SALAMANCA_CENTER.lat, SALAMANCA_CENTER.lng)
+                    if (dist > MAX_DISTANCE_KM) {
+                        isTooFar.value = true
+                        locationError.value = 'Estás a más de 15km de Salamanca'
+                        isLocating.value = false
+                        resolve(false)
+                        return
+                    }
+
+                    isTooFar.value = false
                     userLocation.value = {
                         lat: position.coords.latitude,
                         lng: position.coords.longitude,
@@ -66,6 +81,14 @@ export function useGeolocation() {
 
         navigator.geolocation.watchPosition(
             (position) => {
+                const dist = calculateDistance(position.coords.latitude, position.coords.longitude, SALAMANCA_CENTER.lat, SALAMANCA_CENTER.lng)
+                if (dist > MAX_DISTANCE_KM) {
+                    isTooFar.value = true
+                    userLocation.value = null // hide location if they move too far away
+                    return
+                }
+
+                isTooFar.value = false
                 userLocation.value = {
                     lat: position.coords.latitude,
                     lng: position.coords.longitude,
@@ -132,6 +155,7 @@ export function useGeolocation() {
         isLocating,
         locationError,
         permissionDenied,
+        isTooFar,
         requestLocation,
         watchLocation,
         calculateDistance,

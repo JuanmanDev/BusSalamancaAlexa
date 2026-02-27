@@ -8,6 +8,15 @@
 
 import type { BusStop, BusVehicle, BusArrival, RouteOption, BusLine } from '~/types/bus'
 
+// ===== Centralized Padding Configuration (12-Factor: Config) =====
+// Single source of truth for all map padding values.
+const MAP_PADDING = {
+    /** Uniform padding on each border when in fullscreen mode */
+    FULLSCREEN: 10,
+    /** Extra margin so markers/points are not flush against the visible edge */
+    EDGE_MARGIN: 20,
+} as const
+
 export interface MapState {
     // Map position
     center: [number, number] // [lng, lat]
@@ -123,7 +132,7 @@ export const useMapStore = defineStore('map', () => {
     const isFullscreen = ref(false)
     const isExitingFullscreen = ref(false)
     const showControls = ref(false)
-    const forceAnimations = ref(true)
+    const forceAnimations = useLocalStorage('app-force-animations', true)
 
     // Track whether the current page has its own MapPreview component
     const hasPageMapPreview = ref(false)
@@ -210,10 +219,17 @@ export const useMapStore = defineStore('map', () => {
     }
 
     // ===== Position Actions =====
+    let positionUpdateTimeout: ReturnType<typeof setTimeout> | null = null
+    let lastPositionUpdateTime = 0
+
+    function executePositionUpdate(payload: any) {
+        positionEvent.value = payload
+        lastPositionUpdateTime = Date.now()
+    }
 
     function updatePosition(points: { lat: number; lng: number }[], options: { zoom?: number, bearing?: number, pitch?: number, padding?: any, type?: PositionEventType } = {}) {
         console.log('updatePosition', points, options);
-        positionEvent.value = {
+        const payload = {
             id: Date.now(),
             type: options.type || 'manual',
             points,
@@ -221,6 +237,14 @@ export const useMapStore = defineStore('map', () => {
             bearing: options.bearing,
             pitch: options.pitch,
             padding: options.padding
+        }
+
+        const now = Date.now()
+        if (now - lastPositionUpdateTime < 800) {
+            if (positionUpdateTimeout) clearTimeout(positionUpdateTimeout)
+            positionUpdateTimeout = setTimeout(() => executePositionUpdate(payload), 800 - (now - lastPositionUpdateTime))
+        } else {
+            executePositionUpdate(payload)
         }
     }
 
@@ -230,15 +254,23 @@ export const useMapStore = defineStore('map', () => {
         await nextTick(); // Wait for any DOM changes to settle (like exiting fullscreen) before reading rect
         setPagePaddingFromMapPreviewContainer();
 
-        // We only pass explicit padding. The global page padding is handled by the map instance automatically!
-        const explicitPadding = options.padding ?? { top: 50, bottom: 50, left: 50, right: 50 }
-
-        positionEvent.value = {
+        // options.padding is passed through as-is to the position event.
+        // The final padding calculation (base + margin + extra) is done by getEffectivePadding()
+        // when consumed in BaseMap.vue, so we don't add any buffers here.
+        const payload = {
             id: Date.now(),
             type: options.type || 'manual',
             points,
             zoom: options.zoom,
-            padding: explicitPadding
+            padding: options.padding
+        }
+
+        const now = Date.now()
+        if (now - lastPositionUpdateTime < 800) {
+            if (positionUpdateTimeout) clearTimeout(positionUpdateTimeout)
+            positionUpdateTimeout = setTimeout(() => executePositionUpdate(payload), 800 - (now - lastPositionUpdateTime))
+        } else {
+            executePositionUpdate(payload)
         }
     }
 
@@ -323,10 +355,12 @@ export const useMapStore = defineStore('map', () => {
             id: Date.now(),
             points: [{ lng: vehicle.longitude, lat: vehicle.latitude }],
             zoom: 16,
-            padding: padding.value,
+            // No explicit padding — getEffectivePadding() handles it
             type: 'vehicle'
         }
-        setFullscreen(true);
+        if (currentContext.value !== 'route') {
+            setFullscreen(true);
+        }
 
     }
 
@@ -424,8 +458,9 @@ export const useMapStore = defineStore('map', () => {
         showControls.value = value
 
         // Retrigger last position event to adjust layout (padding) if needed
+        // No explicit padding override — getEffectivePadding() in BaseMap will recalculate
         if (positionEvent.value) {
-            updatePositionWithMapPreviewContainer(positionEvent.value.points, { ...positionEvent.value, padding: padding.value, type: 'manual' })
+            updatePositionWithMapPreviewContainer(positionEvent.value.points, { ...positionEvent.value, type: 'manual' })
         }
     }
 
@@ -491,8 +526,19 @@ export const useMapStore = defineStore('map', () => {
             const clientWidth = document.documentElement.clientWidth
             const windowHeight = window.innerHeight
 
+            console.log('[MapStore] setPagePaddingFromMapPreviewContainer', {
+                source: activeMapPreviewElement.value ? 'registered' : 'getElementById',
+                rect: { top: rect.top, bottom: rect.bottom, left: rect.left, right: rect.right, width: rect.width, height: rect.height },
+                clientWidth,
+                windowHeight
+            })
+
             // Prevent invalid calculations if element is hidden/mid-transition
-            if (rect.width === 0 && rect.height === 0) return;
+            if (rect.width === 0 && rect.height === 0) {
+                console.log('[MapStore] Skipping zero-size element')
+                pagePadding.value = { top: 0, bottom: 0, left: 0, right: 0 }
+                return;
+            }
 
             // Padding is the area of the screen OUTSIDE the MapPreview container.
             // mapRef is fixed inset-0, so it covers the whole screen.
@@ -501,14 +547,52 @@ export const useMapStore = defineStore('map', () => {
             const leftPadding = Math.max(0, rect.left);
             const rightPadding = Math.max(0, clientWidth - rect.right); // clientWidth avoids scrollbar math bugs!
 
-            // Add 20px inner padding so markers don't touch the edges of the visible MapPreview window
+            // Store raw distances only — edge margin is applied by getEffectivePadding()
             pagePadding.value = {
-                top: topPadding + 20,
-                bottom: bottomPadding + 20,
-                left: leftPadding + 20,
-                right: rightPadding + 20
+                top: topPadding,
+                bottom: bottomPadding,
+                left: leftPadding,
+                right: rightPadding
+            }
+        } else {
+            pagePadding.value = { top: 0, bottom: 0, left: 0, right: 0 }
+        }
+    }
+
+    /**
+     * Single source of truth for final map padding.
+     * Combines fullscreen state, pagePadding (container measurement), edge margin, and optional extra padding.
+     */
+    function getEffectivePadding(extraPadding?: { top?: number; bottom?: number; left?: number; right?: number } | number): { top: number; bottom: number; left: number; right: number } {
+        if (isFullscreen.value) {
+            const fs = MAP_PADDING.FULLSCREEN
+            console.log('getEffectivePadding fullscreen', fs)
+            return { top: fs, bottom: fs, left: fs, right: fs }
+        }
+
+        const base = pagePadding.value
+        const margin = MAP_PADDING.EDGE_MARGIN
+
+        let extra = { top: 0, bottom: 0, left: 0, right: 0 }
+        if (typeof extraPadding === 'number') {
+            extra = { top: extraPadding, bottom: extraPadding, left: extraPadding, right: extraPadding }
+        } else if (extraPadding) {
+            extra = {
+                top: extraPadding.top ?? 0,
+                bottom: extraPadding.bottom ?? 0,
+                left: extraPadding.left ?? 0,
+                right: extraPadding.right ?? 0
             }
         }
+
+        const result = {
+            top: Math.round(base.top + margin + extra.top),
+            bottom: Math.round(base.bottom + margin + extra.bottom),
+            left: Math.round(base.left + margin + extra.left),
+            right: Math.round(base.right + margin + extra.right)
+        }
+        console.log('getEffectivePadding result', result)
+        return result
     }
 
     // ===== Context Handlers =====
@@ -529,16 +613,26 @@ export const useMapStore = defineStore('map', () => {
 
         // Load all stops
         const allStopsData = await busService.fetchStops()
-        showAllStops(allStopsData)
+        stops.value = allStopsData
 
         // Try to get user location and update map
-        if (geolocation.userLocation.value) {
-            await updateMapToUserLocation(allStopsData, geolocation)
-        } else if (!geolocation.permissionDenied.value) {
-            const success = await geolocation.requestLocation()
-            if (success) {
-                await updateMapToUserLocation(allStopsData, geolocation)
+        let locationFound = !!geolocation.userLocation.value
+        if (!locationFound && !geolocation.permissionDenied.value) {
+            locationFound = await geolocation.requestLocation()
+            if (!locationFound && geolocation.isTooFar.value) {
+                useToast().add({
+                    title: 'Ubicación lejana',
+                    description: 'Estás a más de 15km de Salamanca. Mostrando vista general.',
+                    icon: 'i-lucide-map-pin-off',
+                    color: 'warning'
+                })
             }
+        }
+
+        if (locationFound) {
+            await updateMapToUserLocation(allStopsData, geolocation)
+        } else {
+            showAllStops(allStopsData)
         }
 
         startGlobalVehicleUpdates()
@@ -725,7 +819,10 @@ export const useMapStore = defineStore('map', () => {
         clearContext()
         currentContext.value = 'line'
         currentContextId.value = lineId
-        setFullscreen(false) // Force disable fullscreen to ensure zoom/pads are correct
+        // setFullscreen(false) // Force disable fullscreen to ensure zoom/pads are correct
+        isFullscreen.value = false
+        isInteractive.value = false
+        showControls.value = false
 
         await nextTick();
         setPagePaddingFromMapPreviewContainer()
@@ -969,21 +1066,83 @@ export const useMapStore = defineStore('map', () => {
     /**
      * Stops list page context: Simple list, no map interaction
      */
-    function setContextToStopsListPage() {
+    async function setContextToStopsListPage() {
         console.log('[MapStore] setContextToStopsListPage')
         clearContext()
         currentContext.value = 'stops-list'
         setFullscreen(false)
+
+        setPagePaddingFromMapPreviewContainer()
+
+        const busService = useBusService()
+        const geolocation = useGeolocation()
+
+        // Load all stops
+        const allStopsData = await busService.fetchStops()
+        stops.value = allStopsData
+
+        // Try to get user location and update map
+        let locationFound = !!geolocation.userLocation.value
+        if (!locationFound && !geolocation.permissionDenied.value) {
+            locationFound = await geolocation.requestLocation()
+            if (!locationFound && geolocation.isTooFar.value) {
+                useToast().add({
+                    title: 'Ubicación lejana',
+                    description: 'Estás a más de 15km de Salamanca. Mostrando vista general.',
+                    icon: 'i-lucide-map-pin-off',
+                    color: 'warning'
+                })
+            }
+        }
+
+        if (locationFound) {
+            await updateMapToUserLocation(allStopsData, geolocation)
+        } else {
+            showAllStops(allStopsData)
+        }
+
+        startGlobalVehicleUpdates()
     }
 
     /**
      * Lines list page context: Simple list, no map interaction
      */
-    function setContextToLinesListPage() {
+    async function setContextToLinesListPage() {
         console.log('[MapStore] setContextToLinesListPage')
         clearContext()
         currentContext.value = 'lines-list'
         setFullscreen(false)
+
+        setPagePaddingFromMapPreviewContainer()
+
+        const busService = useBusService()
+        const geolocation = useGeolocation()
+
+        // Load all stops
+        const allStopsData = await busService.fetchStops()
+        stops.value = allStopsData
+
+        // Try to get user location and update map
+        let locationFound = !!geolocation.userLocation.value
+        if (!locationFound && !geolocation.permissionDenied.value) {
+            locationFound = await geolocation.requestLocation()
+            if (!locationFound && geolocation.isTooFar.value) {
+                useToast().add({
+                    title: 'Ubicación lejana',
+                    description: 'Estás a más de 15km de Salamanca. Mostrando vista general.',
+                    icon: 'i-lucide-map-pin-off',
+                    color: 'warning'
+                })
+            }
+        }
+
+        if (locationFound) {
+            await updateMapToUserLocation(allStopsData, geolocation)
+        } else {
+            showAllStops(allStopsData)
+        }
+
+        startGlobalVehicleUpdates()
     }
 
 
@@ -1183,6 +1342,7 @@ export const useMapStore = defineStore('map', () => {
         fitBounds,
         setPagePadding,
         setPagePaddingFromMapPreviewContainer,
+        getEffectivePadding,
         clearHighlight,
         vehicleClick,
         updateFollowedVehicle,

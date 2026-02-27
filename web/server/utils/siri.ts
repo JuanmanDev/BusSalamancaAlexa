@@ -246,7 +246,10 @@ export async function fetchStops() {
 
 
 export async function fetchArrivals(stopId: string) {
-    const innerXml = `<n4:MonitoringRef xmlns:n4="http://www.siri.org.uk/siri">${stopId}</n4:MonitoringRef>`
+    const innerXml = `
+      <n4:PreviewInterval xmlns:n4="http://www.siri.org.uk/siri">PT30M</n4:PreviewInterval>
+      <n4:MonitoringRef xmlns:n4="http://www.siri.org.uk/siri">${stopId}</n4:MonitoringRef>
+    `
     const requestXml = buildSiriRequest(innerXml, false)
     const result = await callSiriService('GetStopMonitoring', requestXml)
 
@@ -278,7 +281,8 @@ export async function fetchArrivals(stopId: string) {
             location: journey.VehicleLocation ? {
                 latitude: parseFloat(journey.VehicleLocation.Latitude),
                 longitude: parseFloat(journey.VehicleLocation.Longitude)
-            } : undefined
+            } : undefined,
+            isEstimate: !call.ExpectedArrivalTime && !call.ExpectedDepartureTime
         }
     }).sort((a: any, b: any) => a.minutesRemaining - b.minutesRemaining)
 }
@@ -328,6 +332,7 @@ export async function fetchVehicles(options: { vehicleRef?: string, lineRef?: st
     const mappedVehicles = activitiesArray.map((activity: any) => {
         const journey = activity.MonitoredVehicleJourney || {}
         const location = journey.VehicleLocation || {}
+        const recordedAt = activity.RecordedAtTime ? new Date(activity.RecordedAtTime).getTime() : Date.now()
 
         return {
             id: journey.VehicleRef || '',
@@ -338,6 +343,7 @@ export async function fetchVehicles(options: { vehicleRef?: string, lineRef?: st
             bearing: journey.Bearing ? parseFloat(journey.Bearing) : undefined,
             delay: journey.Delay ? parseInt(journey.Delay) : undefined,
             destination: journey.DestinationName || '',
+            timestamp: recordedAt
         }
     }).filter((v: any) => v.latitude !== 0 && v.longitude !== 0)
 

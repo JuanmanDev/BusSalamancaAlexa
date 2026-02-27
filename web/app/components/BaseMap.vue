@@ -4,6 +4,7 @@ import 'maplibre-gl/dist/maplibre-gl.css'
 import maplibregl from 'maplibre-gl'
 import type { BusStop, BusVehicle, BusLine } from '~/types/bus'
 import { getLineColor, getLineColorHex } from '~/utils/bus'
+import { useNow } from '@vueuse/core'
 
 // ===== Map Configuration =====
 const MAP_CONFIG = {
@@ -113,6 +114,16 @@ function getVehicleState(vehicle: BusVehicle): 'disabled' | 'enabled' | 'highlig
   return 'enabled'
 }
 
+// ===== Vehicle Staleness Monitoring =====
+const now = useNow({ interval: 1000 })
+const selectedVehicleAge = computed(() => mapStore.selectedVehicle?.timestamp ? now.value.getTime() - mapStore.selectedVehicle.timestamp : 0)
+const isSelectedVehicleStale = computed(() => selectedVehicleAge.value > 30000)
+const lastUpdateFormatted = computed(() => {
+  if (!mapStore.selectedVehicle?.timestamp) return ''
+  const date = new Date(mapStore.selectedVehicle.timestamp)
+  return date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+})
+
 // ===== Selected Stop Card Data =====
 const selectedStopData = computed(() => {
   if (!mapStore.highlightStopId || !props.stops) return null
@@ -195,7 +206,7 @@ function onMapLoad() {
 
   // Apply padding
   if (props.padding) {
-    mapRef.setPadding(props.padding)
+    // mapRef.setPadding(props.padding)
   }
 
   // Retrigger any pending position
@@ -237,27 +248,28 @@ function setupMapListeners(mapRef: maplibregl.Map) {
   })
 }
 
-// ===== Store Position Events =====
 watch(() => mapStore.positionEvent, (event) => {
   const m = mapInstance.map
   if (!m || !event) return
 
-  const isFullscreen = mapStore.isFullscreen
+  // Reset MapLibre's persistent internal padding to zero.
+  // flyTo/fitBounds apply their padding parameter as a PERSISTENT offset,
+  // so we must clear the old one first to avoid stale values between navigations.
+  m.setPadding({ top: 0, bottom: 0, left: 0, right: 0 })
+
   const points = event.points
   const isSinglePoint = points.length === 1
 
   if (isSinglePoint) {
     const point = points[0]!
-    const targetZoom = event.zoom ?? 15
 
-    // We DO NOT pass `padding` here.
-    // Why? Because MapLibre's `flyTo` completely disables the global map padding (which accounts for our UI layout)
-    // if you pass ANY padding value to it. By leaving it undefined, it will respect `mapStore.pagePadding` naturally
-    // and center the point precisely in the visible portion of the MapPreview!
+    // Use centralized padding calculation — no inline buffers needed
+    const finalPadding = mapStore.getEffectivePadding()
 
     m.flyTo({
       center: [point.lng, point.lat],
-      zoom: targetZoom,
+      zoom: event.zoom,
+      padding: finalPadding,
       bearing: event.bearing ?? m.getBearing(),
       pitch: event.pitch ?? m.getPitch(),
       duration: 800,
@@ -267,33 +279,8 @@ watch(() => mapStore.positionEvent, (event) => {
     const bounds = new maplibregl.LngLatBounds()
     points.forEach(p => bounds.extend([p.lng, p.lat]))
 
-    // For fitBounds, passing `padding` completely overrides the map's default padding (set via `setPadding`).
-    // So to keep our routes centered in the visible left portion of the screen (excluding the right-side card),
-    // we MUST provide the full padding layout, plus the 50px buffer room.
-    const basePadding = isFullscreen ? { top: 0, bottom: 0, left: 0, right: 0 } : (mapStore.pagePadding)
-    
-    // We get the extra margin needed (usually 50px) + an absolute minimum of 20px extra padding
-    // so points don't graze the edge of the viewport.
-    const EXTRA_EDGE_BUFFER = 20;
-    
-    let extraTop = 50 + EXTRA_EDGE_BUFFER, extraBottom = 50 + EXTRA_EDGE_BUFFER, extraLeft = 50 + EXTRA_EDGE_BUFFER, extraRight = 50 + EXTRA_EDGE_BUFFER
-    if (event.padding) {
-        if (typeof event.padding === 'number') {
-            extraTop = extraBottom = extraLeft = extraRight = event.padding + EXTRA_EDGE_BUFFER
-        } else {
-            extraTop = (event.padding.top ?? 50) + EXTRA_EDGE_BUFFER
-            extraBottom = (event.padding.bottom ?? 50) + EXTRA_EDGE_BUFFER
-            extraLeft = (event.padding.left ?? 50) + EXTRA_EDGE_BUFFER
-            extraRight = (event.padding.right ?? 50) + EXTRA_EDGE_BUFFER
-        }
-    }
-
-    const finalPadding = {
-        top: basePadding.top + extraTop,
-        bottom: basePadding.bottom + extraBottom,
-        left: basePadding.left + extraLeft,
-        right: basePadding.right + extraRight,
-    }
+    // Use centralized padding calculation with optional extra padding from the event
+    const finalPadding = mapStore.getEffectivePadding(event.padding)
 
     m.fitBounds(bounds, {
       padding: finalPadding,
@@ -305,12 +292,8 @@ watch(() => mapStore.positionEvent, (event) => {
   }
 }, { deep: true })
 
-// Watch for padding changes
-watch(() => props.padding, (newPadding) => {
-  if (mapInstance.map && newPadding) {
-    mapInstance.map.setPadding(newPadding)
-  }
-}, { deep: true })
+// Padding is now handled exclusively via flyTo/fitBounds padding parameter.
+// No persistent setPadding needed.
 
 // ===== Vehicle Following =====
 watch(
@@ -320,12 +303,17 @@ watch(
     const m = mapInstance.map
     if (!m) return
 
+    // Reset persistent padding before animation
+    m.setPadding({ top: 0, bottom: 0, left: 0, right: 0 })
+    const finalPadding = mapStore.getEffectivePadding()
+
     // Case 1: Switched to a DIFFERENT vehicle -> Fly to it
     const idChanged = !oldVehicle || vehicle.id !== oldVehicle.id
     if (idChanged) {
       m.flyTo({
         center: [vehicle.longitude, vehicle.latitude],
         zoom: 16,
+        padding: finalPadding,
         duration: 1000,
         essential: true
       })
@@ -334,11 +322,12 @@ watch(
 
     // Case 2: SAME vehicle moved -> Pan smoothly
     const coordsChanged = vehicle.longitude !== oldVehicle.longitude || vehicle.latitude !== oldVehicle.latitude
-    if (coordsChanged && !m.isMoving()) {
+    if (coordsChanged) {
       m.easeTo({
         center: [vehicle.longitude, vehicle.latitude],
+        padding: finalPadding,
         duration: 3000,
-        essential: true // Ensure updates happen even if tab backgrounded
+        essential: true
       })
     }
   },
@@ -393,208 +382,215 @@ defineExpose({
 </script>
 
 <template>
-  <MglMap
-    :class="zoomLevelClass"
-    :map-style="mapStyle"
-    :center="center"
-    :zoom="zoom"
-    :max-zoom="MAP_CONFIG.maxZoom"
-    :min-zoom="MAP_CONFIG.minZoom"
-    :attribution-control="false"
-    :render-world-copies="false"
-    :map-key="MAP_KEY"
-    width="100%"
-    height="100%"
-    @map:load="onMapLoad"
-  >
-    <!-- Attribution Control -->
-    <MglAttributionControl v-if="showControls && interactive" position="bottom-left" :compact="true" />
+  <div class="h-dvh w-dvw">
+    <MglMap
+      :map-style="mapStyle"
+      :center="center"
+      :zoom="zoom"
+      :max-zoom="MAP_CONFIG.maxZoom"
+      :min-zoom="MAP_CONFIG.minZoom"
+      :attribution-control="false"
+      :render-world-copies="false"
+      :map-key="MAP_KEY"
+      width="100%"
+      height="100%"
+      @map:load="onMapLoad"
+    >
+      <!-- Attribution Control -->
+      <MglAttributionControl v-if="showControls && interactive" position="bottom-left" :compact="true" />
 
-    <!-- Route Lines & Custom Lines (GeoJSON Layers) -->
-    <MapRouteLinesLayer
-      :selected-route="mapStore.selectedRoute"
-      :lines-to-draw="mapStore.linesToDraw"
-    />
+      <!-- Route Lines & Custom Lines (GeoJSON Layers) -->
+      <MapRouteLinesLayer
+        :selected-route="mapStore.selectedRoute"
+        :lines-to-draw="mapStore.linesToDraw"
+      />
 
-    <!-- Stop Markers (hidden below zoom threshold) -->
-    <MapStopMarker
-      v-for="stop in (stops || [])"
-      :key="stop.id"
-      :stop="stop"
-      :state="getStopState(stop)"
-      @click="handleStopClick"
-    />
+      <!-- Stop Markers (hidden below zoom threshold) -->
+      <MapStopMarker
+        v-for="stop in (stops || [])"
+        :key="stop.id"
+        :stop="stop"
+        :state="getStopState(stop)"
+        @click="handleStopClick"
+      />
 
-    <!-- Vehicle Markers (hidden below zoom threshold) -->
-    <MapVehicleMarker
-      v-for="vehicle in (vehicles || [])"
-      :key="vehicle.id"
-      :vehicle="vehicle"
-      :state="getVehicleState(vehicle)"
-      @click="handleVehicleClick"
-    />
+      <!-- Vehicle Markers (hidden below zoom threshold) -->
+      <MapVehicleMarker
+        v-for="vehicle in (vehicles || [])"
+        :key="vehicle.id"
+        :vehicle="vehicle"
+        :state="getVehicleState(vehicle)"
+        @click="handleVehicleClick"
+      />
 
-    <!-- User Location -->
-    <MapUserLocationMarker
-      v-if="userLocation"
-      :location="userLocation"
-    />
-  </MglMap>
+      <!-- User Location -->
+      <MapUserLocationMarker
+        v-if="userLocation"
+        :location="userLocation"
+      />
+    </MglMap>
+  
 
 
-  <!-- Selected Stop Card Overlay -->
-  <Teleport to="body">
-    <Transition name="slide-up">
-      <div
-        v-if="selectedStopData"
-        class="fixed bottom-6 left-4 right-4 z-[60] md:left-1/2 md:-translate-x-1/2 md:w-96 mb-10 md:mb-0"
-      >
-        <UCard :ui="{ body: 'p-0', root: 'ring-1 ring-gray-200 dark:ring-gray-800' }">
-          <div class="p-4">
-            <div class="flex items-start justify-between gap-3 mb-3">
-              <div>
-                <h3 class="font-bold text-lg text-gray-900 dark:text-white leading-tight">
-                  {{ selectedStopData.name }}
-                </h3>
-                <p class="text-xs text-gray-500 mt-1">
-                  Parada {{ selectedStopData.id }}
-                </p>
+    <!-- Selected Stop Card Overlay -->
+    <Teleport to="body">
+      <Transition name="slide-up">
+        <div
+          v-if="selectedStopData"
+          class="fixed bottom-6 left-4 right-4 z-[60] md:left-1/2 md:-translate-x-1/2 md:w-96 mb-10 md:mb-0"
+        >
+          <UCard :ui="{ body: 'p-0', root: 'ring-1 ring-gray-200 dark:ring-gray-800' }">
+            <div class="p-4">
+              <div class="flex items-start justify-between gap-3 mb-3">
+                <div>
+                  <h3 class="font-bold text-lg text-gray-900 dark:text-white leading-tight">
+                    {{ selectedStopData.name }}
+                  </h3>
+                  <p class="text-xs text-gray-500 mt-1">
+                    Parada {{ selectedStopData.id }}
+                  </p>
+                </div>
+                <UButton
+                  color="neutral"
+                  variant="ghost"
+                  icon="i-lucide-x"
+                  size="xs"
+                  @click="mapStore.clearHighlight()"
+                />
               </div>
-              <UButton
-                color="neutral"
-                variant="ghost"
-                icon="i-lucide-x"
-                size="xs"
-                @click="mapStore.clearHighlight()"
-              />
-            </div>
 
-            <!-- Lines passing through -->
-            <div v-if="selectedStopData.lines && selectedStopData.lines.length > 0" class="flex flex-wrap gap-2 mb-4">
-              <div
-                v-for="lineId in selectedStopData.lines"
-                :key="lineId"
-                class="flex items-center gap-1.5"
-              >
+              <!-- Lines passing through -->
+              <div v-if="selectedStopData.lines && selectedStopData.lines.length > 0" class="flex flex-wrap gap-2 mb-4">
                 <div
-                  class="w-5 h-5 rounded flex items-center justify-center text-xs font-bold text-white"
-                  :class="getLineColor(lineId)"
+                  v-for="lineId in selectedStopData.lines"
+                  :key="lineId"
+                  class="flex items-center gap-1.5"
                 >
-                  {{ lineId }}
+                  <div
+                    class="w-5 h-5 rounded flex items-center justify-center text-xs font-bold text-white"
+                    :class="getLineColor(lineId)"
+                  >
+                    {{ lineId }}
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <!-- Actions Grid -->
-            <div class="grid grid-cols-2 gap-2 mb-3" v-if="false">
-              <UButton
-                size="sm"
-                color="primary"
-                variant="soft"
-                icon="i-lucide-map-pin"
-                @click="() => {
-                  mapStore.setRouteOrigin({ id: selectedStopData!.id, name: selectedStopData!.name, type: 'stop', lat: selectedStopData!.latitude!, lng: selectedStopData!.longitude! });
-                  router.push('/route');
-                  mapStore.setFullscreen(false);
-                  mapStore.clearHighlight();
-                }"
-              >
-                Desde aquí
-              </UButton>
-              <UButton
-                 size="sm"
-                 color="primary"
-                 variant="soft"
-                 icon="i-lucide-flag"
-                 @click="() => {
-                    mapStore.setRouteDestination({ id: selectedStopData!.id, name: selectedStopData!.name, type: 'stop', lat: selectedStopData!.latitude!, lng: selectedStopData!.longitude! });
+              <!-- Actions Grid -->
+              <div class="grid grid-cols-2 gap-2 mb-3" v-if="false">
+                <UButton
+                  size="sm"
+                  color="primary"
+                  variant="soft"
+                  icon="i-lucide-map-pin"
+                  @click="() => {
+                    mapStore.setRouteOrigin({ id: selectedStopData!.id, name: selectedStopData!.name, type: 'stop', lat: selectedStopData!.latitude!, lng: selectedStopData!.longitude! });
                     router.push('/route');
                     mapStore.setFullscreen(false);
                     mapStore.clearHighlight();
-                 }"
+                  }"
+                >
+                  Desde aquí
+                </UButton>
+                <UButton
+                  size="sm"
+                  color="primary"
+                  variant="soft"
+                  icon="i-lucide-flag"
+                  @click="() => {
+                      mapStore.setRouteDestination({ id: selectedStopData!.id, name: selectedStopData!.name, type: 'stop', lat: selectedStopData!.latitude!, lng: selectedStopData!.longitude! });
+                      router.push('/route');
+                      mapStore.setFullscreen(false);
+                      mapStore.clearHighlight();
+                  }"
+                >
+                  Hasta aquí
+                </UButton>
+              </div>
+
+              <UButton
+                block
+                color="neutral"
+                variant="outline"
+                icon="i-lucide-clock"
+                @click="goToStopDetails"
               >
-                Hasta aquí
+                Ver tiempos de llegada
               </UButton>
             </div>
+          </UCard>
+        </div>
+      </Transition>
+    </Teleport>
 
-            <UButton
-              block
-              color="neutral"
-              variant="outline"
-              icon="i-lucide-clock"
-              @click="goToStopDetails"
-            >
-              Ver tiempos de llegada
-            </UButton>
-          </div>
-        </UCard>
-      </div>
-    </Transition>
-  </Teleport>
+    <!-- Selected Vehicle Card Overlay -->
+    <Teleport to="body">
+      <Transition name="slide-up">
+        <div
+          v-if="mapStore.selectedVehicle && mapStore.isFullscreen"
+          class="fixed bottom-6 left-4 right-4 z-[60] md:left-1/2 md:-translate-x-1/2 md:w-96  mb-10 md:mb-0"
+        >
+          <UCard :ui="{ body: 'p-0', root: 'ring-1 ring-gray-200 dark:ring-gray-800' }">
+            <!-- Header colored strip with dynamic color -->
+            <div class="h-2 w-full" :class="getLineColor(mapStore.selectedVehicle.lineId)" />
 
-  <!-- Selected Vehicle Card Overlay -->
-  <Teleport to="body">
-    <Transition name="slide-up">
-      <div
-        v-if="mapStore.selectedVehicle && mapStore.isFullscreen"
-        class="fixed bottom-6 left-4 right-4 z-[60] md:left-1/2 md:-translate-x-1/2 md:w-96  mb-10 md:mb-0"
-      >
-        <UCard :ui="{ body: 'p-0', root: 'ring-1 ring-gray-200 dark:ring-gray-800' }">
-          <!-- Header colored strip with dynamic color -->
-          <div class="h-2 w-full" :class="getLineColor(mapStore.selectedVehicle.lineId)" />
-
-          <div class="p-4">
-            <div class="flex items-start justify-between gap-3 mb-3">
-              <div class="flex items-center gap-3">
-                <div
-                  class="w-12 h-12 rounded-xl flex items-center justify-center text-white shadow-md"
-                  :class="getLineColor(mapStore.selectedVehicle.lineId)"
-                >
-                  <span class="text-xl font-bold">{{ mapStore.selectedVehicle.lineId }}</span>
+            <div class="p-4">
+              <div class="flex items-start justify-between gap-3 mb-3">
+                <div class="flex items-center gap-3">
+                  <div
+                    class="w-12 h-12 rounded-xl flex items-center justify-center text-white shadow-md"
+                    :class="getLineColor(mapStore.selectedVehicle.lineId)"
+                  >
+                    <span class="text-xl font-bold">{{ mapStore.selectedVehicle.lineId }}</span>
+                  </div>
+                  <div>
+                    <h3 class="font-bold text-lg text-gray-900 dark:text-white leading-tight">
+                      {{ mapStore.selectedVehicle.lineName || `Línea ${mapStore.selectedVehicle.lineId}` }}
+                    </h3>
+                    <p class="text-xs text-gray-500 mt-0.5 flex items-center gap-1">
+                      <UIcon name="i-lucide-navigation" class="w-3 h-3" />
+                      {{ mapStore.selectedVehicle.destination || 'En ruta' }}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h3 class="font-bold text-lg text-gray-900 dark:text-white leading-tight">
-                    {{ mapStore.selectedVehicle.lineName || `Línea ${mapStore.selectedVehicle.lineId}` }}
-                  </h3>
-                  <p class="text-xs text-gray-500 mt-0.5 flex items-center gap-1">
-                    <UIcon name="i-lucide-navigation" class="w-3 h-3" />
-                    {{ mapStore.selectedVehicle.destination || 'En ruta' }}
-                  </p>
+                <UButton
+                  color="neutral"
+                  variant="ghost"
+                  icon="i-lucide-x"
+                  size="xs"
+                  @click="mapStore.clearHighlight()"
+                />
+              </div>
+
+              <!-- Vehicle info -->
+              <div class="flex items-center gap-2 mb-4 text-sm text-gray-500">
+                <div class="flex items-center gap-1">
+                  <UIcon name="i-lucide-bus" class="w-4 h-4 text-green-500" />
+                  <span>Siguiendo vehículo</span>
+                </div>
+                <span class="text-xs font-mono bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded">
+                  {{ mapStore.selectedVehicle.id }}
+                </span>
+                <div class="ml-auto flex items-center gap-1 text-xs" :class="isSelectedVehicleStale ? 'text-red-500 font-bold border border-red-500 px-1.5 py-0.5 rounded' : 'text-gray-400'">
+                  <UIcon name="i-lucide-clock" class="w-3 h-3" />
+                  <span>{{ lastUpdateFormatted }}</span>
+                  <UIcon v-if="isSelectedVehicleStale" name="i-lucide-alert-triangle" class="w-3 h-3 ml-0.5" />
                 </div>
               </div>
+
               <UButton
-                color="neutral"
-                variant="ghost"
-                icon="i-lucide-x"
-                size="xs"
-                @click="mapStore.clearHighlight()"
-              />
+                block
+                color="primary"
+                icon="i-lucide-map"
+                @click="goToLineDetails(mapStore.selectedVehicle.lineId)"
+              >
+                Ver recorrido de línea
+              </UButton>
             </div>
-
-            <!-- Vehicle info -->
-            <div class="flex items-center gap-2 mb-4 text-sm text-gray-500">
-              <div class="flex items-center gap-1">
-                <UIcon name="i-lucide-bus" class="w-4 h-4 text-green-500" />
-                <span>Siguiendo vehículo</span>
-              </div>
-              <span class="text-xs font-mono bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded">
-                {{ mapStore.selectedVehicle.id }}
-              </span>
-            </div>
-
-            <UButton
-              block
-              color="primary"
-              icon="i-lucide-map"
-              @click="goToLineDetails(mapStore.selectedVehicle.lineId)"
-            >
-              Ver recorrido de línea
-            </UButton>
-          </div>
-        </UCard>
-      </div>
-    </Transition>
-  </Teleport>
+          </UCard>
+        </div>
+      </Transition>
+    </Teleport>
+</div>
 </template>
 
 <style>

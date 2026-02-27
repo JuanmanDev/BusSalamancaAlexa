@@ -77,7 +77,15 @@ function toggleFavoriteLine(line: BusLine) {
 
 // Request location handler
 async function handleRequestLocation() {
-  await geolocation.requestLocation()
+  const success = await geolocation.requestLocation()
+  if (!success && geolocation.isTooFar.value) {
+    useToast().add({
+      title: 'Ubicación lejana',
+      description: 'Estás a más de 15km de Salamanca.',
+      icon: 'i-lucide-map-pin-off',
+      color: 'warning'
+    })
+  }
 }
 
 // Route Search

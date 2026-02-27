@@ -9,7 +9,63 @@ export default defineNuxtConfig({
     '@vueuse/nuxt',
     '@nuxt/icon',
     '@pinia/nuxt',
+    '@vite-pwa/nuxt',
   ],
+
+  pwa: {
+    registerType: 'autoUpdate',
+    manifest: {
+      name: 'Bus Salamanca',
+      short_name: 'BusSalamanca',
+      theme_color: '#1e40af',
+      background_color: '#ffffff',
+      display: 'standalone',
+      icons: [
+        {
+          src: '/favicon.svg',
+          sizes: 'any',
+          type: 'image/svg+xml',
+          purpose: 'any maskable'
+        }
+      ]
+    },
+    workbox: {
+      globPatterns: ['**/*.{js,css,html,png,svg,ico}'],
+      runtimeCaching: [
+        {
+          urlPattern: /^\/api\/bus\/stops.*/i,
+          handler: 'CacheFirst',
+          options: {
+            cacheName: 'api-stops-cache',
+            expiration: { maxEntries: 5, maxAgeSeconds: 60 * 60 * 24 * 7 }, // 1 week
+            cacheableResponse: { statuses: [0, 200] }
+          }
+        },
+        {
+          urlPattern: /^\/api\/bus\/lines.*/i,
+          handler: 'CacheFirst',
+          options: {
+            cacheName: 'api-lines-cache',
+            expiration: { maxEntries: 5, maxAgeSeconds: 60 * 60 * 24 * 7 },
+            cacheableResponse: { statuses: [0, 200] }
+          }
+        },
+        {
+          urlPattern: /^https:\/\/.*\.tile\.openstreetmap\.org\/.*/i,
+          handler: 'CacheFirst',
+          options: {
+            cacheName: 'osm-tiles-cache',
+            expiration: { maxEntries: 500, maxAgeSeconds: 60 * 60 * 24 * 30 }, // 30 days
+            cacheableResponse: { statuses: [0, 200] }
+          }
+        }
+      ]
+    },
+    devOptions: {
+      enabled: true,
+      type: 'module',
+    },
+  },
 
   css: ['~/assets/css/main.css'],
 

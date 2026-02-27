@@ -7,6 +7,7 @@ const props = defineProps<{
 }>()
 
 const router = useRouter()
+const notification = useArrivalNotification()
 
 function getTimeColor(minutes: number): string {
   if (minutes <= 2) return 'text-red-500 dark:text-red-400'
@@ -105,10 +106,19 @@ function goToLine(lineId: string) {
                     </p>
                     <div class="flex items-center gap-1">
                       <p class="text-xs text-gray-500 dark:text-gray-400 uppercase">min</p>
-                      <span v-if="arrival.isEstimate" class="text-[10px] bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-400 px-1 rounded">
-                        Estimación
-                      </span>
+                      <button 
+                        @click.stop="notification.toggleTracking(arrival.lineId)"
+                        class="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center justify-center shrink-0"
+                        :class="notification.trackedLineId.value === arrival.lineId ? 'text-primary-500 bg-primary-50 dark:bg-primary-900/30' : 'text-gray-400'"
+                        title="Avisar con notificaciones"
+                      >
+                        <UIcon :name="notification.trackedLineId.value === arrival.lineId ? 'i-lucide-bell-ring' : 'i-lucide-bell'" class="w-4 h-4 animate-pulse-subtle" v-if="notification.trackedLineId.value === arrival.lineId" />
+                        <UIcon name="i-lucide-bell" class="w-4 h-4" v-else />
+                      </button>
                     </div>
+                    <span v-if="arrival.isEstimate" class="mt-1 text-[10px] bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-400 px-1 rounded">
+                        Estimación
+                    </span>
                   </div>
                 </div>
               </div>

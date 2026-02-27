@@ -64,6 +64,21 @@ function toggleFavorite(stop: { id: string; name: string }) {
   storage.toggleFavorite('stop', stop.id, stop.name)
 }
 
+async function handleNearbyToggle(v: boolean) {
+  if (v) {
+    const success = await geolocation.requestLocation()
+    if (!success && geolocation.isTooFar.value) {
+      useToast().add({
+        title: 'Ubicación lejana',
+        description: 'Estás a más de 15km de Salamanca.',
+        icon: 'i-lucide-map-pin-off',
+        color: 'warning'
+      })
+      showNearby.value = false
+    }
+  }
+}
+
 // Set map context on mount
 onMounted(() => {
   mapStore.setContextToStopsListPage()
@@ -74,7 +89,14 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="max-w-4xl md:ml-auto px-4 py-6 space-y-4 pointer-events-auto">
+  <div class="md:flex md:min-h-full relative">
+    <!-- MapPreview: hidden on mobile, left sticky on desktop -->
+    <div class="hidden md:block md:flex-1 md:sticky md:top-16 md:h-[calc(100vh-4rem)] shrink-0 md:order-first z-0">
+      <MapPreview height="h-[50vh] md:h-full" />
+    </div>
+
+    <!-- Content (right side on desktop, full width on mobile) -->
+    <div class="w-full md:w-[400px] lg:w-[450px] shrink-0 px-4 py-6 space-y-4 pointer-events-auto relative z-10 ml-auto" id="mapPreviewContainer__">
     <!-- Header -->
     <div class="glass-card p-5">
       <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-1">
@@ -110,7 +132,7 @@ onMounted(() => {
         <USwitch 
           v-model="showNearby"
           :loading="geolocation.isLocating.value"
-          @update:model-value="(v: boolean) => v && geolocation.requestLocation()"
+          @update:model-value="handleNearbyToggle"
         />
       </div>
     </div>
@@ -136,6 +158,7 @@ onMounted(() => {
         <p>No hay paradas cercanas</p>
         <p class="text-sm mt-1">Prueba desactivando el filtro de cercanía</p>
       </div>
+    </div>
     </div>
   </div>
 </template>

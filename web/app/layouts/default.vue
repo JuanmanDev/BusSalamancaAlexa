@@ -93,12 +93,13 @@ const showHeaderAndNav = computed(() => {
         <!-- Actions -->
         <div class="flex items-center gap-2">
           <GlobalSearch v-model="searchQuery" />
-          <button
-            @click="colorMode.preference = colorMode.value === 'dark' ? 'light' : 'dark'"
-            class="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+          <NuxtLink
+            to="/settings"
+            class="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors flex items-center p-2 rounded-lg"
+            title="Ajustes"
           >
-            <UIcon :name="colorMode.value === 'dark' ? 'i-lucide-moon' : 'i-lucide-sun'" class="w-5 h-5" />
-          </button>
+            <UIcon name="i-lucide-settings" class="w-5 h-5" />
+          </NuxtLink>
         </div>
       </div>
     </header>
@@ -142,14 +143,14 @@ const showHeaderAndNav = computed(() => {
     </nav>
     </Transition>
 
-    <!-- <div class="fixed bottom-0 right-0 z-50 bg-black/50 text-white p-2 text-xs">
+    <div class="fixed bottom-0 right-0 z-50 bg-black/50 text-white p-2 text-xs">
       paddings {{ mapStore.padding }}
       pagePadding {{ mapStore.pagePadding }}
-      rotation {{ mapStore.rotation }}
-      3d {{ mapStore.pitch }}
+      <!-- rotation {{ mapStore.rotation }}
+      3d {{ mapStore.pitch }} -->
       context {{ mapStore.currentContext }}
       fs {{ mapStore.isFullscreen }}
-    </div> -->
+    </div>
   </div>
 </template>
 
