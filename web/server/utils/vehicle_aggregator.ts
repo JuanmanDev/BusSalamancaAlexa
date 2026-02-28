@@ -11,6 +11,7 @@ export interface BusVehicle {
     destination: string
     delay?: number
     isEstimate?: boolean
+    timestamp?: number
 }
 
 // Hub stops chosen based on line coverage analysis (Salamanca)
@@ -58,6 +59,16 @@ export async function fetchVehiclesFromHubs(): Promise<BusVehicle[]> {
             if (arrival.vehicleRef && arrival.location) {
                 seenVehicleIds.add(arrival.vehicleRef)
 
+                const existing = vehicleStateMap.get(arrival.vehicleRef)
+                let itemTimestamp = now
+                if (existing) {
+                    const sameLocation = existing.data.latitude === arrival.location.latitude &&
+                        existing.data.longitude === arrival.location.longitude;
+                    if (sameLocation) {
+                        itemTimestamp = existing.data.timestamp || existing.lastUpdated
+                    }
+                }
+
                 // Update State
                 vehicleStateMap.set(arrival.vehicleRef, {
                     data: {
@@ -69,7 +80,8 @@ export async function fetchVehiclesFromHubs(): Promise<BusVehicle[]> {
                         destination: arrival.destination,
                         bearing: 0,
                         delay: 0,
-                        isEstimate: false // Fresh data
+                        isEstimate: false, // Fresh data
+                        timestamp: itemTimestamp
                     },
                     lastUpdated: now,
                     isEstimate: false
@@ -105,7 +117,7 @@ export async function fetchVehiclesFromHubs(): Promise<BusVehicle[]> {
             }
         }
 
-        console.log(`[Aggregator] Serving ${activeVehicles.length} vehicles (${activeVehicles.filter(v => v.isEstimate).length} estimated).`)
+        // console.log(`[Aggregator] Serving ${activeVehicles.length} vehicles (${activeVehicles.filter(v => v.isEstimate).length} estimated).`)
 
         return activeVehicles
     } catch (e) {

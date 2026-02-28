@@ -169,6 +169,7 @@ const toggleFullscreen = async () => {
   if (!el || !place) return
 
   isTransitioning.value = true
+  mapStore.isTransitioning = true
   internalToggle.value = true
 
   if (!mapStore.isFullscreen) {
@@ -209,7 +210,7 @@ const toggleFullscreen = async () => {
       position: 'fixed',
       top: '0px',
       left: '0px',
-      width: `${window.innerWidth}px`,
+      width: '100%',
       height: `${window.innerHeight}px`,
       zIndex: '60'
     }
@@ -217,6 +218,7 @@ const toggleFullscreen = async () => {
     // 6. Cleanup after FLIP transition, then re-center map content
     setTimeout(async () => {
       isTransitioning.value = false
+      mapStore.isTransitioning = false
       el.style.transition = ''
       // Remove explicit px dimensions and rely exclusively on CSS classes (`fixed inset-0`)
       // to handle window resizing natively while in fullscreen.
@@ -237,6 +239,7 @@ const toggleFullscreen = async () => {
   } else {
     // EXITING Fullscreen
     isTransitioning.value = true
+    mapStore.isTransitioning = true
     mapStore.isExitingFullscreen = true
     // Mark as internal so the watcher skips when setFullscreen(false) fires
     internalToggle.value = true
@@ -284,6 +287,7 @@ const toggleFullscreen = async () => {
       mapStore.setFullscreen(false)
       mapStore.isExitingFullscreen = false
       isTransitioning.value = false
+      mapStore.isTransitioning = false
       
       // 7. Clear explicit styles so the component drops back into its static relative DOM wrapper
       containerStyle.value = {}

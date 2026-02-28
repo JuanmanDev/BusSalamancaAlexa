@@ -124,6 +124,12 @@ const lastUpdateFormatted = computed(() => {
   return date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
 })
 
+const formattedLineName = computed(() => {
+  const name = mapStore.selectedVehicle?.lineName || (mapStore.selectedVehicle?.lineId ? `Línea ${mapStore.selectedVehicle.lineId}` : '')
+  if (!name) return ''
+  return name.replace(/ - /g, ' - <wbr>')
+})
+
 // ===== Selected Stop Card Data =====
 const selectedStopData = computed(() => {
   if (!mapStore.highlightStopId || !props.stops) return null
@@ -204,6 +210,8 @@ function onMapLoad() {
   mapRef.doubleClickZoom.enable()
   mapRef.touchZoomRotate.enable()
 
+  mapRef.setPadding({ top: 20, bottom: 20, left: 20, right: 20 })
+
   // Apply padding
   if (props.padding) {
     // mapRef.setPadding(props.padding)
@@ -254,9 +262,11 @@ watch(() => mapStore.positionEvent, (event) => {
 
   console.log('positionEvent', event)
 
-  // NOTE: Do NOT reset setPadding here. MapLibre's flyTo/fitBounds natively
-  // interpolate the padding parameter from old→new during animation. Resetting
-  // to zero first causes an instant visual jump that kills the smooth transition.
+  // NOTE: Do NOT call m.setPadding({0,0,0,0}) here!
+  // flyTo/fitBounds set persistent padding via their `padding` option automatically.
+  // Calling setPadding() beforehand would cause an INSTANT visual jump (resetting
+  // the old asymmetric padding), leaving almost nothing for flyTo to animate —
+  // especially for single-point stops where center/zoom don't change.
 
   const points = event.points
   const isSinglePoint = points.length === 1
@@ -291,8 +301,6 @@ watch(() => mapStore.positionEvent, (event) => {
     })
   } else if (points.length > 1) {
 
-      m.setPadding({ top: 0, bottom: 0, left: 0, right: 0 })
-
     const bounds = new maplibregl.LngLatBounds()
     points.forEach(p => bounds.extend([p.lng, p.lat]))
 
@@ -320,8 +328,7 @@ watch(
     const m = mapInstance.map
     if (!m) return
 
-    // NOTE: padding is handled by the flyTo/easeTo padding parameter,
-    // which smoothly interpolates from old→new. No manual setPadding reset needed.
+    // flyTo/easeTo set persistent padding via their padding param — no need to pre-reset
     const finalPadding = mapStore.getEffectivePadding()
 
     // Case 1: Switched to a DIFFERENT vehicle -> Fly to it
@@ -458,87 +465,85 @@ defineExpose({
       <Transition name="slide-up">
         <div
           v-if="selectedStopData"
-          class="fixed bottom-6 left-4 right-4 z-[60] md:left-1/2 md:-translate-x-1/2 md:w-96 mb-10 md:mb-0"
+          class="fixed bottom-4 left-4 right-4 z-[60] md:left-1/2 md:-translate-x-1/2 md:w-96 mb-10 md:mb-0"
         >
-          <UCard :ui="{ body: 'p-0', root: 'ring-1 ring-gray-200 dark:ring-gray-800' }">
-            <div class="p-4">
-              <div class="flex items-start justify-between gap-3 mb-3">
-                <div>
-                  <h3 class="font-bold text-lg text-gray-900 dark:text-white leading-tight">
-                    {{ selectedStopData.name }}
-                  </h3>
-                  <p class="text-xs text-gray-500 mt-1">
-                    Parada {{ selectedStopData.id }}
-                  </p>
-                </div>
-                <UButton
-                  color="neutral"
-                  variant="ghost"
-                  icon="i-lucide-x"
-                  size="xs"
-                  @click="mapStore.clearHighlight()"
-                />
+          <div class="glass-card py-4 px-4">
+            <div class="flex items-start justify-between gap-3 mb-3">
+              <div>
+                <h3 class="font-bold text-lg text-gray-900 dark:text-white leading-tight">
+                  {{ selectedStopData.name }}
+                </h3>
+                <p class="text-xs text-gray-500 mt-1">
+                  Parada {{ selectedStopData.id }}
+                </p>
               </div>
+              <UButton
+                color="neutral"
+                variant="ghost"
+                icon="i-lucide-x"
+                size="xs"
+                @click="mapStore.clearHighlight()"
+              />
+            </div>
 
-              <!-- Lines passing through -->
-              <div v-if="selectedStopData.lines && selectedStopData.lines.length > 0" class="flex flex-wrap gap-2 mb-4">
+            <!-- Lines passing through -->
+            <div v-if="selectedStopData.lines && selectedStopData.lines.length > 0" class="flex flex-wrap gap-2 mb-4">
+              <div
+                v-for="lineId in selectedStopData.lines"
+                :key="lineId"
+                class="flex items-center gap-1.5"
+              >
                 <div
-                  v-for="lineId in selectedStopData.lines"
-                  :key="lineId"
-                  class="flex items-center gap-1.5"
+                  class="w-5 h-5 rounded flex items-center justify-center text-xs font-bold text-white"
+                  :class="getLineColor(lineId)"
                 >
-                  <div
-                    class="w-5 h-5 rounded flex items-center justify-center text-xs font-bold text-white"
-                    :class="getLineColor(lineId)"
-                  >
-                    {{ lineId }}
-                  </div>
+                  {{ lineId }}
                 </div>
               </div>
+            </div>
 
-              <!-- Actions Grid -->
-              <div class="grid grid-cols-2 gap-2 mb-3" v-if="false">
-                <UButton
-                  size="sm"
-                  color="primary"
-                  variant="soft"
-                  icon="i-lucide-map-pin"
-                  @click="() => {
-                    mapStore.setRouteOrigin({ id: selectedStopData!.id, name: selectedStopData!.name, type: 'stop', lat: selectedStopData!.latitude!, lng: selectedStopData!.longitude! });
+            <!-- Actions Grid -->
+            <div class="grid grid-cols-2 gap-2 mb-3" v-if="false">
+              <UButton
+                size="sm"
+                color="primary"
+                variant="soft"
+                icon="i-lucide-map-pin"
+                @click="() => {
+                  mapStore.setRouteOrigin({ id: selectedStopData!.id, name: selectedStopData!.name, type: 'stop', lat: selectedStopData!.latitude!, lng: selectedStopData!.longitude! });
+                  router.push('/route');
+                  mapStore.setFullscreen(false);
+                  mapStore.clearHighlight();
+                }"
+              >
+                Desde aquí
+              </UButton>
+              <UButton
+                size="sm"
+                color="primary"
+                variant="soft"
+                icon="i-lucide-flag"
+                @click="() => {
+                    mapStore.setRouteDestination({ id: selectedStopData!.id, name: selectedStopData!.name, type: 'stop', lat: selectedStopData!.latitude!, lng: selectedStopData!.longitude! });
                     router.push('/route');
                     mapStore.setFullscreen(false);
                     mapStore.clearHighlight();
-                  }"
-                >
-                  Desde aquí
-                </UButton>
-                <UButton
-                  size="sm"
-                  color="primary"
-                  variant="soft"
-                  icon="i-lucide-flag"
-                  @click="() => {
-                      mapStore.setRouteDestination({ id: selectedStopData!.id, name: selectedStopData!.name, type: 'stop', lat: selectedStopData!.latitude!, lng: selectedStopData!.longitude! });
-                      router.push('/route');
-                      mapStore.setFullscreen(false);
-                      mapStore.clearHighlight();
-                  }"
-                >
-                  Hasta aquí
-                </UButton>
-              </div>
-
-              <UButton
-                block
-                color="neutral"
-                variant="outline"
-                icon="i-lucide-clock"
-                @click="goToStopDetails"
+                }"
               >
-                Ver tiempos de llegada
+                Hasta aquí
               </UButton>
             </div>
-          </UCard>
+
+            <UButton
+              block
+              color="neutral"
+              variant="outline"
+              icon="i-lucide-clock"
+              @click="goToStopDetails"
+            >
+              Ver tiempos de llegada
+            </UButton>
+          </div>
         </div>
       </Transition>
     </Teleport>
@@ -548,11 +553,10 @@ defineExpose({
       <Transition name="slide-up">
         <div
           v-if="mapStore.selectedVehicle && mapStore.isFullscreen"
-          class="fixed bottom-6 left-4 right-4 z-[60] md:left-1/2 md:-translate-x-1/2 md:w-96  mb-10 md:mb-0"
+          class="glass-card fixed bottom-6 left-4 right-4 z-[60] md:left-1/2 md:-translate-x-1/2 md:w-96  mb-10 md:mb-0 overflow-hidden"
         >
-          <UCard :ui="{ body: 'p-0', root: 'ring-1 ring-gray-200 dark:ring-gray-800' }">
             <!-- Header colored strip with dynamic color -->
-            <div class="h-2 w-full" :class="getLineColor(mapStore.selectedVehicle.lineId)" />
+            <div class="h-2 w-full overflow-hidden" :class="getLineColor(mapStore.selectedVehicle.lineId)" />
 
             <div class="p-4">
               <div class="flex items-start justify-between gap-3 mb-3">
@@ -564,8 +568,7 @@ defineExpose({
                     <span class="text-xl font-bold">{{ mapStore.selectedVehicle.lineId }}</span>
                   </div>
                   <div>
-                    <h3 class="font-bold text-lg text-gray-900 dark:text-white leading-tight">
-                      {{ mapStore.selectedVehicle.lineName || `Línea ${mapStore.selectedVehicle.lineId}` }}
+                    <h3 class="font-bold text-lg text-gray-900 dark:text-white leading-tight" v-html="formattedLineName">
                     </h3>
                     <p class="text-xs text-gray-500 mt-0.5 flex items-center gap-1">
                       <UIcon name="i-lucide-navigation" class="w-3 h-3" />
@@ -594,7 +597,8 @@ defineExpose({
                 <div class="ml-auto flex items-center gap-1 text-xs" :class="isSelectedVehicleStale ? 'text-red-500 font-bold border border-red-500 px-1.5 py-0.5 rounded' : 'text-gray-400'">
                   <UIcon name="i-lucide-clock" class="w-3 h-3" />
                   <span>{{ lastUpdateFormatted }}</span>
-                  <UIcon v-if="isSelectedVehicleStale" name="i-lucide-alert-triangle" class="w-3 h-3 ml-0.5" />
+                  
+                <UIcon v-if="isSelectedVehicleStale" name="i-lucide-alert-triangle" class="w-3 h-3 ml-0.5" />
                 </div>
               </div>
 
@@ -607,7 +611,6 @@ defineExpose({
                 Ver recorrido de línea
               </UButton>
             </div>
-          </UCard>
         </div>
       </Transition>
     </Teleport>

@@ -131,6 +131,7 @@ export const useMapStore = defineStore('map', () => {
     const isInteractive = ref(false)
     const isFullscreen = ref(false)
     const isExitingFullscreen = ref(false)
+    const isTransitioning = ref(false) // True during MapPreview FLIP animation
     const showControls = ref(false)
     const forceAnimations = useLocalStorage('app-force-animations', true)
 
@@ -690,6 +691,7 @@ export const useMapStore = defineStore('map', () => {
             currentContextId.value = stopId
         }
 
+        await nextTick() // Wait for DOM to settle (matching setContextToLinePage)
         setPagePaddingFromMapPreviewContainer()
 
         const busService = useBusService()
@@ -1339,6 +1341,7 @@ export const useMapStore = defineStore('map', () => {
         isInteractive,
         isFullscreen,
         isExitingFullscreen,
+        isTransitioning,
         showControls,
         hasPageMapPreview,
         padding,

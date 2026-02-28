@@ -148,7 +148,7 @@ const isRunningOnDebug = computed(() => {
 
     <div 
       class="fixed bottom-0 right-0 z-50 bg-black/50 text-white p-2 text-xs"
-      v-if="isRunningOnDebug && false"
+      v-if="isRunningOnDebug "
     >
       paddings {{ mapStore.padding }}
       pagePadding {{ mapStore.pagePadding }}
