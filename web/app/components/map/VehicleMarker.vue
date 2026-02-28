@@ -1,14 +1,12 @@
 <script setup lang="ts">
 import { MglMarker } from '@indoorequal/vue-maplibre-gl'
-import { useNow } from '@vueuse/core'
 import type { BusVehicle } from '~/types/bus'
 import { getLineColor } from '~/utils/bus'
 
-export type MarkerState = 'disabled' | 'enabled' | 'highlighted'
-
 const props = defineProps<{
   vehicle: BusVehicle
-  state: MarkerState
+  now: Date // Shared timer from BaseMap
+  state?: 'highlighted' | 'dimmed' | 'normal'
 }>()
 
 const emit = defineEmits<{
@@ -25,7 +23,6 @@ watch(
     const [oldLng, oldLat] = animatedCoords.value
     if (oldLng === newLng && oldLat === newLat) return
 
-    // Cancel any running animation
     if (animationFrame) cancelAnimationFrame(animationFrame)
 
     const duration = 3000
@@ -56,22 +53,16 @@ onBeforeUnmount(() => {
 
 const lineColor = computed(() => getLineColor(props.vehicle.lineId))
 
-const containerClasses = computed(() => {
-  switch (props.state) {
-    case 'disabled':
-      return 'opacity-40 grayscale scale-75 z-0'
-    case 'highlighted':
-      return 'opacity-100 scale-110 z-20'
-    case 'enabled':
-    default:
-      return 'opacity-100 z-10'
-  }
+// CSS data classes for the cascade approach
+const markerClasses = computed(() => {
+  const classes: string[] = ['vehicle-marker', `line-${props.vehicle.lineId}`, `vehicle-${props.vehicle.id}`]
+  if (props.state === 'dimmed') classes.push('is-dimmed')
+  if (props.state === 'highlighted') classes.push('is-highlighted')
+  return classes
 })
 
-const isHighlighted = computed(() => props.state === 'highlighted')
-
-const now = useNow({ interval: 1000 })
-const dataAge = computed(() => props.vehicle.timestamp ? now.value.getTime() - props.vehicle.timestamp : 0)
+// Staleness (using shared now prop)
+const dataAge = computed(() => props.vehicle.timestamp ? props.now.getTime() - props.vehicle.timestamp : 0)
 const isDelayed = computed(() => dataAge.value > 7000)
 const isStale = computed(() => dataAge.value > 30000)
 </script>
@@ -79,34 +70,24 @@ const isStale = computed(() => dataAge.value > 30000)
 <template>
   <MglMarker :coordinates="animatedCoords">
     <template #marker>
-      <!-- Outer wrapper: CSS Zoom Scale (Class) -->
       <div class="zoom-scaler">
-        <!-- Inner wrapper: Vue State Scale (Smooth Transition) - removed manual will-change -->
         <div
-          class="vehicle-marker-wrapper relative flex flex-col items-center cursor-pointer transition-all duration-300"
-          :class="containerClasses"
+          class="vehicle-marker-wrapper relative flex flex-col items-center cursor-pointer vehicle-transition"
+          :class="markerClasses"
           @click.stop="emit('click', vehicle)"
         >
-          <!-- Selection/Ping Halo -->
+          <!-- Ping Halo — only rendered when vehicle is active and not delayed -->
           <div
-            class="absolute inset-0 -m-1 rounded-xl transition-all duration-300"
-            :class="[
-              lineColor,
-              isHighlighted
-                ? 'opacity-100 ring-4 ring-yellow-400 ring-opacity-50'
-                : (isDelayed ? 'opacity-0' : 'animate-ping opacity-25')
-            ]"
+            v-if="!isDelayed"
+            class="absolute inset-0 -m-1 rounded-xl animate-ping opacity-25 vehicle-halo"
+            :class="lineColor"
           />
 
           <!-- Bus body (Pill shape) -->
           <div
-            class="relative z-10 flex items-center gap-1.5 px-2 py-1 rounded-xl border-2 border-white shadow-md transition-all duration-300 group-hover:scale-110 min-w-[3rem] justify-center"
-            :class="[
-              lineColor,
-              isHighlighted ? 'scale-125 ring-2 ring-yellow-400' : ''
-            ]"
+            class="relative z-10 flex items-center gap-1.5 px-2 py-1 rounded-xl border-2 border-white shadow-md body-transition min-w-[3rem] justify-center"
+            :class="lineColor"
           >
-            <!-- Bus Icon -->
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="text-white w-5 h-5">
               <path d="M8 6v6"/>
               <path d="M15 6v6"/>
@@ -117,9 +98,8 @@ const isStale = computed(() => dataAge.value > 30000)
               <circle cx="16" cy="18" r="2"/>
             </svg>
             <span class="text-white font-bold text-s leading-none">{{ vehicle.lineId }}</span>
-            <!-- Stale icon overlay -->
             <div v-if="isStale" class="absolute -top-1 -right-1 bg-red-500 rounded-full border border-white flex items-center justify-center p-0.5 shadow-sm">
-                <UIcon name="i-lucide-alert-triangle" class="w-2.5 h-2.5 text-white" />
+              <UIcon name="i-lucide-alert-triangle" class="w-2.5 h-2.5 text-white" />
             </div>
           </div>
         </div>
@@ -132,17 +112,44 @@ const isStale = computed(() => dataAge.value > 30000)
 .zoom-scaler {
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   transform-origin: center;
-  transform: scale(1);
+  transform: scale(var(--marker-zoom-scale, 1));
+  contain: layout style;
 }
 
-/* Discrete Zoom Steps based on parent class in BaseMap */
-:global(.z-low) .zoom-scaler {
-  transform: scale(0.65);
+/* Specific property transitions instead of transition-all */
+.vehicle-transition {
+  transition-property: opacity, transform, filter;
+  transition-duration: 300ms;
+  transition-timing-function: ease;
 }
-:global(.z-med) .zoom-scaler {
-  transform: scale(0.85);
+
+.body-transition {
+  transition-property: transform;
+  transition-duration: 300ms;
+  transition-timing-function: ease;
 }
-:global(.z-high) .zoom-scaler {
-  transform: scale(1.0);
+
+/* Default state: enabled */
+.vehicle-marker {
+  opacity: 1;
+  filter: none;
+  z-index: 10;
 }
+
+.vehicle-marker.is-dimmed {
+  opacity: 0.35;
+  z-index: 0;
+}
+
+.vehicle-marker.is-dimmed .vehicle-halo {
+  display: none;
+}
+
+.vehicle-marker.is-highlighted {
+  opacity: 1;
+  transform: scale(1.1);
+  z-index: 20;
+}
+
+/* Matching markers get re-enabled by dynamic <style> in BaseMap */
 </style>

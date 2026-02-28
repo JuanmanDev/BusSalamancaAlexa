@@ -9,10 +9,8 @@ import { useNow } from '@vueuse/core'
 // ===== Map Configuration =====
 const MAP_CONFIG = {
   maxZoom: 18,
-  minZoom: 11, // allow further zooming out for smoother flyTo
+  minZoom: 10, // Allow zooming out enough for fitBounds on wide lines
   defaultCenter: [-5.6635, 40.9701] as [number, number],
-  // Expanded maxBounds significantly to prevent flyTo animation aborts when user is nearby but outside the box
-  maxBounds: [[-6.50, 40.20], [-4.80, 41.80]] as [[number, number], [number, number]], 
 }
 
 // Map key for useMap() composable access
@@ -68,51 +66,46 @@ const mapInstance = useMap(MAP_KEY)
 // Current zoom level for dynamic sizing
 const currentZoom = ref(props.zoom)
 
+// Animation flag: suppresses marker transitions during flyTo/fitBounds
+const isAnimating = ref(false)
+
 // Get lines to display names in the card
 const { data: allLines } = await useBusLines() as { data: Ref<BusLine[]> }
 
-// ===== Marker State Derivation =====
-function getStopState(stop: BusStop): 'disabled' | 'enabled' | 'highlighted' {
-  const isSelected = stop.id === mapStore.highlightStopId
-  if (isSelected) return 'highlighted'
-
-  const lineIds = stop.lines || []
-
-  // Dimming logic
+// ===== Marker State via CSS Cascade =====
+// Instead of computing state per-marker (300+ reactive evaluations),
+// ===== Marker States =====
+function getStopState(stop: BusStop): 'highlighted' | 'dimmed' | 'normal' {
   if (mapStore.selectedRoute) {
-    const isInRoute = mapStore.selectedRoute.segments.some(s =>
-      s.from.id === stop.id || s.to.id === stop.id
-    )
-    return isInRoute ? 'enabled' : 'disabled'
+    const isRouteStop = mapStore.selectedRoute.segments.some(s => s.from?.id === stop.id || s.to?.id === stop.id)
+    return isRouteStop ? 'highlighted' : 'dimmed'
   }
-
-  if (mapStore.highlightLineId) {
-    return lineIds.includes(mapStore.highlightLineId) ? 'enabled' : 'disabled'
-  }
-
   if (mapStore.highlightStopId) {
-    return 'disabled'
+    return stop.id === mapStore.highlightStopId ? 'highlighted' : 'dimmed'
   }
-
-  return 'enabled'
+  if (mapStore.highlightLineId) {
+    return stop.lines?.includes(mapStore.highlightLineId) ? 'highlighted' : 'dimmed'
+  }
+  if (mapStore.selectedVehicle?.lineId) {
+    return stop.lines?.includes(mapStore.selectedVehicle.lineId) ? 'highlighted' : 'dimmed'
+  }
+  return 'normal'
 }
 
-function getVehicleState(vehicle: BusVehicle): 'disabled' | 'enabled' | 'highlighted' {
-  if (mapStore.selectedVehicle?.id === vehicle.id) return 'highlighted'
-
+function getVehicleState(vehicle: BusVehicle): 'highlighted' | 'dimmed' | 'normal' {
   if (mapStore.selectedRoute) {
-    const routeLines = mapStore.selectedRoute.segments
-      .filter(s => s.type === 'bus')
-      .map(s => s.lineId)
-    return routeLines.includes(vehicle.lineId) ? 'enabled' : 'disabled'
+    const isRouteLine = mapStore.selectedRoute.segments.some(s => s.lineId === vehicle.lineId)
+    return isRouteLine ? 'highlighted' : 'dimmed'
   }
-
-  if (props.highlightLineId) {
-    return vehicle.lineId === props.highlightLineId ? 'enabled' : 'disabled'
+  if (mapStore.selectedVehicle) {
+    return vehicle.id === mapStore.selectedVehicle.id ? 'highlighted' : 'dimmed'
   }
-
-  return 'enabled'
+  if (mapStore.highlightLineId) {
+    return vehicle.lineId === mapStore.highlightLineId ? 'highlighted' : 'dimmed'
+  }
+  return 'normal'
 }
+
 
 // ===== Vehicle Staleness Monitoring =====
 const now = useNow({ interval: 1000 })
@@ -139,24 +132,24 @@ const selectedStopData = computed(() => {
 
 
 
-// Discrete Zoom Classes (limit style recalculations to 3 steps)
-const zoomLevelClass = computed(() => {
+// Discrete Zoom Scale (CSS custom property — avoids classes on root div)
+const zoomScale = computed(() => {
   const z = currentZoom.value
-  if (z < 13) return 'z-low'
-  if (z < 15) return 'z-med'
-  return 'z-high'
+  if (z < 13) return 0.6
+  if (z < 15) return 0.8
+  return 1.0
 })
 
-// Zoom throttling (updates CSS vars efficiently)
-let zoomFrame: number | null = null
+// Zoom throttling with debounce (avoids jank during flyTo)
+// During animations, zoom events are ignored by debounce naturally
+let zoomTimeout: ReturnType<typeof setTimeout> | null = null
 function updateZoom() {
-  if (zoomFrame) return
-  zoomFrame = requestAnimationFrame(() => {
+  if (zoomTimeout) clearTimeout(zoomTimeout)
+  zoomTimeout = setTimeout(() => {
     if (mapInstance.map) {
       currentZoom.value = mapInstance.map.getZoom()
     }
-    zoomFrame = null
-  })
+  }, isAnimating.value ? 500 : 100) // Longer debounce during flyTo
 }
 
 // Rotation/Pitch throttling
@@ -175,7 +168,6 @@ function updateCamera() {
 // ===== Map Event Handlers =====
 function onMapReady(map: maplibregl.Map) {
   mapStore.mapInstance = map
-  map.setMaxBounds(MAP_CONFIG.maxBounds)
   emit('mapReady', map)
 }
 
@@ -239,6 +231,12 @@ function setupMapListeners(mapRef: maplibregl.Map) {
     mapStore.zoom = zoom
     mapStore.rotation = bearing
     mapStore.pitch = pitch
+
+    // Sync zoom scale to final level, then re-enable marker transitions
+    currentZoom.value = zoom
+    if (isAnimating.value) {
+      isAnimating.value = false
+    }
   })
 
   // Track rotation & pitch
@@ -279,21 +277,38 @@ watch(() => mapStore.positionEvent, (event) => {
 
     console.log('finalPadding', finalPadding)
 
-    // point.lng += 0.00001
+    // Safe padding guard
+    const containerHeight = m.getContainer().clientHeight || 800
+    const containerWidth = m.getContainer().clientWidth || 800
+    
+    // Validate padding to prevent "null instead of number" crash in MapLibre
+    let safePadding = finalPadding
+    if (safePadding) {
+      if ((safePadding.top || 0) + (safePadding.bottom || 0) >= containerHeight * 0.9) {
+        console.warn('Padding vertically exceeds map height, defaulting to 0', safePadding, containerHeight)
+        safePadding = { top: 0, bottom: 0, left: 0, right: 0 }
+      }
+      if ((safePadding.left || 0) + (safePadding.right || 0) >= containerWidth * 0.9) {
+        console.warn('Padding horizontally exceeds map width, defaulting to 0', safePadding, containerWidth)
+        safePadding = { top: 0, bottom: 0, left: 0, right: 0 }
+      }
+    }
+
     console.log('flying to', {
       center: [point.lng, point.lat],
       zoom: event.zoom,
-      padding: finalPadding,
+      padding: safePadding,
       bearing: event.bearing ?? m.getBearing(),
       pitch: event.pitch ?? m.getPitch(),
-      duration: 800,
-      essential: mapStore.forceAnimations,
     })
+
+    // Suppress marker transitions during flyTo to prevent jank
+    isAnimating.value = true
 
     m.flyTo({
       center: [point.lng, point.lat],
       zoom: event.zoom,
-      padding: finalPadding,
+      padding: safePadding,
       bearing: event.bearing ?? m.getBearing(),
       pitch: event.pitch ?? m.getPitch(),
       duration: 800,
@@ -302,13 +317,41 @@ watch(() => mapStore.positionEvent, (event) => {
   } else if (points.length > 1) {
 
     const bounds = new maplibregl.LngLatBounds()
-    points.forEach(p => bounds.extend([p.lng, p.lat]))
+    let validPoints = 0
+    points.forEach(p => {
+      if (typeof p.lng === 'number' && typeof p.lat === 'number' && !isNaN(p.lng) && !isNaN(p.lat)) {
+        bounds.extend([p.lng, p.lat])
+        validPoints++
+      }
+    })
+
+    if (validPoints < 2) {
+      console.warn("Not enough valid points for fitBounds!", points)
+      return
+    }
 
     // Use centralized padding calculation with optional extra padding from the event
     const finalPadding = mapStore.getEffectivePadding(event.padding)
+    
+    const containerHeight = m.getContainer().clientHeight || 800
+    const containerWidth = m.getContainer().clientWidth || 800
+    let safePadding = finalPadding
+    if (safePadding) {
+      if ((safePadding.top || 0) + (safePadding.bottom || 0) >= containerHeight * 0.9) {
+        console.warn('fitBounds: Padding vertically exceeds map height, defaulting to 0', safePadding, containerHeight)
+        safePadding = { top: 0, bottom: 0, left: 0, right: 0 }
+      }
+      if ((safePadding.left || 0) + (safePadding.right || 0) >= containerWidth * 0.9) {
+        console.warn('fitBounds: Padding horizontally exceeds map width, defaulting to 0', safePadding, containerWidth)
+        safePadding = { top: 0, bottom: 0, left: 0, right: 0 }
+      }
+    }
+
+    // Suppress marker transitions during fitBounds to prevent jank
+    isAnimating.value = true
 
     m.fitBounds(bounds, {
-      padding: finalPadding,
+      padding: safePadding,
       bearing: event.bearing ?? m.getBearing(),
       pitch: event.pitch ?? m.getPitch(),
       duration: 800,
@@ -410,7 +453,7 @@ defineExpose({
 </script>
 
 <template>
-  <div class="h-dvh w-dvw">
+  <div class="h-dvh w-dvw" :class="[{ 'map-animating': isAnimating }]" :style="{ '--marker-zoom-scale': zoomScale }">
     <MglMap
       :map-style="mapStyle"
       :center="center"
@@ -418,7 +461,7 @@ defineExpose({
       :max-zoom="MAP_CONFIG.maxZoom"
       :min-zoom="MAP_CONFIG.minZoom"
       :attribution-control="false"
-      :render-world-copies="false"
+      :render-world-copies="true"
       :map-key="MAP_KEY"
       width="100%"
       height="100%"
@@ -433,7 +476,7 @@ defineExpose({
         :lines-to-draw="mapStore.linesToDraw"
       />
 
-      <!-- Stop Markers (hidden below zoom threshold) -->
+      <!-- Stop Markers -->
       <MapStopMarker
         v-for="stop in (stops || [])"
         :key="stop.id"
@@ -442,11 +485,12 @@ defineExpose({
         @click="handleStopClick"
       />
 
-      <!-- Vehicle Markers (hidden below zoom threshold) -->
+      <!-- Vehicle Markers -->
       <MapVehicleMarker
         v-for="vehicle in (vehicles || [])"
         :key="vehicle.id"
         :vehicle="vehicle"
+        :now="now"
         :state="getVehicleState(vehicle)"
         @click="handleVehicleClick"
       />
@@ -457,7 +501,6 @@ defineExpose({
         :location="userLocation"
       />
     </MglMap>
-  
 
 
     <!-- Selected Stop Card Overlay -->
@@ -646,5 +689,16 @@ defineExpose({
 
 .maplibregl-ctrl-logo {
   display: none !important;
+}
+
+/* ===== Animation Jank Prevention =====
+   When the map is performing a flyTo/fitBounds animation,
+   suppress all marker CSS transitions to prevent layout thrashing.
+   Markers will snap to their new state instantly, and the map
+   camera animation remains smooth. */
+:global(.map-animating) .stop-marker-wrapper,
+:global(.map-animating) .vehicle-marker-wrapper,
+:global(.map-animating) .zoom-scaler {
+  transition: none !important;
 }
 </style>

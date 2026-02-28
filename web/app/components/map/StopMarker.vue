@@ -3,11 +3,9 @@ import { MglMarker } from '@indoorequal/vue-maplibre-gl'
 import type { BusStop } from '~/types/bus'
 import { generateStopMarkerSVG } from '~/utils/bus'
 
-export type MarkerState = 'disabled' | 'enabled' | 'highlighted'
-
 const props = defineProps<{
   stop: BusStop
-  state: MarkerState
+  state?: 'highlighted' | 'dimmed' | 'normal'
 }>()
 
 const emit = defineEmits<{
@@ -16,47 +14,38 @@ const emit = defineEmits<{
 
 const coordinates = computed<[number, number]>(() => [props.stop.longitude!, props.stop.latitude!])
 
-// Fixed base sizes for SVG generation (scaling is handled by CSS)
-const markerSize = computed(() => {
-  return props.state === 'highlighted' ? 36 : 24
-})
-
+// Fixed base size — CSS handles all scaling
 const svgContent = computed(() => {
   const lineIds = props.stop.lines || []
-  return generateStopMarkerSVG(lineIds, markerSize.value, props.state === 'highlighted')
+  return generateStopMarkerSVG(lineIds, 24, false)
 })
 
-const stateClasses = computed(() => {
-  switch (props.state) {
-    case 'disabled':
-      return 'opacity-30 grayscale scale-75'
-    case 'highlighted':
-      return 'scale-125 z-50'
-    case 'enabled':
-    default:
-      return 'hover:scale-110'
-  }
+// CSS data classes for the cascade approach
+// Parent (BaseMap root) sets `hl-line-{id}` / `hl-stop-{id}`, and the dynamic <style>
+// in BaseMap matches `.hl-line-{id} .line-{id}` to re-enable matching markers.
+const markerClasses = computed(() => {
+  const classes: string[] = ['stop-marker']
+  // Add stop ID class
+  classes.push(`stop-${props.stop.id}`)
+  // Add line ID classes for each line this stop serves
+  const lineIds = props.stop.lines || []
+  lineIds.forEach(lineId => classes.push(`line-${lineId}`))
+  if (props.state === 'dimmed') classes.push('is-dimmed')
+  if (props.state === 'highlighted') classes.push('is-highlighted')
+  return classes
 })
 </script>
 
 <template>
   <MglMarker :coordinates="coordinates">
     <template #marker>
-      <!-- Outer wrapper handles Zoom Scale (CSS Class) - WITH TRANSITION -->
       <div class="zoom-scaler">
-        <!-- Inner wrapper handles State Scale/Hover (Vue) - WITH TRANSITION -->
         <div
-          class="stop-marker-wrapper cursor-pointer relative"
-          style="transition: opacity 300ms ease, transform 300ms ease, filter 300ms ease;"
-          :class="stateClasses"
+          class="stop-marker-wrapper cursor-pointer relative marker-transition"
+          :class="markerClasses"
           @click.stop="emit('click', stop)"
         >
           <div v-html="svgContent" />
-          <div
-            v-if="state === 'highlighted'"
-            class="absolute inset-0 rounded-full ring-4 ring-amber-400 ring-opacity-60 animate-pulse"
-            style="margin: -4px;"
-          />
         </div>
       </div>
     </template>
@@ -67,17 +56,37 @@ const stateClasses = computed(() => {
 .zoom-scaler {
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   transform-origin: center;
+  transform: scale(var(--marker-zoom-scale, 1));
+  contain: layout style;
+}
+
+/* Specific property transitions instead of transition-all */
+.marker-transition {
+  transition-property: opacity, transform, filter;
+  transition-duration: 300ms;
+  transition-timing-function: ease;
+}
+
+/* Default state: enabled */
+.stop-marker {
+  opacity: 1;
+  filter: none;
   transform: scale(1);
 }
 
-/* Discrete Zoom Steps based on parent class in BaseMap */
-:global(.z-low) .zoom-scaler {
-  transform: scale(0.6);
+.stop-marker:hover {
+  transform: scale(1.1);
 }
-:global(.z-med) .zoom-scaler {
-  transform: scale(0.8);
+
+.stop-marker.is-dimmed {
+  opacity: 0.35;
 }
-:global(.z-high) .zoom-scaler {
-  transform: scale(1.0);
+
+.stop-marker.is-highlighted {
+  opacity: 1;
+  transform: scale(1.15);
+  z-index: 50;
 }
+
+/* Matching markers get re-enabled by dynamic <style> in BaseMap */
 </style>
