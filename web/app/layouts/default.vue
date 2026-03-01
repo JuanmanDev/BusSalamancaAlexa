@@ -3,6 +3,7 @@ const route = useRoute()
 const searchQuery = ref('')
 const mapStore = useMapStore()
 const colorMode = useColorMode()
+const { watchLocation } = useGeolocation()
 
 // Navigation items
 const navItems = [
@@ -41,6 +42,12 @@ const showHeaderAndNav = computed(() => {
 
 const isRunningOnDebug = computed(() => {
   return process.env.NODE_ENV === 'development'
+})
+
+onMounted(async () => {
+  if (process.client) {
+    watchLocation()
+  }
 })
 </script>
 
@@ -147,8 +154,8 @@ const isRunningOnDebug = computed(() => {
     </Transition>
 
     <div 
-      class="fixed bottom-0 right-0 z-50 bg-black/50 text-white p-2 text-xs"
-      v-if="isRunningOnDebug "
+      class="fixed bottom-0 right-0 z-50 bg-black/50 text-white px-2 py-1 text-[10px] overflow-x-auto whitespace-nowrap [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+      v-if="isRunningOnDebug && !false"
     >
       paddings {{ mapStore.padding }}
       pagePadding {{ mapStore.pagePadding }}

@@ -39,15 +39,24 @@ interface VehicleState {
 const vehicleStateMap = new Map<string, VehicleState>()
 const REMOVE_TIMEOUT = 15 * 60 * 1000 // 15 minutes
 
-export async function fetchVehiclesFromHubs(): Promise<BusVehicle[]> {
-    // We ignore the simple cache for the aggregation itself to ensure we run the state logic
-    // But we might want to respect the 3s cache to avoid spamming SIRI?
-    // Let's use the SIRI cache logic (in siri.ts calls) or keep the global aggregator cache?
-    // If we want "isEstimate" to update (e.g. time based), we need to run logic.
-    // For now, let's just fetch fresh.
+// Helper to calculate distance in meters between two coordinates
+function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+    const R = 6371e3; // metres
+    const φ1 = lat1 * Math.PI / 180;
+    const φ2 = lat2 * Math.PI / 180;
+    const Δφ = (lat2 - lat1) * Math.PI / 180;
+    const Δλ = (lon2 - lon1) * Math.PI / 180;
 
+    const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+        Math.cos(φ1) * Math.cos(φ2) *
+        Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+    return R * c;
+}
+
+export async function fetchVehiclesFromHubs(): Promise<BusVehicle[]> {
     try {
-        // console.log(`[Aggregator] Fetching vehicles from ${HUB_STOPS.length} hubs...`)
         const promises = HUB_STOPS.map(id => fetchArrivals(id))
         const results = await Promise.all(promises)
 
@@ -61,11 +70,28 @@ export async function fetchVehiclesFromHubs(): Promise<BusVehicle[]> {
 
                 const existing = vehicleStateMap.get(arrival.vehicleRef)
                 let itemTimestamp = now
+
+                let finalLat = arrival.location.latitude
+                let finalLng = arrival.location.longitude
+
                 if (existing) {
                     const sameLocation = existing.data.latitude === arrival.location.latitude &&
                         existing.data.longitude === arrival.location.longitude;
+
                     if (sameLocation) {
                         itemTimestamp = existing.data.timestamp || existing.lastUpdated
+                    } else if (existing.data.lineId === arrival.lineId) {
+                        // Check for GPS glitches (buses jumping wildly on the same line)
+                        const distMeters = calculateDistance(existing.data.latitude, existing.data.longitude, arrival.location.latitude, arrival.location.longitude)
+
+                        // If it jumped more than 1500 meters (1.5km) in a single update, it's likely a GPS error.
+                        // We reject the new coordinate and keep the old one, but we still update the timestamp so it stays alive
+                        if (distMeters > 1500) {
+                            // console.warn(`[Aggregator] GPS Glitch on ${arrival.vehicleRef}: jumped ${Math.round(distMeters)}m. Ignoring new coordinate.`);
+                            finalLat = existing.data.latitude
+                            finalLng = existing.data.longitude
+                            itemTimestamp = existing.data.timestamp || existing.lastUpdated
+                        }
                     }
                 }
 
@@ -75,8 +101,8 @@ export async function fetchVehiclesFromHubs(): Promise<BusVehicle[]> {
                         id: arrival.vehicleRef,
                         lineId: arrival.lineId,
                         lineName: arrival.lineName,
-                        latitude: arrival.location.latitude,
-                        longitude: arrival.location.longitude,
+                        latitude: finalLat,
+                        longitude: finalLng,
                         destination: arrival.destination,
                         bearing: 0,
                         delay: 0,

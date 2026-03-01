@@ -68,7 +68,7 @@ function goToStop(stop: BusStop) {
 
 // Vehicles for this line (from store)
 const lineVehicles = computed(() => 
-  mapStore.vehicles.filter(v => v.lineId === lineId.value)
+  mapStore.vehicles.filter((v: any) => v.lineId === lineId.value)
 )
 
 const isRefreshing = computed(() => mapStore.arrivalsLoading)

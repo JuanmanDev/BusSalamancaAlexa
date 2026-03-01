@@ -76,8 +76,8 @@ const { data: allLines } = await useBusLines() as { data: Ref<BusLine[]> }
 // Instead of computing state per-marker (300+ reactive evaluations),
 // ===== Marker States =====
 function getStopState(stop: BusStop): 'highlighted' | 'dimmed' | 'normal' {
-  if (mapStore.selectedRoute) {
-    const isRouteStop = mapStore.selectedRoute.segments.some(s => s.from?.id === stop.id || s.to?.id === stop.id)
+  if (mapStore.selectedRoute && mapStore.selectedRoute.segments) {
+    const isRouteStop = mapStore.selectedRoute.segments.some((s: any) => s.from?.id === stop.id || s.to?.id === stop.id)
     return isRouteStop ? 'highlighted' : 'dimmed'
   }
   if (mapStore.highlightStopId) {
@@ -93,8 +93,8 @@ function getStopState(stop: BusStop): 'highlighted' | 'dimmed' | 'normal' {
 }
 
 function getVehicleState(vehicle: BusVehicle): 'highlighted' | 'dimmed' | 'normal' {
-  if (mapStore.selectedRoute) {
-    const isRouteLine = mapStore.selectedRoute.segments.some(s => s.lineId === vehicle.lineId)
+  if (mapStore.selectedRoute && mapStore.selectedRoute.segments) {
+    const isRouteLine = mapStore.selectedRoute.segments.some((s: any) => s.lineId === vehicle.lineId)
     return isRouteLine ? 'highlighted' : 'dimmed'
   }
   if (mapStore.selectedVehicle) {
@@ -318,7 +318,7 @@ watch(() => mapStore.positionEvent, (event) => {
 
     const bounds = new maplibregl.LngLatBounds()
     let validPoints = 0
-    points.forEach(p => {
+    points.forEach((p: any) => {
       if (typeof p.lng === 'number' && typeof p.lat === 'number' && !isNaN(p.lng) && !isNaN(p.lat)) {
         bounds.extend([p.lng, p.lat])
         validPoints++

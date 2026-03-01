@@ -153,6 +153,80 @@ export const useMapStore = defineStore('map', () => {
     // Custom Line Paths (e.g. for Line Detail visualization)
     const linesToDraw = ref<{ id: string; color: string; points: { lat: number; lng: number }[]; width?: number; opacity?: number }[]>([])
 
+    // Preloaded Geometries
+    const preloadedLineGeometries = ref<Record<string, { id: string, color: string, points: { lat: number, lng: number }[] }[]> | null>(null)
+    const geometriesCacheTime = ref<number>(0)
+
+    // Manual localStorage sync to avoid VueUse serializer issues with complex nested objects/nulls
+    const GEOMETRY_CACHE_KEY = 'bus-line-geometries-store-v10'
+    const TIMESTAMP_CACHE_KEY = 'bus-line-geometries-time-v10'
+
+    function loadFromLocalStorage() {
+        if (typeof window === 'undefined') return false;
+        try {
+            const timeStr = localStorage.getItem(TIMESTAMP_CACHE_KEY)
+            const geomStr = localStorage.getItem(GEOMETRY_CACHE_KEY)
+            if (timeStr && geomStr) {
+                const time = parseInt(timeStr, 10)
+                const now = Date.now()
+                const ONE_DAY = 24 * 60 * 60 * 1000
+                if (now - time < ONE_DAY) {
+                    preloadedLineGeometries.value = JSON.parse(geomStr)
+                    geometriesCacheTime.value = time
+                    return true
+                }
+            }
+        } catch (e) {
+            console.error('[MapStore] Error reading cache from localStorage', e)
+        }
+        return false
+    }
+
+    function saveToLocalStorage(data: any, time: number) {
+        if (typeof window === 'undefined') return;
+        try {
+            localStorage.setItem(GEOMETRY_CACHE_KEY, JSON.stringify(data))
+            localStorage.setItem(TIMESTAMP_CACHE_KEY, time.toString())
+        } catch (e) {
+            console.error('[MapStore] Error saving cache to localStorage', e)
+        }
+    }
+
+    let lineGeometryPromises: Record<string, Promise<void>> = {}
+
+    async function fetchLineGeometry(lineId: string) {
+        if (preloadedLineGeometries.value && preloadedLineGeometries.value[lineId]) return;
+        if (lineGeometryPromises[lineId]) return lineGeometryPromises[lineId];
+
+        // Try to load from localStorage first if we just freshly opened the app
+        if (!preloadedLineGeometries.value || Object.keys(preloadedLineGeometries.value).length === 0) {
+            loadFromLocalStorage()
+            if (preloadedLineGeometries.value && preloadedLineGeometries.value[lineId]) return;
+        }
+
+        lineGeometryPromises[lineId] = (async () => {
+            try {
+                console.log(`[MapStore] Fetching geometry for line ${lineId}...`)
+                const data = await $fetch(`/api/bus/all-lines-geometry?lineId=${lineId}`)
+                if (data && typeof data === 'object') {
+                    // Merge new line data into the store
+                    preloadedLineGeometries.value = {
+                        ...preloadedLineGeometries.value,
+                        ...data
+                    }
+                    saveToLocalStorage(preloadedLineGeometries.value, Date.now())
+                    console.log(`[MapStore] Geometry for line ${lineId} loaded and cached.`)
+                }
+            } catch (e) {
+                console.error(`Failed to load geometry for line ${lineId}:`, e)
+            } finally {
+                delete lineGeometryPromises[lineId]
+            }
+        })();
+
+        return lineGeometryPromises[lineId];
+    }
+
     // Map instance
     const mapInstance = shallowRef<any | null>(null)
 
@@ -882,16 +956,35 @@ export const useMapStore = defineStore('map', () => {
         linesToDraw.value = []
 
         try {
+            if (currentContextId.value !== lineId) return
+            const hex = getLineColorHex(lineId)
+
+            if (!preloadedLineGeometries.value || !preloadedLineGeometries.value[lineId]) {
+                await fetchLineGeometry(lineId)
+            }
+
+            if (currentContextId.value !== lineId) return
+
+            if (preloadedLineGeometries.value && preloadedLineGeometries.value[lineId]) {
+                const dirs = preloadedLineGeometries.value[lineId]
+
+                if (Array.isArray(dirs)) {
+                    const result = dirs.map((dir: any) => ({
+                        ...dir,
+                        color: hex
+                    }))
+                    setLines(result)
+                    return
+                }
+            }
+
+            console.warn(`[MapStore] No geometry cached for line ${lineId}, falling back to straight lines`)
             const allLines = await busService.fetchLines()
             if (currentContextId.value !== lineId) return
 
             const lineInfo = allLines.find((l: BusLine) => l.id === lineId)
-            const hex = getLineColorHex(lineId)
-
             const straightLines: { id: string, color: string, points: { lat: number, lng: number }[], opacity?: number }[] = []
-            const directionsToFetch: { id: string; points: { lat: number; lng: number }[] }[] = []
 
-            // Strategy 1: Use explicit directions from API (Best)
             if (lineInfo?.directions && lineInfo.directions.length > 0) {
                 lineInfo.directions.forEach((dir: any, idx: number) => {
                     const points: { lat: number; lng: number }[] = []
@@ -906,12 +999,10 @@ export const useMapStore = defineStore('map', () => {
                     if (points.length > 1) {
                         const lineIdPart = `${lineId}-${dir.id || idx}`
                         straightLines.push({ id: lineIdPart, color: hex, points })
-                        directionsToFetch.push({ id: lineIdPart, points })
                     }
                 })
             }
 
-            // Strategy 2: Fallback to numeric sort if no directions
             if (straightLines.length === 0 && lineStops.length > 1) {
                 const points: { lat: number; lng: number }[] = []
                 const validStops = lineStops.filter(s => s.latitude && s.longitude)
@@ -919,55 +1010,11 @@ export const useMapStore = defineStore('map', () => {
 
                 if (points.length > 1) {
                     straightLines.push({ id: lineId, color: hex, points })
-                    directionsToFetch.push({ id: lineId, points })
                 }
             }
 
-            if (straightLines.length === 0) return
-
-            // Show straight lines initially with 0 opacity (or low)
-            // Actually, let's show them immediately if OSRM takes time, but standard practice is to wait a bit.
-            // Let's replicate the component logic:
-
-            // Start OSRM fetch
-            const osrmPromise = (async () => {
-                try {
-                    const detailedLines = await Promise.all(directionsToFetch.map(async (dir) => {
-                        const geometry = await $fetch('/api/bus/route-geometry', {
-                            method: 'POST',
-                            body: { points: dir.points }
-                        }) as { lat: number; lng: number }[]
-                        return { id: dir.id, color: hex, points: geometry || dir.points }
-                    }))
-                    return detailedLines
-                } catch (e) {
-                    console.error('Failed to fetch OSRM geometry', e)
-                    return null
-                }
-            })()
-
-            // Race: wait 3s max for OSRM, else show straight lines
-            const timeout = new Promise<null>(r => setTimeout(() => r(null), 3000))
-            const result = await Promise.race([osrmPromise, timeout])
-
-            if (currentContextId.value !== lineId) return
-
-            if (result) {
-                // OSRM loaded fast
-                setLines(result)
-            } else {
-                // Timeout - show straight lines
-                console.log('[MapStore] OSRM timeout, showing straight lines')
-                setLines(straightLines.map(l => ({ ...l, opacity: 0.7 })))
-
-                // Continue waiting for OSRM
-                osrmPromise.then(detailedLines => {
-                    if (currentContextId.value !== lineId) return
-                    if (detailedLines) {
-                        console.log('[MapStore] OSRM loaded late, updating lines')
-                        setLines(detailedLines)
-                    }
-                })
+            if (straightLines.length > 0) {
+                setLines(straightLines)
             }
 
         } catch (e) {
@@ -1386,6 +1433,7 @@ export const useMapStore = defineStore('map', () => {
         setLines,
 
         // Context Handlers
+        fetchLineGeometry,
         setContextToHomePage,
         setContextToStopPage,
         setContextToLinePage,
