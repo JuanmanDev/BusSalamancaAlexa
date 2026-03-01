@@ -311,7 +311,7 @@ watch(() => mapStore.positionEvent, (event) => {
       padding: safePadding,
       bearing: event.bearing ?? m.getBearing(),
       pitch: event.pitch ?? m.getPitch(),
-      duration: 800,
+      duration: event.animate === false ? 0 : 800,
       essential: mapStore.forceAnimations,
     })
   } else if (points.length > 1) {
@@ -354,7 +354,7 @@ watch(() => mapStore.positionEvent, (event) => {
       padding: safePadding,
       bearing: event.bearing ?? m.getBearing(),
       pitch: event.pitch ?? m.getPitch(),
-      duration: 800,
+      duration: event.animate === false ? 0 : 800,
       essential: mapStore.forceAnimations,
     })
   }

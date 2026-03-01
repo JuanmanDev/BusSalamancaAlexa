@@ -107,7 +107,7 @@ onMounted(async () => {
     </div>
 
     <!-- Content (right side on desktop, full width on mobile) -->
-    <div class="w-full md:w-[400px] lg:w-[450px] shrink-0 px-4 py-6 space-y-6 pointer-events-auto relative z-10" id="mapPreviewContainer__">
+    <div class="w-full md:w-[400px] lg:w-[450px] shrink-0 px-4 py-6 space-y-6 pointer-events-auto relative z-10" id="mapPreviewContainer">
       <!-- Hero section -->
       <div class="glass-card text-center py-6 px-4">
         <h1 class="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-2">

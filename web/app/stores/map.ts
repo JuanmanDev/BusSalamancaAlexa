@@ -69,6 +69,7 @@ export interface MapPositionEvent {
     bearing?: number
     pitch?: number
     padding?: { top: number; bottom: number; left: number; right: number }
+    animate?: boolean
 }
 
 // Context types
@@ -312,7 +313,7 @@ export const useMapStore = defineStore('map', () => {
         lastPositionUpdateTime = 0
     }
 
-    function updatePosition(points: { lat: number; lng: number }[], options: { zoom?: number, bearing?: number, pitch?: number, padding?: any, type?: PositionEventType } = {}) {
+    function updatePosition(points: { lat: number; lng: number }[], options: { zoom?: number, bearing?: number, pitch?: number, padding?: any, type?: PositionEventType, animate?: boolean } = {}) {
         console.log('updatePosition', points, options);
         const payload = {
             id: Date.now(),
@@ -321,7 +322,8 @@ export const useMapStore = defineStore('map', () => {
             zoom: options.zoom,
             bearing: options.bearing,
             pitch: options.pitch,
-            padding: options.padding
+            padding: options.padding,
+            animate: options.animate
         }
 
         const now = Date.now()
@@ -333,7 +335,7 @@ export const useMapStore = defineStore('map', () => {
         }
     }
 
-    async function updatePositionWithMapPreviewContainer(points: { lat: number; lng: number }[], options: { zoom?: number, padding?: any, type?: PositionEventType } = {}) {
+    async function updatePositionWithMapPreviewContainer(points: { lat: number; lng: number }[], options: { zoom?: number, padding?: any, type?: PositionEventType, animate?: boolean } = {}) {
         console.log('updatePositionWithMapPreviewContainer', points, options);
 
         await nextTick(); // Wait for any DOM changes to settle (like exiting fullscreen) before reading rect
@@ -347,7 +349,8 @@ export const useMapStore = defineStore('map', () => {
             type: options.type || 'manual',
             points,
             zoom: options.zoom,
-            padding: options.padding
+            padding: options.padding,
+            animate: options.animate
         }
 
         const now = Date.now()
@@ -535,7 +538,7 @@ export const useMapStore = defineStore('map', () => {
         linesToDraw.value = []
 
         // Reset view to Salamanca default
-        updatePosition([{ lng: -5.6635, lat: 40.9701 }], { zoom: 14, type: 'manual' })
+        updatePosition([{ lng: -5.6635, lat: 40.9701 }], { zoom: 14, type: 'manual', animate: false })
     }
 
     function setFullscreen(value: boolean, skipPositionUpdate = false) {
@@ -741,6 +744,7 @@ export const useMapStore = defineStore('map', () => {
         // Stops are already set by the caller — only trigger the position update
         updatePositionWithMapPreviewContainer(points, {
             zoom: 15,
+            animate: false
         })
     }
 
