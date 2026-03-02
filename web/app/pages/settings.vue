@@ -46,19 +46,12 @@ const handleThemeChange = (val: any) => {
         
         <div v-if="mounted" class="space-y-4">
           <p class="text-sm text-gray-500 dark:text-gray-400">Selecciona el tema de la aplicación</p>
-          <URadioGroup
+          <UTabs
             v-model="colorMode.preference"
-            :options="themeOptions"
+            :items="themeOptions"
             @update:model-value="handleThemeChange"
-            class="flex flex-col gap-3"
-          >
-            <template #label="{ item }">
-              <div class="flex items-center gap-2 cursor-pointer">
-                <UIcon :name="item?.icon" class="w-5 h-5 text-gray-500 dark:text-gray-400" />
-                <span>{{ item?.label }}</span>
-              </div>
-            </template>
-          </URadioGroup>
+            class="w-full"
+          />
         </div>
         <div v-else class="h-24 flex items-center justify-center">
           <UIcon name="i-lucide-loader-2" class="w-6 h-6 animate-spin text-gray-400" />
@@ -106,6 +99,60 @@ const handleThemeChange = (val: any) => {
                  </div>
                </ClientOnly>
           </div>
+        </div>
+      </section>
+
+      <!-- Links -->
+      <section class="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-700">
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+          <UIcon name="i-lucide-external-link" class="w-5 h-5 text-primary-500" />
+          Enlaces de interés
+        </h2>
+        
+        <div class="flex flex-col gap-2">
+          <UButton
+            to="https://juanman.tech/"
+            target="_blank"
+            color="neutral"
+            variant="ghost"
+            icon="i-lucide-user"
+            class="justify-start"
+          >
+            Web del desarrollador (Juanma)
+          </UButton>
+          
+          <UButton
+            to="https://salamancadetransportes.com/"
+            target="_blank"
+            color="neutral"
+            variant="ghost"
+            icon="i-lucide-bus"
+            class="justify-start"
+          >
+            Web oficial de autobuses
+          </UButton>
+          
+          <UButton
+            to="https://www.amazon.es/Juan-Manuel-B%C3%A9c-Bus-Salamanca/dp/B0F59TDK93/?utm_source=bussalamanca.juanman.tech"
+            target="_blank"
+            color="neutral"
+            variant="ghost"
+            icon="i-lucide-mic"
+            class="justify-start"
+          >
+            Skill de Alexa
+          </UButton>
+          
+          <UButton
+            to="https://github.com/JuanmanDev/BusSalamancaAlexa"
+            target="_blank"
+            color="neutral"
+            variant="ghost"
+            icon="i-lucide-github"
+            class="justify-start"
+          >
+            Código fuente (GitHub)
+          </UButton>
         </div>
       </section>
     </div>
