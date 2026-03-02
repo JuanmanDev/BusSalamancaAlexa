@@ -4,6 +4,9 @@
 
 Skill for Alexa to get bus arrival times in Salamanca.
 
+**🌐 New: Now also available as a full visual Web App!**  
+Check out the interactive map and live bus tracking at: [https://bussalamanca.juanman.tech/](https://bussalamanca.juanman.tech/)
+
 ## 🚀 New Dockerized Version
 
 This project has been refactored to run as a standalone Docker service, removing the AWS Lambda dependency.

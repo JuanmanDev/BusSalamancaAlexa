@@ -1,0 +1,37 @@
+{
+  "name": "web",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "nuxt build",
+    "dev": "nuxt dev",
+    "dev:local": "nuxt dev --host",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare"
+  },
+  "dependencies": {
+    "@indoorequal/vue-maplibre-gl": "^8.4.2",
+    "@nuxt/icon": "^2.2.1",
+    "@nuxt/ui": "^4.4.0",
+    "@types/xml2js": "^0.4.14",
+    "@vueuse/nuxt": "^14.2.0",
+    "maplibre-gl": "^5.17.0",
+    "nuxt": "^4.3.0",
+    "vue": "^3.5.27",
+    "vue-router": "^4.6.4",
+    "xml2js": "^0.6.2"
+  },
+  "devDependencies": {
+    "@iconify-json/lucide": "^1.2.88",
+    "@pinia/nuxt": "^0.11.3",
+    "@semantic-release/changelog": "^6.0.3",
+    "@semantic-release/commit-analyzer": "^13.0.1",
+    "@semantic-release/git": "^10.0.1",
+    "@semantic-release/github": "^12.0.6",
+    "@semantic-release/release-notes-generator": "^14.1.0",
+    "@vite-pwa/nuxt": "^1.1.1",
+    "pinia": "^3.0.4",
+    "semantic-release": "^25.0.3"
+  }
+}
