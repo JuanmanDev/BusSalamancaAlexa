@@ -77,7 +77,7 @@ onMounted(async () => {
         v-show="showHeaderAndNav"
         class="fixed top-0 left-0 right-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 shadow-sm"
       >
-      <div class="mx-auto md:px-4 h-16 flex items-center justify-between">
+      <div class="mx-auto px-4 h-16 flex items-center justify-between">
         <!-- Logo -->
         <NuxtLink to="/" class="flex items-center gap-2 font-bold text-xl text-primary-600 dark:text-primary-400">
           <UIcon name="i-lucide-bus" class="w-8 h-8" />
@@ -103,6 +103,13 @@ onMounted(async () => {
         <!-- Actions -->
         <div class="flex items-center gap-2">
           <GlobalSearch v-model="searchQuery" />
+          <button
+            @click="colorMode.preference = colorMode.value === 'dark' ? 'light' : 'dark'"
+            class="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors flex items-center p-2 rounded-lg"
+            title="Cambiar tema"
+          >
+            <UIcon :name="colorMode.value === 'dark' ? 'i-lucide-sun' : 'i-lucide-moon'" class="w-5 h-5" />
+          </button>
           <NuxtLink
             to="/settings"
             class="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors flex items-center p-2 rounded-lg"
