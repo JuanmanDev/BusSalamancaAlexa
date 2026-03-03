@@ -185,24 +185,6 @@ onUnmounted(() => {
   mapStore.clearContext(true) // Keep vehicles to prevent flash
 })
 
-
-function centerMapWithOffset(lat: number, lng: number) {
-  if (!mapStore.mapInstance) return 
-  return;
-  
-  const height = mapContainer.value?.clientHeight || window.innerHeight
-  const offsetY = height * 0.2 // 20% height (to shift center down, so point appears up)
-  
-  // Use flyTo with offset
-  mapStore.mapInstance.flyTo({
-    center: [lng, lat],
-    zoom: 16,
-    offset: [0, -offsetY],
-    padding: { bottom: 0, top: 0, left: 0, right: 0 },
-    duration: 1000
-  })
-}
-
 function centerOnUser() {
   const geo = useGeolocation()
   if (geo.userLocation.value) {

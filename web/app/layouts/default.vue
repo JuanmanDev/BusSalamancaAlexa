@@ -47,6 +47,7 @@ const isRunningOnDebug = computed(() => {
 onMounted(async () => {
   if (process.client) {
     watchLocation()
+    mapStore.preloadAllLineGeometries()
   }
 })
 </script>

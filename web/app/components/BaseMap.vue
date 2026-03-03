@@ -117,6 +117,15 @@ const lastUpdateFormatted = computed(() => {
   return date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
 })
 
+const activeVehicles = computed(() => {
+  if (!props.vehicles) return []
+  const current = now.value.getTime()
+  return props.vehicles.filter(v => {
+    if (!v.timestamp) return true
+    return (current - v.timestamp) <= 600000 // 10 minutes in ms
+  })
+})
+
 const formattedLineName = computed(() => {
   const name = mapStore.selectedVehicle?.lineName || (mapStore.selectedVehicle?.lineId ? `Línea ${mapStore.selectedVehicle.lineId}` : '')
   if (!name) return ''
@@ -382,7 +391,7 @@ watch(
         zoom: 16,
         padding: finalPadding,
         duration: 1000,
-        essential: true
+        essential: mapStore.forceAnimations
       })
       return
     }
@@ -487,7 +496,7 @@ defineExpose({
 
       <!-- Vehicle Markers -->
       <MapVehicleMarker
-        v-for="vehicle in (vehicles || [])"
+        v-for="vehicle in activeVehicles"
         :key="vehicle.id"
         :vehicle="vehicle"
         :now="now"

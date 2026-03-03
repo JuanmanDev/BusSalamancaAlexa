@@ -11,6 +11,19 @@ const storage = useStorage()
 const geolocation = useGeolocation()
 const mapStore = useMapStore()
 
+const favLinesScrollContainer = ref<HTMLElement | null>(null)
+const { arrivedState } = useScroll(favLinesScrollContainer)
+
+function scrollFavLines(direction: 'left' | 'right') {
+  if (!favLinesScrollContainer.value) return
+  // Find first child element width approx 40% + gap
+  const itemWidth = (favLinesScrollContainer.value.firstElementChild as HTMLElement)?.offsetWidth || 150
+  const gap = 12 // 0.75rem or 12px
+  const scrollAmount = itemWidth + gap
+  
+  favLinesScrollContainer.value.scrollBy({ left: direction === 'left' ? -scrollAmount : scrollAmount, behavior: 'smooth' })
+}
+
 // Load static data
 const { data: allStops, status: stopsStatus } = await useBusStops()
 const { data: allLines, status: linesStatus } = await useBusLines()
@@ -75,6 +88,11 @@ function toggleFavoriteLine(line: BusLine) {
   storage.toggleFavorite('line', line.id, line.name)
 }
 
+function formatFavoriteLineName(name: string) {
+  if (!name) return ''
+  return name.replace(/ - /g, '<br/>').replace(/\(/g, '<br/>(')
+}
+
 // Request location handler
 async function handleRequestLocation() {
   const success = await geolocation.requestLocation()
@@ -107,7 +125,7 @@ onMounted(async () => {
     </div>
 
     <!-- Content (right side on desktop, full width on mobile) -->
-    <div class="w-full md:w-[400px] lg:w-[450px] shrink-0 px-4 py-6 space-y-6 pointer-events-auto relative z-10" id="mapPreviewContainer">
+    <div class="w-full md:w-[400px] lg:w-[450px] shrink-0 px-4 py-6 space-y-6 pointer-events-auto relative z-10">
       <!-- Hero section -->
       <div class="glass-card text-center py-6 px-4">
         <h1 class="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-2">
@@ -136,7 +154,7 @@ onMounted(async () => {
         <!-- Favorite stops -->
         <div v-if="storage.favoriteStops.value.length > 0" class="mb-4">
           <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Paradas</h3>
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div class="grid grid-cols-1 gap-3">
             <NuxtLink
               v-for="fav in storage.favoriteStops.value"
               :key="`stop-${fav.id}`"
@@ -160,24 +178,72 @@ onMounted(async () => {
         <!-- Favorite lines -->
         <div v-if="storage.favoriteLines.value.length > 0">
           <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Líneas</h3>
-          <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          
+          <!-- 1 or 2 lines layout -->
+          <div v-if="storage.favoriteLines.value.length <= 2" class="flex flex-col gap-3">
             <NuxtLink
               v-for="fav in storage.favoriteLines.value"
               :key="`line-${fav.id}`"
               :to="`/line/${fav.id}`"
-              class="bg-white/80 dark:bg-gray-800/80 rounded-lg p-3 hover:bg-white dark:hover:bg-gray-800 transition-all"
+              class="bg-white/80 dark:bg-gray-800/80 rounded-lg p-3 hover:bg-white dark:hover:bg-gray-800 transition-all flex items-center gap-3"
               :style="{ viewTransitionName: `line-${fav.id}` }"
             >
-              <div class="flex items-center gap-3">
+              <div 
+                class="w-10 h-10 rounded-lg flex items-center justify-center text-white shadow-sm shrink-0"
+                :class="getLineColor(fav.id)"
+              >
+                <span class="text-lg font-bold">{{ fav.id }}</span>
+              </div>
+              <p class="text-xs text-gray-500 flex-1 line-clamp-3" v-html="formatFavoriteLineName(fav.name)"></p>
+            </NuxtLink>
+          </div>
+
+          <!-- 3 or more lines layout -->
+          <div v-else class="relative group">
+            <Transition name="fade">
+              <UButton 
+                v-show="!arrivedState.left" 
+                icon="i-lucide-chevron-left" 
+                color="neutral"
+                variant="soft"
+                class="absolute -left-3 top-1/2 -translate-y-1/2 z-10 rounded-full shadow-md bg-white/95 dark:bg-gray-800/95 backdrop-blur aspect-square w-8 h-8 flex items-center justify-center pointer-events-auto transition-opacity"
+                size="sm"
+                @click.prevent="scrollFavLines('left')" 
+              />
+            </Transition>
+            
+            <div 
+              ref="favLinesScrollContainer"
+              class="flex overflow-x-auto snap-x snap-mandatory gap-3 hide-scrollbar pb-1 px-1"
+            >
+              <NuxtLink
+                v-for="fav in storage.favoriteLines.value"
+                :key="`line-${fav.id}`"
+                :to="`/line/${fav.id}`"
+                class="bg-white/80 dark:bg-gray-800/80 rounded-lg p-3 hover:bg-white dark:hover:bg-gray-800 transition-all flex flex-col items-center gap-2 shrink-0 w-[40%] snap-start"
+                :style="{ viewTransitionName: `line-${fav.id}` }"
+              >
                 <div 
                   class="w-10 h-10 rounded-lg flex items-center justify-center text-white shadow-sm shrink-0"
                   :class="getLineColor(fav.id)"
                 >
                   <span class="text-lg font-bold">{{ fav.id }}</span>
                 </div>
-                <p class="text-xs text-gray-500 truncate flex-1">{{ fav.name }}</p>
-              </div>
-            </NuxtLink>
+                <p class="text-xs text-center text-gray-500 line-clamp-3 w-full" v-html="formatFavoriteLineName(fav.name)"></p>
+              </NuxtLink>
+            </div>
+
+            <Transition name="fade">
+              <UButton 
+                v-show="!arrivedState.right" 
+                icon="i-lucide-chevron-right" 
+                color="neutral"
+                variant="soft"
+                class="absolute -right-3 top-1/2 -translate-y-1/2 z-10 rounded-full shadow-md bg-white/95 dark:bg-gray-800/95 backdrop-blur aspect-square w-8 h-8 flex items-center justify-center pointer-events-auto transition-opacity"
+                size="sm"
+                @click.prevent="scrollFavLines('right')" 
+              />
+            </Transition>
           </div>
         </div>
       </div>
@@ -333,6 +399,20 @@ onMounted(async () => {
           <h3 class="font-semibold">Ver mapa</h3>
           <p class="text-sm text-white/80">Paradas y buses</p>
         </NuxtLink>
+
+        <NuxtLink
+          to="https://www.amazon.es/Juan-Manuel-B%C3%A9c-Bus-Salamanca/dp/B0F59TDK93/?utm_source=bussalamanca.juanman.tech&utm_compaign=home-bottom-card"
+          target="_blank"
+          class="col-span-2 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-xl p-6 text-white shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all flex items-center gap-4"
+        >
+          <div class="bg-white/20 p-2 rounded-xl shrink-0">
+            <img src="https://m.media-amazon.com/images/I/41E21ldSofL.png" alt="Bus Salamanca Alexa Skill" class="w-12 h-12 object-contain rounded-lg" />
+          </div>
+          <div>
+            <h3 class="font-semibold text-lg">Skill de Alexa</h3>
+            <p class="text-sm text-white/90">Pregunta a tu asistente por el bus</p>
+          </div>
+        </NuxtLink>
       </div>
     </div>
   </div>
@@ -353,5 +433,14 @@ onMounted(async () => {
   max-height: 0;
   opacity: 0;
   transform: translateY(-10px);
+}
+
+/* Hide scrollbar for layout components */
+.hide-scrollbar {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none; /* Chrome, Safari and Opera */
 }
 </style>

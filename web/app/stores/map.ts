@@ -228,6 +228,33 @@ export const useMapStore = defineStore('map', () => {
         return lineGeometryPromises[lineId];
     }
 
+    let preloadingPromise: Promise<void> | null = null;
+
+    async function preloadAllLineGeometries() {
+        // If already loaded from cache or in progress, return
+        if (loadFromLocalStorage()) return;
+        if (preloadingPromise) return preloadingPromise;
+
+        preloadingPromise = (async () => {
+            try {
+                console.log(`[MapStore] Preloading all lines geometry in background...`)
+                const data = await $fetch(`/api/bus/all-lines-geometry`)
+                if (data && typeof data === 'object') {
+                    // Cache the entire mapping
+                    preloadedLineGeometries.value = data as any
+                    saveToLocalStorage(preloadedLineGeometries.value, Date.now())
+                    console.log(`[MapStore] All lines geometry preloaded and cached.`)
+                }
+            } catch (e) {
+                console.error(`Failed to preload all lines geometry:`, e)
+            } finally {
+                preloadingPromise = null
+            }
+        })();
+
+        return preloadingPromise;
+    }
+
     // Map instance
     const mapInstance = shallowRef<any | null>(null)
 
@@ -538,7 +565,9 @@ export const useMapStore = defineStore('map', () => {
         linesToDraw.value = []
 
         // Reset view to Salamanca default
-        updatePosition([{ lng: -5.6635, lat: 40.9701 }], { zoom: 14, type: 'manual', animate: false })
+        setTimeout(() => {
+            updatePosition([{ lng: -5.6635, lat: 40.9701 }], { zoom: 14, type: 'manual' })
+        }, 500)
     }
 
     function setFullscreen(value: boolean, skipPositionUpdate = false) {
@@ -743,8 +772,7 @@ export const useMapStore = defineStore('map', () => {
 
         // Stops are already set by the caller — only trigger the position update
         updatePositionWithMapPreviewContainer(points, {
-            zoom: 15,
-            animate: false
+            zoom: 15
         })
     }
 
@@ -1438,6 +1466,7 @@ export const useMapStore = defineStore('map', () => {
 
         // Context Handlers
         fetchLineGeometry,
+        preloadAllLineGeometries,
         setContextToHomePage,
         setContextToStopPage,
         setContextToLinePage,
