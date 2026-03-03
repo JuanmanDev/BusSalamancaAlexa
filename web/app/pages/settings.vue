@@ -7,9 +7,9 @@ definePageMeta({
 
 const colorMode = useColorMode()
 const mapStore = useMapStore()
+const config = useRuntimeConfig()
 
-// This project's package.json doesn't have a version field, default to 1.0.0
-const version = '1.0.0'
+const version = config.public.version || '0.0.0'
 
 const themeOptions = [
   { label: 'Sistema', value: 'system', icon: 'i-lucide-monitor' },
