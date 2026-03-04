@@ -102,6 +102,27 @@ const handleThemeChange = (val: any) => {
         </div>
       </section>
 
+      <!-- Help Section -->
+      <section class="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-700">
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+          <UIcon name="i-lucide-help-circle" class="w-5 h-5 text-primary-500" />
+          Ayuda e Información
+        </h2>
+        
+        <div class="flex flex-col gap-2">
+          <p class="text-sm text-gray-500 dark:text-gray-400 mb-2">Consulta cómo funciona la aplicación, el origen de los datos y preguntas frecuentes sobre las estimaciones.</p>
+          <UButton
+            to="/help"
+            color="primary"
+            variant="soft"
+            icon="i-lucide-info"
+            class="justify-center w-full sm:w-auto sm:justify-start"
+          >
+            Ver página de Ayuda
+          </UButton>
+        </div>
+      </section>
+
       <!-- Links -->
       <section class="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-700">
         <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">

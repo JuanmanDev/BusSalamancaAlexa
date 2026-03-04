@@ -107,13 +107,12 @@ onMounted(() => {
   <div class="relative">
     <!-- Search trigger button -->
     <button
-      v-if="!isOpen"
-      class="flex items-center gap-2 px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded-lg text-white/80 hover:text-white transition-all text-sm"
+      class="flex items-center gap-2 p-2 px-3 rounded-lg text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-sm"
       @click="openSearch"
     >
-      <UIcon name="i-lucide-search" class="w-4 h-4" />
-      <span class="hidden sm:inline">Buscar</span>
-      <kbd class="hidden md:inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-white/10 rounded text-xs select-none">
+      <UIcon name="i-lucide-search" class="w-5 h-5" />
+      <span class="hidden sm:inline font-medium">Buscar</span>
+      <kbd class="hidden md:inline-flex items-center gap-0.5 px-1.5 py-0.5 border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 rounded text-xs select-none">
         <span class="text-xs">{{ metaSymbol }}</span><span>K</span>
       </kbd>
     </button>
