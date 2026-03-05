@@ -437,7 +437,7 @@ function swappoints() {
                      <div class="flex-1 space-y-3">
                          <UInput 
                             v-model="originQuery"
-                            placeholder="Origen"
+                            :placeholder="$t('route.origin')"
                             icon="i-lucide-circle"
                             class="w-full"
                             autofocus
@@ -450,7 +450,7 @@ function swappoints() {
                          
                          <UInput 
                             v-model="destQuery"
-                            placeholder="Destino"
+                            :placeholder="$t('route.destination')"
                             icon="i-lucide-map-pin"
                             class="w-full"
                             @focus="onFocus('destination')"
