@@ -113,7 +113,7 @@ export default defineNuxtConfig({
       title: 'Bus Salamanca',
       meta: [
         { name: 'description', content: 'Consulta tiempos de autobuses en Salamanca en tiempo real' },
-        { name: 'viewport', content: 'width=device-width, initial-scale=1, maximum-scale=1' },
+        { name: 'viewport', content: 'width=device-width, initial-scale=1, maximum-scale=1, interactive-widget=resizes-content' },
         { name: 'theme-color', content: '#1e40af' },
       ],
       link: [

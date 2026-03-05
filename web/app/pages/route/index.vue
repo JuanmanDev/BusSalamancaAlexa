@@ -482,8 +482,8 @@ function swappoints() {
              </div>
 
 
-        <!-- Suggestions List -->
-        <div class="flex-1 overflow-y-auto max-w-md mx-auto w-full p-2 mt-4 glass-card" v-if="activeField || suggestions.length > 0">
+        <!-- Suggestions List (Desktop Only) -->
+        <div class="hidden md:block flex-1 overflow-y-auto max-w-md mx-auto w-full p-2 mt-4 glass-card" v-if="activeField || suggestions.length > 0">
             
             <!-- Loading -->
             <div v-if="isSearching" class="py-4 text-center text-gray-500">
@@ -504,7 +504,7 @@ function swappoints() {
                     </div>
                     <div>
                         <p class="font-medium text-gray-900 dark:text-white">{{ item.name }}</p>
-                        <p class="text-xs text-gray-500 truncate" v-if="item.secondary">{{ item.secondary }}</p>
+                        <p class="text-xs text-gray-500" v-if="item.secondary">{{ item.secondary }}</p>
                     </div>
                 </button>
             </div>
@@ -516,7 +516,7 @@ function swappoints() {
         </div>
         
         <!-- Stop Overlay Card -->
-        <div v-if="selectedOverlayStop" class="relative z-20 mt-4 mx-4">
+        <div v-if="selectedOverlayStop" class="relative z-20 mt-4 mx-4 hidden md:block">
              <UCard :ui="{ body: 'p-4', root: 'shadow-lg border-2 border-primary/20 backdrop-blur-md bg-white/90 dark:bg-gray-900/90' }">
                  <div class="flex items-start justify-between mb-3">
                      <div class="flex items-center gap-2">
@@ -588,6 +588,80 @@ function swappoints() {
 
     <!-- Map Picker Overlay - Teleported to Body to ensure it's above everything -->
     <Teleport to="body">
+        <!-- Overlay For Mobile Search -->
+        <div v-if="activeField !== null" class="fixed inset-0 z-[70] bg-gray-50 dark:bg-gray-950 flex flex-col md:hidden pb-[env(safe-area-inset-bottom)]" style="height: 100dvh;">
+            <!-- Top Bar -->
+            <div class="shrink-0 pointer-events-auto bg-white/90 dark:bg-gray-900/90 shadow p-4 flex justify-between items-center z-10">
+                <h2 class="text-lg font-bold text-gray-900 dark:text-white">
+                    {{ activeField === 'origin' ? $t('route.origin') : $t('route.destination') }}
+                </h2>
+                <UButton icon="i-lucide-x" color="neutral" variant="ghost" @click="activeField = null" />
+            </div>
+
+            <!-- Suggestions List (Mobile Reverse Stacking) -->
+            <div class="flex-1 overflow-y-auto flex flex-col-reverse p-3 gap-2">
+                <!-- No results -->
+                <div v-if="!isSearching && suggestions.length === 0 && (activeField === 'origin' ? originQuery : destQuery).length > 2" class="py-10 text-center text-gray-500">
+                    <p>No se encontraron resultados</p>
+                </div>
+
+                <!-- Results -->
+                <div v-else-if="suggestions.length > 0" class="flex flex-col-reverse gap-2">
+                    <button 
+                        v-for="item in suggestions" 
+                        :key="item.id"
+                        class="w-full text-left p-3 rounded-lg bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 shadow-sm border border-gray-100 dark:border-gray-800 flex items-center gap-3 transition-colors active:bg-gray-100 dark:active:bg-gray-800"
+                        @click="selectResult(item)"
+                    >
+                        <div class="w-10 h-10 rounded-full bg-gray-50 dark:bg-gray-800 flex items-center justify-center shrink-0">
+                            <UIcon :name="item.icon" class="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                        </div>
+                        <div>
+                            <p class="font-medium text-gray-900 dark:text-white">{{ item.name }}</p>
+                            <p class="text-xs text-gray-500" v-if="item.secondary">{{ item.secondary }}</p>
+                        </div>
+                    </button>
+                </div>
+
+                <!-- Loading -->
+                <div v-if="isSearching" class="py-4 text-center text-gray-500">
+                    <UIcon name="i-lucide-loader-2" class="w-6 h-6 animate-spin mx-auto mb-2" />
+                    <p class="text-sm">{{ $t('route.searching') }}</p>
+                </div>
+            </div>
+
+            <!-- Bottom Pinned Input Area -->
+            <div class="shrink-0 p-4 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 z-10 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+                <UInput 
+                    v-if="activeField === 'origin'"
+                    v-model="originQuery"
+                    :placeholder="$t('route.origin')"
+                    icon="i-lucide-circle"
+                    size="xl"
+                    class="w-full"
+                    autofocus
+                >
+                    <template #trailing>
+                        <UButton v-if="originQuery" icon="i-lucide-x" color="neutral" variant="ghost" size="sm" @click="originQuery = ''; mapStore.setRouteOrigin(null)" />
+                    </template>
+                </UInput>
+
+                <UInput 
+                    v-else-if="activeField === 'destination'"
+                    v-model="destQuery"
+                    :placeholder="$t('route.destination')"
+                    icon="i-lucide-map-pin"
+                    size="xl"
+                    class="w-full"
+                    autofocus
+                >
+                    <template #trailing>
+                        <UButton v-if="destQuery" icon="i-lucide-x" color="neutral" variant="ghost" size="sm" @click="destQuery = ''; mapStore.setRouteDestination(null)" />
+                    </template>
+                </UInput>
+            </div>
+        </div>
+
         <div v-if="isPickingLocation" class="fixed inset-0 z-[60] flex flex-col pointer-events-none">
             <!-- Top Bar -->
             <div class="pointer-events-auto bg-white/90 dark:bg-gray-900/90 backdrop-blur shadow p-4 pt-10 flex justify-between items-center">

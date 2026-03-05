@@ -66,7 +66,7 @@ function goToLine(lineId: string) {
             <div
               v-for="arrival in arrivals"
               :key="`${arrival.lineId}-${arrival.expectedArrivalTime.getTime()}`"
-              class="bg-white/80 dark:bg-gray-800/80 rounded-lg p-3 hover:bg-white dark:hover:bg-gray-800 transition-all border border-transparent"
+              class="bg-white/80 dark:bg-gray-800/80 rounded-lg p-2 hover:bg-white dark:hover:bg-gray-800 transition-all border border-transparent"
                :class="{ 'border-yellow-400/30 dark:border-yellow-400/20 bg-yellow-50/50 dark:bg-yellow-900/10': arrival.isEstimate }"
             >
               <div class="flex items-center justify-between gap-3">
@@ -95,6 +95,17 @@ function goToLine(lineId: string) {
                   </div>
                 </div>
 
+                <!-- Notification button -->
+                <button 
+                  @click.stop="notification.toggleTracking(arrival.lineId)"
+                  class="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center justify-center shrink-0"
+                  :class="notification.trackedLineId.value === arrival.lineId ? 'text-primary-500 bg-primary-50 dark:bg-primary-900/30' : 'text-gray-400'"
+                  :title="$t('arrivals.notify')"
+                >
+                  <UIcon :name="notification.trackedLineId.value === arrival.lineId ? 'i-lucide-bell-ring' : 'i-lucide-bell'" class="w-6 h-6 animate-pulse-subtle opacity-25" v-if="notification.trackedLineId.value === arrival.lineId" />
+                  <UIcon name="i-lucide-bell" class="w-6 h-6 opacity-50" v-else />
+                </button>
+
                 <!-- Time remaining -->
                 <div class="text-right shrink-0">
                   <div class="flex flex-col items-end">
@@ -106,21 +117,15 @@ function goToLine(lineId: string) {
                     </p>
                     <div class="flex items-center gap-1">
                       <p class="text-xs text-gray-500 dark:text-gray-400 uppercase">{{ $t('arrivals.minutes') }}</p>
-                      <button 
-                        @click.stop="notification.toggleTracking(arrival.lineId)"
-                        class="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center justify-center shrink-0"
-                        :class="notification.trackedLineId.value === arrival.lineId ? 'text-primary-500 bg-primary-50 dark:bg-primary-900/30' : 'text-gray-400'"
-                        :title="$t('arrivals.notify')"
-                      >
-                        <UIcon :name="notification.trackedLineId.value === arrival.lineId ? 'i-lucide-bell-ring' : 'i-lucide-bell'" class="w-4 h-4 animate-pulse-subtle" v-if="notification.trackedLineId.value === arrival.lineId" />
-                        <UIcon name="i-lucide-bell" class="w-4 h-4" v-else />
-                      </button>
                     </div>
-                    <span v-if="arrival.isEstimate" class="mt-1 text-[10px] bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-400 px-1 rounded">
-                        {{ $t('arrivals.estimate') }}
-                    </span>
                   </div>
                 </div>
+              </div>
+
+              <div v-if="arrival.isEstimate" class="flex justify-end">
+                <span class="text-[10px] bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-400 px-1 rounded">
+                  {{ $t('arrivals.estimate') }}
+                </span>
               </div>
             </div>
           </TransitionGroup>
