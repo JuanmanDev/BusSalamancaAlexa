@@ -141,6 +141,7 @@ onBeforeRouteLeave((to, from, next) => {
 })
 
 const isPickingLocation = ref(false)
+const isConfirmingLocation = ref(false)
 const pickingField = ref<'origin' | 'destination' | null>(null)
 
 function startMapSelection(field: 'origin' | 'destination') {
@@ -150,13 +151,38 @@ function startMapSelection(field: 'origin' | 'destination') {
     mapStore.setFullscreen(true)
 }
 
-function confirmMapSelection() {
+async function confirmMapSelection() {
     if (!pickingField.value) return
 
     const [lng, lat] = mapStore.center
+    let locationName = t('route.confirm_location')
+    
+    isConfirmingLocation.value = true
+    
+    try {
+        const nominatimUrl = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&zoom=18&addressdetails=1`
+        const response = await fetch(nominatimUrl)
+        if (response.ok) {
+            const data = await response.json()
+            if (data && data.address) {
+                const road = data.address.road || data.address.pedestrian || data.address.footway
+                const houseNumber = data.address.house_number
+                if (road) {
+                    locationName = houseNumber ? `${road}, ${houseNumber}` : road
+                } else if (data.name) {
+                    locationName = data.name
+                }
+            }
+        }
+    } catch (e) {
+        console.error('Reverse geocoding error', e)
+    } finally {
+        isConfirmingLocation.value = false
+    }
+
     const location = {
         id: `loc:${lat.toFixed(5)},${lng.toFixed(5)}`,
-        name: t('route.confirm_location'),
+        name: locationName,
         type: 'map' as const,
         lat,
         lng
@@ -170,6 +196,7 @@ function confirmMapSelection() {
         destQuery.value = location.name
     }
 
+    activeField.value = null
     cancelMapSelection()
     
     if (mapStore.routeOrigin && mapStore.routeDestination) {
@@ -221,6 +248,8 @@ watch(() => mapStore.highlightStopId, (newStopId) => {
             if (isPickingLocation.value) {
                 cancelMapSelection()
             }
+            
+            activeField.value = null
             
             if (mapStore.routeOrigin && mapStore.routeDestination) {
                 searchRoute()
@@ -382,7 +411,7 @@ function searchRoute() {
     }
 
     router.push(localePath({
-        path: '/route/results',
+        name: 'route-results',
         query
     }))
 }
@@ -589,7 +618,7 @@ function swappoints() {
     <!-- Map Picker Overlay - Teleported to Body to ensure it's above everything -->
     <Teleport to="body">
         <!-- Overlay For Mobile Search -->
-        <div v-if="activeField !== null" class="fixed inset-0 z-[70] bg-gray-50 dark:bg-gray-950 flex flex-col md:hidden pb-[env(safe-area-inset-bottom)]" style="height: 100dvh;">
+        <div v-if="activeField !== null && !isPickingLocation" class="fixed inset-0 z-[70] bg-gray-50 dark:bg-gray-950 flex flex-col md:hidden pb-[env(safe-area-inset-bottom)]" style="height: 100dvh;">
             <!-- Top Bar -->
             <div class="shrink-0 pointer-events-auto bg-white/90 dark:bg-gray-900/90 shadow p-4 flex justify-between items-center z-10">
                 <h2 class="text-lg font-bold text-gray-900 dark:text-white">
@@ -684,7 +713,7 @@ function swappoints() {
             
             <!-- Bottom Confirmation -->
             <div class="pointer-events-auto p-6 pb-10 flex justify-center bg-gradient-to-t from-black/50 to-transparent">
-                <UButton size="xl" color="primary" @click="confirmMapSelection" class="shadow-xl">
+                <UButton size="xl" color="primary" :loading="isConfirmingLocation" @click="confirmMapSelection" class="shadow-xl">
                     {{ $t('route.confirm_location') }}
                 </UButton>
             </div>
