@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
+const { t } = useI18n()
+
 const props = defineProps<{
     origin?: string
     destination?: string
@@ -41,7 +43,7 @@ const nodes = [1, 2, 3]
                  <div class="w-10 h-10 rounded-full bg-blue-500 text-white flex items-center justify-center shadow-lg ring-4 ring-white dark:ring-gray-900 animate-pulse-slow">
                      <UIcon :name="originIcon" class="w-5 h-5" />
                  </div>
-                 <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Origen</span>
+                 <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{{ $t('route_loader.origin') }}</span>
             </div>
 
             <!-- Intermediate Graph Nodes (Animated) -->
@@ -66,14 +68,13 @@ const nodes = [1, 2, 3]
                  <div class="w-10 h-10 rounded-full bg-red-500 text-white flex items-center justify-center shadow-lg ring-4 ring-white dark:ring-gray-900 animate-pulse-slow" :style="{ animationDelay: '0.5s' }">
                      <UIcon :name="destIcon" class="w-5 h-5" />
                  </div>
-                 <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Destino</span>
+                 <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{{ $t('route_loader.destination') }}</span>
             </div>
 
         </div>
         
-        <!-- Text Status -->
         <p class="mt-4 text-sm font-medium text-gray-500 dark:text-gray-400 animate-pulse">
-            Calculando la mejor ruta...
+            {{ $t('route_loader.calculating') }}
         </p>
     </div>
 </template>

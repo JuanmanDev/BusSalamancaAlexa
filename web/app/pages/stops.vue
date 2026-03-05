@@ -1,10 +1,13 @@
 <script setup lang="ts">
+const { t } = useI18n()
+
 useSeoMeta({
-  title: 'Todas las paradas - Bus Salamanca',
-  description: 'Listado de todas las paradas de autobús de Salamanca',
+  title: computed(() => `${t('stops.title')} - ${t('index.title')}`),
+  description: computed(() => t('stops.description')),
 })
 
 const router = useRouter()
+const localePath = useLocalePath()
 const storage = useStorage()
 const geolocation = useGeolocation()
 const busService = useBusService()
@@ -57,7 +60,7 @@ const filteredStops = computed(() => {
 
 function goToStop(stop: { id: string; name: string }) {
   storage.addRecent('stop', stop.id, stop.name)
-  router.push(`/stop/${stop.id}`)
+  router.push(localePath(`/stop/${stop.id}`))
 }
 
 function toggleFavorite(stop: { id: string; name: string }) {
@@ -100,10 +103,10 @@ onMounted(() => {
     <!-- Header -->
     <div class="glass-card p-5">
       <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-1">
-        Paradas de autobús
+        {{ $t('stops.title') }}
       </h1>
       <p class="text-gray-500 dark:text-gray-400">
-        {{ allStops?.length || 0 }} paradas disponibles
+        {{ allStops?.length || 0 }} {{ $t('stops.available') }}
       </p>
     </div>
 
@@ -111,7 +114,7 @@ onMounted(() => {
     <div class="glass-card p-4 space-y-3">
       <SearchInput
         v-model="searchQuery"
-        placeholder="Buscar por número o nombre..."
+        :placeholder="$t('lines.search')"
       />
       
       <!-- Nearby toggle -->
@@ -126,7 +129,7 @@ onMounted(() => {
             :class="geolocation.isLocating.value ? 'animate-spin text-primary-500' : 'text-gray-400'"
           />
           <span class="text-sm text-gray-700 dark:text-gray-300">
-            Ordenar por cercanía
+            {{ $t('stops.sort_nearby') }}
           </span>
         </div>
         <USwitch 
@@ -155,8 +158,8 @@ onMounted(() => {
         class="text-center py-8 text-gray-500"
       >
         <UIcon name="i-lucide-map-pin-off" class="w-10 h-10 mx-auto mb-3 opacity-50" />
-        <p>No hay paradas cercanas</p>
-        <p class="text-sm mt-1">Prueba desactivando el filtro de cercanía</p>
+        <p>{{ $t('stops.no_nearby') }}</p>
+        <p class="text-sm mt-1">{{ $t('stops.try_disabling') }}</p>
       </div>
     </div>
     </div>

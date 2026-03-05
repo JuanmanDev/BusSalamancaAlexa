@@ -6,6 +6,8 @@ const storage = useStorage()
 const mapStore = useMapStore()
 
 const stopId = computed(() => route.params.id as string)
+const { t } = useI18n()
+const localePath = useLocalePath()
 
 // Load stop info from cached data
 const { data: allStops } = await useBusStops()
@@ -17,8 +19,8 @@ const stopInfo = computed(() => {
 
 // Set page meta
 useSeoMeta({
-  title: () => stopInfo.value ? `Parada ${stopInfo.value.name} - Bus Salamanca` : 'Parada - Bus Salamanca',
-  description: () => `Tiempos de llegada en tiempo real para la parada ${stopInfo.value?.name || stopId.value}`,
+  title: () => stopInfo.value ? `${t('search_modal.stop')} ${stopInfo.value.name} - ${t('index.title')}` : `${t('search_modal.stop')} - ${t('index.title')}`,
+  description: () => `${t('stop_detail.next_arrivals')} - ${stopInfo.value?.name || stopId.value}`,
 })
 
 // Arrivals from store (managed by context)
@@ -104,8 +106,8 @@ function openInAppleMaps() {
         <div class="grid grid-cols-[1fr_auto] grid-rows-[auto_auto] gap-x-4">
           <!-- Breadcrumb: top-left -->
           <div class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-            <NuxtLink to="/stops" class="hover:text-primary-500 transition-colors">
-              Paradas
+            <NuxtLink :to="localePath('/stops')" class="hover:text-primary-500 transition-colors">
+              {{ $t('nav.stops') }}
             </NuxtLink>
             <UIcon name="i-lucide-chevron-right" class="w-4 h-4" />
             <span :style="{ viewTransitionName: `stop-${stopId}` }">{{ stopId }}</span>
@@ -129,7 +131,7 @@ function openInAppleMaps() {
             class="text-xl font-bold text-gray-900 dark:text-white mt-1"
             :style="{ viewTransitionName: `stop-name-${stopId}` }"
           >
-            {{ stopInfo?.name || `Parada ${stopId}` }}
+            {{ stopInfo?.name || `${$t('search_modal.stop')} ${stopId}` }}
           </h1>
         </div>
       </div>
@@ -143,7 +145,7 @@ function openInAppleMaps() {
           <UIcon name="i-lucide-alert-circle" class="w-5 h-5 shrink-0" />
           <span class="flex-1">{{ error }}</span>
           <UButton size="sm" variant="ghost" @click="refreshArrivals">
-            Reintentar
+            {{ $t('stop_detail.error_retry') }}
           </UButton>
         </div>
       </div>
@@ -152,7 +154,7 @@ function openInAppleMaps() {
       <div class="glass-card p-5">
         <div class="flex items-center justify-between mb-4">
           <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
-            Próximas llegadas
+            {{ $t('stop_detail.next_arrivals') }}
           </h2>
 
           <div class="flex items-center gap-2">
@@ -163,7 +165,7 @@ function openInAppleMaps() {
               :loading="loading || isRefreshing"
               @click="refreshArrivals"
             >
-              Actualizar
+              {{ $t('stop_detail.refresh') }}
             </UButton>
           </div>
         </div>
@@ -174,7 +176,7 @@ function openInAppleMaps() {
         
         <span v-if="lastUpdated" class="flex items-center justify-center gap-1">
           <span class="text-xs text-gray-500 mt-2" v-if="lastUpdated">
-            Última actualización: {{ formatLastUpdated() }}
+             {{ $t('stop_detail.last_updated') }} {{ formatLastUpdated() }}
           </span>
         </span>
       </div>
@@ -183,28 +185,28 @@ function openInAppleMaps() {
       <div class="grid grid-cols-2 gap-3">
         <!-- Route Actions -->
         <NuxtLink
-          :to="`/route?origin=${stopId}`"
+          :to="localePath({ path: '/route', query: { origin: stopId } })"
           class="glass-card p-4 hover:scale-[1.02] transition-all flex items-center gap-3"
         >
           <div class="w-10 h-10 bg-primary-100 dark:bg-primary-900/50 rounded-lg flex items-center justify-center shrink-0">
             <UIcon name="i-lucide-map-pin" class="w-5 h-5 text-primary-600 dark:text-primary-400" />
           </div>
           <div class="text-left">
-            <p class="font-medium text-gray-900 dark:text-white text-sm">Desde aquí</p>
-            <p class="text-xs text-gray-500">Planificar ruta</p>
+            <p class="font-medium text-gray-900 dark:text-white text-sm">{{ $t('stop_detail.from_here') }}</p>
+            <p class="text-xs text-gray-500">{{ $t('stop_detail.plan_route') }}</p>
           </div>
         </NuxtLink>
 
         <NuxtLink
-          :to="`/route?destination=${stopId}`"
+          :to="localePath({ path: '/route', query: { destination: stopId } })"
           class="glass-card p-4 hover:scale-[1.02] transition-all flex items-center gap-3"
         >
           <div class="w-10 h-10 bg-primary-100 dark:bg-primary-900/50 rounded-lg flex items-center justify-center shrink-0">
              <UIcon name="i-lucide-flag" class="w-5 h-5 text-primary-600 dark:text-primary-400" />
           </div>
           <div class="text-left">
-            <p class="font-medium text-gray-900 dark:text-white text-sm">Hasta aquí</p>
-            <p class="text-xs text-gray-500">Planificar ruta</p>
+            <p class="font-medium text-gray-900 dark:text-white text-sm">{{ $t('stop_detail.to_here') }}</p>
+            <p class="text-xs text-gray-500">{{ $t('stop_detail.plan_route') }}</p>
           </div>
         </NuxtLink>
 
@@ -218,7 +220,7 @@ function openInAppleMaps() {
           </div>
           <div class="text-left">
             <p class="font-medium text-gray-900 dark:text-white text-sm">Google Maps</p>
-            <p class="text-xs text-gray-500">Cómo llegar</p>
+            <p class="text-xs text-gray-500">{{ $t('stop_detail.how_to_get_there') }}</p>
           </div>
         </button>
 
@@ -231,7 +233,7 @@ function openInAppleMaps() {
           </div>
           <div class="text-left">
             <p class="font-medium text-gray-900 dark:text-white text-sm">Apple Maps</p>
-            <p class="text-xs text-gray-500">Cómo llegar</p>
+            <p class="text-xs text-gray-500">{{ $t('stop_detail.how_to_get_there') }}</p>
           </div>
         </button>
       </div>
@@ -240,13 +242,13 @@ function openInAppleMaps() {
       <!-- Lines at this stop -->
       <div v-if="stopInfo?.lines?.length" class="glass-card p-5">
         <h2 class="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-3 uppercase tracking-wide">
-          Líneas de autobús disponibles
+          {{ $t('stop_detail.available_lines') }}
         </h2>
         <div class="flex flex-wrap gap-2">
           <NuxtLink
             v-for="lineId in stopInfo.lines"
             :key="lineId"
-            :to="`/line/${lineId}`"
+            :to="localePath(`/line/${lineId}`)"
             class="pr-3 pl-1 py-1 rounded-lg hover:scale-[1.2] transition-all"
           >
             <div 

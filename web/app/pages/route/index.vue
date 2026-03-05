@@ -7,6 +7,8 @@ const route = useRoute()
 const { fetchStops } = useBusService()
 const { userLocation } = useGeolocation()
 const mapStore = useMapStore()
+const { t } = useI18n()
+const localePath = useLocalePath()
 
 // State - Now using mapStore
 // Local refs only for inputs (v-model needs local state for typing, sync on change/blur?)
@@ -90,7 +92,7 @@ onMounted(async () => {
         if (userLocation.value) {
             const loc = {
                 id: 'user',
-                name: 'Mi ubicación',
+                name: t('route.origin'), // Generic user location name
                 type: 'user' as const,
                 lat: userLocation.value.lat,
                 lng: userLocation.value.lng
@@ -154,7 +156,7 @@ function confirmMapSelection() {
     const [lng, lat] = mapStore.center
     const location = {
         id: `loc:${lat.toFixed(5)},${lng.toFixed(5)}`,
-        name: 'Ubicación seleccionada',
+        name: t('route.confirm_location'),
         type: 'map' as const,
         lat,
         lng
@@ -237,7 +239,7 @@ const performSearch = useDebounceFn(async (query: string) => {
     if (!query || query.length < 2) {
         suggestions.value = [{
             id: 'map-picker',
-            name: 'Seleccionar en el mapa',
+            name: t('route.select_map'),
             type: 'map' as any,
             icon: 'i-lucide-map',
             lat: 0,
@@ -298,7 +300,7 @@ const performSearch = useDebounceFn(async (query: string) => {
     // 4. Add map option at the START (so it appears at bottom with flex-col-reverse)
     results.unshift({
         id: 'map-picker',
-        name: 'Seleccionar en el mapa',
+        name: t('route.select_map'),
         type: 'map' as any,
         icon: 'i-lucide-map',
         lat: 0,
@@ -379,10 +381,10 @@ function searchRoute() {
         query.destinationName = mapStore.routeDestination.name
     }
 
-    router.push({
+    router.push(localePath({
         path: '/route/results',
         query
-    })
+    }))
 }
 
 function swappoints() {
@@ -394,19 +396,22 @@ function swappoints() {
 <template>
   <div class="md:flex md:min-h-full">
     <!-- MapPreview: inline on mobile, left sticky on desktop -->
-    <div class="md:flex-1 md:sticky md:top-16 md:h-[calc(100vh-4rem)] shrink-0 md:order-first z-0">
+    <div 
+      class="md:flex-1 md:sticky md:top-16 md:h-[calc(100vh-4rem)] shrink-0 md:order-first z-0"
+      :class="{ 'hidden md:block': activeField !== null }"
+    >
       <MapPreview height="h-[50vh] md:h-full" />
     </div>
 
     <!-- Content (right side on desktop) -->
-    <div class="w-full md:w-[400px] lg:w-[450px] shrink-0 px-4 py-6 space-y-4 pointer-events-auto flex flex-col relative z-10">
+    <div class="w-full md:w-[400px] lg:w-[450px] shrink-0 p-3 sm:p-4 md:py-6 space-y-4 pointer-events-auto flex flex-col relative z-10">
       <!-- Beta Warning -->
       <UAlert
         icon="i-lucide-flask-conical"
         color="warning"
         variant="subtle"
-        title="Rutas en fase Beta"
-        description="Esta función es experimental y puede contener errores. Úsala con precaución y verifica siempre los horarios oficiales. Es posible que no ofrezcan la ruta óptima."
+        :title="$t('route.beta_warning')"
+        :description="$t('route.beta_desc')"
         class="mb-4 relative z-10 shadow-lg bg-white/50 dark:bg-gray-900/50 backdrop-blur-md"
       />
       
@@ -418,7 +423,7 @@ function swappoints() {
              <div class="max-w-md mx-auto relative">
                 <div class="flex items-center gap-2 mb-4">
                     <UButton icon="i-lucide-arrow-left" variant="ghost" color="neutral" @click="router.back()" />
-                    <h1 class="text-lg font-bold text-gray-900 dark:text-white">Planificar Ruta</h1>
+                    <h1 class="text-lg font-bold text-gray-900 dark:text-white">{{ $t('route.title') }}</h1>
                 </div>
 
                 <div class="flex gap-3">
@@ -432,7 +437,7 @@ function swappoints() {
                      <div class="flex-1 space-y-3">
                          <UInput 
                             v-model="originQuery"
-                            placeholder="Origen"
+                            :placeholder="$t('route.origin')"
                             icon="i-lucide-circle"
                             class="w-full"
                             autofocus
@@ -445,7 +450,7 @@ function swappoints() {
                          
                          <UInput 
                             v-model="destQuery"
-                            placeholder="Destino"
+                            :placeholder="$t('route.destination')"
                             icon="i-lucide-map-pin"
                             class="w-full"
                             @focus="onFocus('destination')"
@@ -465,7 +470,7 @@ function swappoints() {
                      <!-- Search Action -->
                      <div class="flex items-center justify-end w-full pt-2" v-if="mapStore.routeOrigin && mapStore.routeDestination">
                         <UButton 
-                            label="Buscar ruta" 
+                            :label="$t('route.search_route')" 
                             icon="i-lucide-search"
                             size="md"
                             color="primary"
@@ -477,13 +482,13 @@ function swappoints() {
              </div>
 
 
-        <!-- Suggestions List -->
-        <div class="flex-1 overflow-y-auto max-w-md mx-auto w-full p-2 mt-4 glass-card" v-if="activeField || suggestions.length > 0">
+        <!-- Suggestions List (Desktop Only) -->
+        <div class="hidden md:block flex-1 overflow-y-auto max-w-md mx-auto w-full p-2 mt-4 glass-card" v-if="activeField || suggestions.length > 0">
             
             <!-- Loading -->
             <div v-if="isSearching" class="py-4 text-center text-gray-500">
                 <UIcon name="i-lucide-loader-2" class="w-6 h-6 animate-spin mx-auto mb-2" />
-                <p class="text-sm">Buscando...</p>
+                <p class="text-sm">{{ $t('route.searching') }}</p>
             </div>
 
             <!-- Results -->
@@ -499,7 +504,7 @@ function swappoints() {
                     </div>
                     <div>
                         <p class="font-medium text-gray-900 dark:text-white">{{ item.name }}</p>
-                        <p class="text-xs text-gray-500 truncate" v-if="item.secondary">{{ item.secondary }}</p>
+                        <p class="text-xs text-gray-500" v-if="item.secondary">{{ item.secondary }}</p>
                     </div>
                 </button>
             </div>
@@ -511,14 +516,14 @@ function swappoints() {
         </div>
         
         <!-- Stop Overlay Card -->
-        <div v-if="selectedOverlayStop" class="relative z-20 mt-4 mx-4">
+        <div v-if="selectedOverlayStop" class="relative z-20 mt-4 mx-4 hidden md:block">
              <UCard :ui="{ body: 'p-4', root: 'shadow-lg border-2 border-primary/20 backdrop-blur-md bg-white/90 dark:bg-gray-900/90' }">
                  <div class="flex items-start justify-between mb-3">
                      <div class="flex items-center gap-2">
                          <UIcon name="i-lucide-bus" class="w-5 h-5 text-primary-500" />
                          <div>
                              <h3 class="font-bold text-gray-900 dark:text-white leading-none">{{ selectedOverlayStop.name }}</h3>
-                             <p class="text-xs text-gray-500 mt-1">Parada {{ selectedOverlayStop.id }}</p>
+                             <p class="text-xs text-gray-500 mt-1">{{ $t('search_modal.stop') }} {{ selectedOverlayStop.id }}</p>
                          </div>
                      </div>
                      <UButton icon="i-lucide-x" color="neutral" variant="ghost" size="xs" @click="selectedOverlayStop = null" />
@@ -544,7 +549,7 @@ function swappoints() {
                         }"
                      >
                          <UIcon name="i-lucide-circle" class="w-4 h-4 text-blue-500" />
-                         Desde aquí
+                         {{ $t('route.from_here') }}
                      </UButton>
                      <UButton 
                         size="sm" 
@@ -565,16 +570,15 @@ function swappoints() {
                         }"
                      >
                          <UIcon name="i-lucide-map-pin" class="w-4 h-4 text-red-500" />
-                         Llegar aquí
+                         {{ $t('route.to_here') }}
                      </UButton>
                  </div>
              </UCard>
         </div>
         
-        <!-- Search Button (when ready) -->
         <div v-if="!activeField && mapStore.routeOrigin && mapStore.routeDestination" class="mt-4 flex justify-center">
              <UButton size="xl" class="w-full max-w-md shadow-lg" color="primary" @click="searchRoute">
-                Buscar Ruta
+                {{ $t('route.search_route') }}
              </UButton>
         </div>
 
@@ -584,11 +588,85 @@ function swappoints() {
 
     <!-- Map Picker Overlay - Teleported to Body to ensure it's above everything -->
     <Teleport to="body">
+        <!-- Overlay For Mobile Search -->
+        <div v-if="activeField !== null" class="fixed inset-0 z-[70] bg-gray-50 dark:bg-gray-950 flex flex-col md:hidden pb-[env(safe-area-inset-bottom)]" style="height: 100dvh;">
+            <!-- Top Bar -->
+            <div class="shrink-0 pointer-events-auto bg-white/90 dark:bg-gray-900/90 shadow p-4 flex justify-between items-center z-10">
+                <h2 class="text-lg font-bold text-gray-900 dark:text-white">
+                    {{ activeField === 'origin' ? $t('route.origin') : $t('route.destination') }}
+                </h2>
+                <UButton icon="i-lucide-x" color="neutral" variant="ghost" @click="activeField = null" />
+            </div>
+
+            <!-- Suggestions List (Mobile Reverse Stacking) -->
+            <div class="flex-1 overflow-y-auto flex flex-col-reverse p-3 gap-2">
+                <!-- No results -->
+                <div v-if="!isSearching && suggestions.length === 0 && (activeField === 'origin' ? originQuery : destQuery).length > 2" class="py-10 text-center text-gray-500">
+                    <p>No se encontraron resultados</p>
+                </div>
+
+                <!-- Results -->
+                <div v-else-if="suggestions.length > 0" class="flex flex-col-reverse gap-2">
+                    <button 
+                        v-for="item in suggestions" 
+                        :key="item.id"
+                        class="w-full text-left p-3 rounded-lg bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 shadow-sm border border-gray-100 dark:border-gray-800 flex items-center gap-3 transition-colors active:bg-gray-100 dark:active:bg-gray-800"
+                        @click="selectResult(item)"
+                    >
+                        <div class="w-10 h-10 rounded-full bg-gray-50 dark:bg-gray-800 flex items-center justify-center shrink-0">
+                            <UIcon :name="item.icon" class="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                        </div>
+                        <div>
+                            <p class="font-medium text-gray-900 dark:text-white">{{ item.name }}</p>
+                            <p class="text-xs text-gray-500" v-if="item.secondary">{{ item.secondary }}</p>
+                        </div>
+                    </button>
+                </div>
+
+                <!-- Loading -->
+                <div v-if="isSearching" class="py-4 text-center text-gray-500">
+                    <UIcon name="i-lucide-loader-2" class="w-6 h-6 animate-spin mx-auto mb-2" />
+                    <p class="text-sm">{{ $t('route.searching') }}</p>
+                </div>
+            </div>
+
+            <!-- Bottom Pinned Input Area -->
+            <div class="shrink-0 p-4 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 z-10 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+                <UInput 
+                    v-if="activeField === 'origin'"
+                    v-model="originQuery"
+                    :placeholder="$t('route.origin')"
+                    icon="i-lucide-circle"
+                    size="xl"
+                    class="w-full"
+                    autofocus
+                >
+                    <template #trailing>
+                        <UButton v-if="originQuery" icon="i-lucide-x" color="neutral" variant="ghost" size="sm" @click="originQuery = ''; mapStore.setRouteOrigin(null)" />
+                    </template>
+                </UInput>
+
+                <UInput 
+                    v-else-if="activeField === 'destination'"
+                    v-model="destQuery"
+                    :placeholder="$t('route.destination')"
+                    icon="i-lucide-map-pin"
+                    size="xl"
+                    class="w-full"
+                    autofocus
+                >
+                    <template #trailing>
+                        <UButton v-if="destQuery" icon="i-lucide-x" color="neutral" variant="ghost" size="sm" @click="destQuery = ''; mapStore.setRouteDestination(null)" />
+                    </template>
+                </UInput>
+            </div>
+        </div>
+
         <div v-if="isPickingLocation" class="fixed inset-0 z-[60] flex flex-col pointer-events-none">
             <!-- Top Bar -->
             <div class="pointer-events-auto bg-white/90 dark:bg-gray-900/90 backdrop-blur shadow p-4 pt-10 flex justify-between items-center">
                 <h2 class="text-lg font-bold text-gray-900 dark:text-white">
-                    Seleccionando {{ pickingField === 'origin' ? 'Origen' : 'Destino' }}
+                    {{ $t('route.select_map') }} ({{ pickingField === 'origin' ? $t('route.origin') : $t('route.destination') }})
                 </h2>
                 <UButton icon="i-lucide-x" color="neutral" variant="ghost" @click="cancelMapSelection" />
             </div>
@@ -607,7 +685,7 @@ function swappoints() {
             <!-- Bottom Confirmation -->
             <div class="pointer-events-auto p-6 pb-10 flex justify-center bg-gradient-to-t from-black/50 to-transparent">
                 <UButton size="xl" color="primary" @click="confirmMapSelection" class="shadow-xl">
-                    Confirmar Ubicación
+                    {{ $t('route.confirm_location') }}
                 </UButton>
             </div>
         </div>

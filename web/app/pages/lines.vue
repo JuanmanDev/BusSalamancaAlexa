@@ -1,10 +1,13 @@
 <script setup lang="ts">
+const { t } = useI18n()
+
 useSeoMeta({
-  title: 'Todas las líneas - Bus Salamanca',
-  description: 'Listado de todas las líneas de autobús de Salamanca',
+  title: computed(() => `${t('lines.title')} - ${t('index.title')}`),
+  description: computed(() => t('lines.description')),
 })
 
 const router = useRouter()
+const localePath = useLocalePath()
 const storage = useStorage()
 const mapStore = useMapStore()
 
@@ -30,7 +33,7 @@ const filteredLines = computed(() => {
 
 function goToLine(line: { id: string; name: string }) {
   storage.addRecent('line', line.id, line.name)
-  router.push(`/line/${line.id}`)
+  router.push(localePath(`/line/${line.id}`))
 }
 
 function toggleFavorite(line: { id: string; name: string }) {
@@ -55,10 +58,10 @@ onMounted(() => {
     <!-- Header -->
     <div class="glass-card p-5">
       <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-1">
-        Líneas de autobús
+        {{ $t('lines.title') }}
       </h1>
       <p class="text-gray-500 dark:text-gray-400">
-        {{ allLines?.length || 0 }} líneas disponibles
+        {{ allLines?.length || 0 }} {{ $t('lines.available') }}
       </p>
     </div>
 
@@ -66,7 +69,7 @@ onMounted(() => {
     <div class="glass-card p-4">
       <SearchInput
         v-model="searchQuery"
-        placeholder="Buscar por número o nombre..."
+        :placeholder="$t('lines.search')"
       />
     </div>
 

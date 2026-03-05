@@ -1,0 +1,238 @@
+{
+  "general": {
+    "loading": "Chargement en cours...",
+    "search": "Rechercher",
+    "search_placeholder": "Rechercher un arrêt ou une ligne...",
+    "cancel": "Annuler",
+    "close": "Fermer"
+  },
+  "nav": {
+    "home": "Accueil",
+    "lines": "Lignes",
+    "stops": "Arrêts",
+    "map": "Carte",
+    "route": "Itinéraire",
+    "settings_title": "Paramètres",
+    "change_theme": "Changer le thème"
+  },
+  "index": {
+    "title": "Bus Salamanque",
+    "subtitle": "Consultez les temps d'arrivée en temps réel",
+    "favorites": "Favoris",
+    "nearby_stops": "Arrêts à proximité",
+    "closest_first": "(les plus proches d'abord)",
+    "no_nearby_stops": "Aucun arrêt dans un rayon de 500m",
+    "locating": "Obtention de l'emplacement...",
+    "access_denied": "Accès refusé",
+    "enable_location": "Activez l'autorisation de localisation dans votre navigateur",
+    "activate_location": "Activez votre position",
+    "find_closest_stops": "Trouvez les arrêts les plus proches",
+    "activate_location_btn": "Activer la localisation",
+    "recent": "Récents",
+    "clear": "Effacer",
+    "all_lines": "Toutes les lignes",
+    "see_itineraries": "Voir les itinéraires",
+    "see_map": "Voir la carte",
+    "stops_and_buses": "Arrêts et bus",
+    "alexa_skill": "Skill Alexa",
+    "ask_assistant": "Demandez à votre assistant pour le bus"
+  },
+  "arrivals": {
+    "unknown_destination": "Destination inconnue",
+    "estimate": "Estimation",
+    "no_arrivals": "Aucune arrivée prévue",
+    "minutes": "min",
+    "notify": "Notifier avec des alertes",
+    "minutes_short": "min"
+  },
+  "search_modal": {
+    "lines": "Lignes",
+    "stops": "Arrêts",
+    "stop": "Arrêt",
+    "no_results": "Aucun résultat trouvé",
+    "type_to_search": "Tapez pour rechercher des arrêts ou des lignes"
+  },
+  "settings": {
+    "title": "Paramètres",
+    "subtitle": "Personnalisez votre expérience sur BusSalamanca",
+    "appearance": "Apparence",
+    "theme_desc": "Sélectionnez le thème de l'application",
+    "language": "Langue",
+    "language_desc": "Sélectionnez une langue",
+    "system": "Système",
+    "light": "Clair",
+    "dark": "Sombre",
+    "map": "Carte",
+    "smooth_animations": "Animations fluides",
+    "smooth_animations_desc": "Activez ou désactivez les mouvements de caméra dynamiques sur la carte.",
+    "offline": "Mode hors-ligne",
+    "offline_desc": "Installez l'application sur votre appareil pour vérifier les arrêts et les lignes sans connexion Internet.",
+    "update_app": "Mettre à jour l'application",
+    "install_app": "Installer l'application",
+    "app_installed": "Prêt à installer ou application déjà installée",
+    "help": "Aide et Informations",
+    "help_desc": "Découvrez le fonctionnement de l'application, les sources de données et les questions fréquentes.",
+    "view_help": "Voir la page d'aide",
+    "links": "Liens utiles",
+    "dev_web": "Site web du développeur (Juanma)",
+    "official_web": "Site officiel des bus",
+    "alexa_skill_btn": "Skill Alexa",
+    "source_code": "Code source (GitHub)",
+    "footer_created_by": "Créé par",
+    "legal_notice": "Mentions légales :",
+    "legal_text_1": "Ce projet est open source et n'est pas affilié, soutenu ou lié légalement de quelque manière que ce soit à la compagnie de transport public de Salamanque, à la Mairie ou à toute entité officielle.",
+    "legal_text_2": "Les données affichées sont obtenues via des API publiques et peuvent contenir des inexactitudes. À des fins d'information uniquement."
+  },
+  "route_results": {
+    "options": "Options d'itinéraire",
+    "try_again": "Réessayer",
+    "your_location": "Votre position",
+    "location_error": "Impossible d'obtenir position",
+    "selected_location": "Position",
+    "stop_not_found": "Arrêt introuvable.",
+    "no_routes": "Aucun itinéraire",
+    "invalid_destination": "Invalide",
+    "calc_error": "Erreur",
+    "start": "Départ",
+    "arrival": "Arrivée",
+    "from_to": "De {from} à {to}",
+    "transfers": "correspondances",
+    "calculating": "Calcul..."
+  },
+  "line_detail": {
+    "loading": "Chargement...",
+    "stops_count": "arrêts",
+    "active_bus": "bus",
+    "active_buses": "bus actifs",
+    "stops_list": "Arrêts",
+    "no_stops": "Aucun arrêt"
+  },
+  "stop_detail": {
+    "next_arrivals": "Prochains bus",
+    "refresh": "Actualiser",
+    "last_updated": "Dernière MAJ:",
+    "from_here": "Partir d'ici",
+    "to_here": "Aller ici",
+    "plan_route": "Itinéraire",
+    "how_to_get_there": "S'y rendre",
+    "available_lines": "Lignes",
+    "error_retry": "Réessayer"
+  },
+  "map": {
+    "all_lines": "Toutes",
+    "line_single": "Ligne {id}",
+    "lines_count": "{count} lignes",
+    "all": "Toutes",
+    "select_all": "Tout sél.",
+    "none": "Aucune",
+    "deselect_all": "Désélectionner",
+    "stops": "Arrêts",
+    "buses": "Bus",
+    "routes": "Itinéraires",
+    "refresh": "Actu.",
+    "refresh_buses": "Actu. bus",
+    "my_location": "Ma position",
+    "location": "Emplacement",
+    "no_lines_available": "Aucune ligne",
+    "no_stops_available": "Aucun arrêt",
+    "description": "Carte interactive de toutes les lignes et arrêts de bus en temps réel."
+  },
+  "help": {
+    "title": "Aide",
+    "subtitle": "FAQ",
+    "estimations": {
+      "title": "Temps",
+      "p1": "Estimés.",
+      "p2": "Peuvent varier."
+    },
+    "locations": {
+      "title": "GPS",
+      "p1": "Peut être imprécise.",
+      "p2": "Le signal GPS."
+    },
+    "data": {
+      "title": "Source",
+      "p1": "Données officielles.",
+      "p2": "Sans garantie."
+    },
+    "refresh": {
+      "title": "Rafraîchir",
+      "p1": "Auto."
+    }
+  },
+  "route_loader": {
+    "origin": "Départ",
+    "destination": "Arrivée",
+    "calculating": "Calcul..."
+  },
+  "search_input": {
+    "placeholder": "Rechercher..."
+  },
+  "lines": {
+    "title": "Lignes",
+    "description": "Toutes les lignes",
+    "available": "lignes",
+    "search": "Recherche..."
+  },
+  "stops": {
+    "title": "Arrêts",
+    "description": "Trouver arrêts",
+    "available": "arrêts",
+    "sort_nearby": "Proximité",
+    "no_nearby": "Aucun arrêt près",
+    "try_disabling": "Rechercher ailleurs"
+  },
+  "map_preview": {
+    "permission_denied": "Refusé",
+    "permission_desc": "Accès position refusé.",
+    "location_far": "Trop loin",
+    "location_far_desc": "Loin de Salamanque.",
+    "timeout_desc": "Délai expiré",
+    "error_desc": "Erreur position",
+    "location_error": "Erreur",
+    "exit_fullscreen": "Quitter plein écran",
+    "view_full_map": "Carte",
+    "exit": "Quitter",
+    "zoom_out": "-",
+    "zoom_in": "+",
+    "center_location": "Ma position",
+    "reset_north": "Nord",
+    "reset_2d": "2D"
+  },
+  "route": {
+    "beta_warning": "Version Bêta",
+    "beta_desc": "Le planificateur d'itinéraire est en version bêta et peut suggérer des itinéraires sous-optimaux.",
+    "title": "Planifier l'itinéraire",
+    "select_map": "Sélectionner sur la carte",
+    "origin": "Origine",
+    "destination": "Destination",
+    "confirm_location": "Confirmer la position",
+    "search_route": "Rechercher l'itinéraire",
+    "from_here": "D'ici",
+    "to_here": "Vers ici",
+    "searching": "Recherche..."
+  },
+  "notifications": {
+    "unsupported_browser": "Votre navigateur ne prend pas en charge les notifications natives.",
+    "following_line": "Suivi de la ligne {line}",
+    "will_notify": "Nous vous informerons de son arrivée à l'arrêt.",
+    "permission_denied": "Permission refusée",
+    "enable_notifications": "Vous devez activer les notifications dans votre navigateur.",
+    "bus_at_stop": "Bus à votre arrêt !",
+    "bus_should_be_here": "Le bus de la ligne {line} devrait déjà être là.",
+    "arriving_now": "Arrive maintenant !",
+    "minutes_remaining": "Encore {mins} min avant votre arrêt",
+    "estimate_suffix": "(Estimation)",
+    "line_destination": "Ligne {line} - {destination}",
+    "title": "Centre de notifications",
+    "subtitle": "Gérez vos alertes d'arrivée actives",
+    "empty_title": "Aucune notification active",
+    "empty_desc": "Vous ne suivez aucun bus actuellement.",
+    "go_to_map": "Aller à la carte",
+    "clear_all": "Tout effacer",
+    "view_line": "Voir la ligne",
+    "view_stop": "Voir l'arrêt",
+    "stop_tracking": "Arrêter le suivi",
+    "estimating": "Estimation en cours..."
+  }
+}

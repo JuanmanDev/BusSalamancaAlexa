@@ -51,6 +51,7 @@ const colorMode = useColorMode()
 const geolocation = useGeolocation()
 const mapStore = useMapStore()
 const router = useRouter()
+const localePath = useLocalePath()
 
 // Map styles
 const LIGHT_STYLE = 'https://tiles.openfreemap.org/styles/bright'
@@ -198,6 +199,12 @@ function onMapLoad() {
 
   // Setup interaction listeners
   setupMapListeners(mapRef)
+
+  // Suppress missing image warning from base map styles (like 'wood-pattern')
+  mapRef.on('styleimagemissing', (e: any) => {
+    // We intentionally ignore missing images from the base style to prevent console spam
+    // as we aren't using these textures (like wood-pattern) in our custom layers.
+  });
 
   // Emit for legacy compatibility
   emit('mapReady', mapRef)
@@ -430,14 +437,14 @@ function handleVehicleClick(vehicle: BusVehicle) {
 function goToStopDetails() {
   if (mapStore.highlightStopId) {
     mapStore.setFullscreen(false)
-    router.push(`/stop/${mapStore.highlightStopId}`)
+    router.push(localePath(`/stop/${mapStore.highlightStopId}`))
   }
 }
 
 function goToLineDetails(lineId: string) {
   mapStore.setFullscreen(false)
   mapStore.clearHighlight()
-  router.push(`/line/${lineId}`)
+  router.push(localePath(`/line/${lineId}`))
 }
 
 function getLineInfo(lineId: string) {

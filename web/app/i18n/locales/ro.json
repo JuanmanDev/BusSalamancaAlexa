@@ -1,0 +1,238 @@
+{
+  "general": {
+    "loading": "Se încarcă...",
+    "search": "Căutare",
+    "search_placeholder": "Căutați stația sau linia...",
+    "cancel": "Anulați",
+    "close": "Închideți"
+  },
+  "nav": {
+    "home": "Acasă",
+    "lines": "Linii",
+    "stops": "Stații",
+    "map": "Hartă",
+    "route": "Traseu",
+    "settings_title": "Setări",
+    "change_theme": "Schimbați tema"
+  },
+  "index": {
+    "title": "Bus Salamanca",
+    "subtitle": "Vedeți timpii de sosire în timp real",
+    "favorites": "Favorite",
+    "nearby_stops": "Stații în apropiere",
+    "closest_first": "(cele mai apropiate mai întâi)",
+    "no_nearby_stops": "Nu există stații la o distanță mai mică de 500m",
+    "locating": "Obținere locație...",
+    "access_denied": "Acces interzis",
+    "enable_location": "Permiteți accesul la locație din browser-ul dvs.",
+    "activate_location": "Activați-vă locația",
+    "find_closest_stops": "Găsiți cele mai apropiate stații",
+    "activate_location_btn": "Permite locația",
+    "recent": "Recente",
+    "clear": "Ștergeți",
+    "all_lines": "Toate liniile",
+    "see_itineraries": "Vizualizare rute",
+    "see_map": "Vizualizare hartă",
+    "stops_and_buses": "Stații și autobuze",
+    "alexa_skill": "Aplicația Alexa",
+    "ask_assistant": "Întrebați de traseul asistentul autobuzului"
+  },
+  "arrivals": {
+    "unknown_destination": "Destinație necunoscută",
+    "estimate": "Aproximativ",
+    "no_arrivals": "Nu există sosiri planificate",
+    "minutes": "min",
+    "notify": "Notificați prin alerte",
+    "minutes_short": "min"
+  },
+  "search_modal": {
+    "lines": "Linii",
+    "stops": "Stații",
+    "stop": "Stație",
+    "no_results": "Nu au fost găsite rezultate",
+    "type_to_search": "Tastați pentru a căuta stații sau linii"
+  },
+  "settings": {
+    "title": "Setări",
+    "subtitle": "Personalizați-vă experiența pe BusSalamanca",
+    "appearance": "Aspect",
+    "theme_desc": "Alegeți tema aplicației",
+    "language": "Limba",
+    "language_desc": "Alegeți o limbă",
+    "system": "Sistem",
+    "light": "Luminos",
+    "dark": "Întunecat",
+    "map": "Hartă",
+    "smooth_animations": "Animații netede",
+    "smooth_animations_desc": "Activați sau dezactivați mișcările dinamice ale camerei pe hartă.",
+    "offline": "Modul Offline",
+    "offline_desc": "Instalați aplicația pe dispozitiv pentru a verifica informațiile fără o conexiune la internet.",
+    "update_app": "Actualizați aplicația",
+    "install_app": "Instalați aplicația",
+    "app_installed": "Presto pentru instalare sau deja instalat",
+    "help": "Ajutor și Informații",
+    "help_desc": "Descoperiți cum funcționează aplicația, sursele de date și frecventul Q & A.",
+    "view_help": "Vezi pagina de ajutor",
+    "links": "Linkuri Utile",
+    "dev_web": "Site-ul dezvoltatorului (Juanma)",
+    "official_web": "Site-ul Oficial al Autobuzelor",
+    "alexa_skill_btn": "Alexa Skill",
+    "source_code": "Cod de Sursă (GitHub)",
+    "footer_created_by": "Creat de",
+    "legal_notice": "Notavjurială:",
+    "legal_text_1": "Acest proiect este de cod sursă deschis și nu este afiliat din punct de vedere legal cu, aprobat sau asociat în mod direct cu compania de transport publică din Salamanca, un Consiliu Local, sau orice altă afacilitate oficială a cetenilor de orice tip.",
+    "legal_text_2": "Toate datele trimise s-au obținut prin publicarea și consultarea de API. Nu ne angajăm dacă există anumite date ce conțin erori. Acestea au un scop exclusiv legat de natură informațională."
+  },
+  "route_results": {
+    "options": "Opțiuni",
+    "try_again": "Încearcă",
+    "your_location": "Locația",
+    "location_error": "Eroare",
+    "selected_location": "Selectată",
+    "stop_not_found": "Negăsit",
+    "no_routes": "Fără rute",
+    "invalid_destination": "Invalida",
+    "calc_error": "Eroare",
+    "start": "Pornire",
+    "arrival": "Sosire",
+    "from_to": "Din {from} în {to}",
+    "transfers": "schimbări",
+    "calculating": "Calcul..."
+  },
+  "line_detail": {
+    "loading": "Încărcare...",
+    "stops_count": "stații",
+    "active_bus": "bus",
+    "active_buses": "buses",
+    "stops_list": "Stații",
+    "no_stops": "Nicio stație"
+  },
+  "stop_detail": {
+    "next_arrivals": "Următoarele",
+    "refresh": "Refresh",
+    "last_updated": "Update:",
+    "from_here": "Aici de plecare",
+    "to_here": "Destinație",
+    "plan_route": "Vezi ruta",
+    "how_to_get_there": "Cum să ajungi",
+    "available_lines": "Linii din stație",
+    "error_retry": "Re-Incarcă"
+  },
+  "map": {
+    "all_lines": "Toate rutele",
+    "line_single": "Linia {id}",
+    "lines_count": "{count} lines gasit",
+    "all": "Tot",
+    "select_all": "Tot",
+    "none": "Nu",
+    "deselect_all": "Nu le mai fi",
+    "stops": "Stații",
+    "buses": "Autobuze",
+    "routes": "Rute pe",
+    "refresh": "Refresh",
+    "refresh_buses": "Refresh buses",
+    "my_location": "Locul meu",
+    "location": "Zona ta.",
+    "no_lines_available": "Nu",
+    "no_stops_available": "Nu avem aici",
+    "description": "Harta interactivă a tuturor liniilor de autobuz și stațiilor în timp real."
+  },
+  "help": {
+    "title": "Întrebari",
+    "subtitle": "Aplica",
+    "estimations": {
+      "title": "Mai",
+      "p1": "O stima estimată",
+      "p2": "Poate avea eroar."
+    },
+    "locations": {
+      "title": "Locati",
+      "p1": "Gps",
+      "p2": "Eroare"
+    },
+    "data": {
+      "title": "Oras",
+      "p1": "Primaria",
+      "p2": "Oficiale"
+    },
+    "refresh": {
+      "title": "A.",
+      "p1": "Da se refereshaza"
+    }
+  },
+  "route_loader": {
+    "origin": "Din",
+    "destination": "In",
+    "calculating": "Calculeaza acum"
+  },
+  "search_input": {
+    "placeholder": "Căutare..."
+  },
+  "lines": {
+    "title": "Linii",
+    "description": "Toate liniile găsite in",
+    "available": "Gasite la",
+    "search": "Scrie aici linie"
+  },
+  "stops": {
+    "title": "Statiile de la BusSalamanca",
+    "description": "Găsește",
+    "available": "Stati.",
+    "sort_nearby": "Lângă tine acum",
+    "no_nearby": "Nimic aproape",
+    "try_disabling": "Caută si farâ filtru"
+  },
+  "map_preview": {
+    "permission_denied": "A refuzat",
+    "permission_desc": "Acces locaţie",
+    "location_far": "La distanta prea mare",
+    "location_far_desc": "Eroare depărtare",
+    "timeout_desc": "Gps fail",
+    "error_desc": "Fail locație",
+    "location_error": "Eroare",
+    "exit_fullscreen": "Ieşi acum",
+    "view_full_map": "Mapa",
+    "exit": "Ieșiri",
+    "zoom_out": "-",
+    "zoom_in": "+",
+    "center_location": "Eu sunt aici",
+    "reset_north": "Dute la orientația",
+    "reset_2d": "2D"
+  },
+  "route": {
+    "beta_warning": "Versiune Beta",
+    "beta_desc": "Planificatorul de rute este în fază beta și ar putea sugera rute suboptime.",
+    "title": "Planifică Ruta",
+    "select_map": "Selectează pe hartă",
+    "origin": "Origine",
+    "destination": "Destinație",
+    "confirm_location": "Confirmă locația",
+    "search_route": "Caută ruta",
+    "from_here": "De aici",
+    "to_here": "Până aici",
+    "searching": "Căutare..."
+  },
+  "notifications": {
+    "unsupported_browser": "Browser-ul tău nu suportă notificări native.",
+    "following_line": "Urmărire linia {line}",
+    "will_notify": "Vă vom anunța când ajunge la stație.",
+    "permission_denied": "Permisiune refuzată",
+    "enable_notifications": "Trebuie să activezi notificările în browser.",
+    "bus_at_stop": "Autobuzul este în stație!",
+    "bus_should_be_here": "Autobuzul liniei {line} ar trebui să fie deja aici.",
+    "arriving_now": "Sosește acum!",
+    "minutes_remaining": "Au mai rămas {mins} min până la stație",
+    "estimate_suffix": "(Estimare)",
+    "line_destination": "Linia {line} - {destination}",
+    "title": "Centrul de Notificări",
+    "subtitle": "Gestionează alarmele de sosire active",
+    "empty_title": "Fără notificări active",
+    "empty_desc": "Nu urmăriți niciun autobuz în acest moment.",
+    "go_to_map": "Mergeți la hartă",
+    "clear_all": "Ștergeți tot",
+    "view_line": "Vezi linia",
+    "view_stop": "Vezi stația",
+    "stop_tracking": "Opriți urmărirea",
+    "estimating": "Estimare..."
+  }
+}

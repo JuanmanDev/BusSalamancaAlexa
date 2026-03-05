@@ -1,0 +1,238 @@
+{
+  "general": {
+    "loading": "Cargando datos",
+    "search": "Buscar",
+    "search_placeholder": "Buscar parada o línea...",
+    "cancel": "Cancelar",
+    "close": "Cerrar"
+  },
+  "nav": {
+    "home": "Inicio",
+    "lines": "Líneas",
+    "stops": "Paradas",
+    "map": "Mapa",
+    "route": "Ruta",
+    "settings_title": "Ajustes",
+    "change_theme": "Cambiar tema"
+  },
+  "index": {
+    "title": "Bus Salamanca",
+    "subtitle": "Consulta tiempos de llegada en tiempo real",
+    "favorites": "Favoritos",
+    "nearby_stops": "Paradas cercanas",
+    "closest_first": "(más cercanas primero)",
+    "no_nearby_stops": "No hay paradas en un radio de 500m",
+    "locating": "Obteniendo ubicación...",
+    "access_denied": "Acceso denegado",
+    "enable_location": "Activa el permiso de ubicación en tu navegador",
+    "activate_location": "Activa tu ubicación",
+    "find_closest_stops": "Encuentra las paradas más cercanas",
+    "activate_location_btn": "Activar ubicación",
+    "recent": "Recientes",
+    "clear": "Limpiar",
+    "all_lines": "Todas las líneas",
+    "see_itineraries": "Ver itinerarios",
+    "see_map": "Ver mapa",
+    "stops_and_buses": "Paradas y buses",
+    "alexa_skill": "Skill de Alexa",
+    "ask_assistant": "Pregunta a tu asistente por el bus"
+  },
+  "arrivals": {
+    "unknown_destination": "Destino desconocido",
+    "estimate": "Estimación",
+    "no_arrivals": "No hay llegadas previstas",
+    "minutes": "min",
+    "notify": "Avisar con notificaciones",
+    "minutes_short": "min"
+  },
+  "search_modal": {
+    "lines": "Líneas",
+    "stops": "Paradas",
+    "stop": "Parada",
+    "no_results": "No se encontraron resultados",
+    "type_to_search": "Escribe para buscar paradas o líneas"
+  },
+  "settings": {
+    "title": "Ajustes",
+    "subtitle": "Personaliza tu experiencia en BusSalamanca",
+    "appearance": "Apariencia",
+    "theme_desc": "Selecciona el tema de la aplicación",
+    "language": "Idioma",
+    "language_desc": "Selecciona un idioma",
+    "system": "Sistema",
+    "light": "Claro",
+    "dark": "Oscuro",
+    "map": "Mapa",
+    "smooth_animations": "Animaciones fluidas",
+    "smooth_animations_desc": "Activa o desactiva los movimientos dinámicos de cámara en el mapa.",
+    "offline": "Modo Sin Conexión",
+    "offline_desc": "Instala la aplicación en tu dispositivo para poder consultar las paradas y líneas sin conexión a internet.",
+    "update_app": "Actualizar Aplicación",
+    "install_app": "Instalar Aplicación",
+    "app_installed": "Instalación lista o app ya instalada",
+    "help": "Ayuda e Información",
+    "help_desc": "Consulta cómo funciona la aplicación, el origen de los datos y preguntas frecuentes.",
+    "view_help": "Ver página de Ayuda",
+    "links": "Enlaces de interés",
+    "dev_web": "Web del desarrollador (Juanma)",
+    "official_web": "Web oficial de autobuses",
+    "alexa_skill_btn": "Skill de Alexa",
+    "source_code": "Código fuente (GitHub)",
+    "footer_created_by": "Creado por",
+    "legal_notice": "Aviso Legal:",
+    "legal_text_1": "Este proyecto es de código abierto y no está afiliado, respaldado ni relacionado legalmente de ninguna forma con la empresa concesionaria del transporte público de Salamanca, el Ayuntamiento de Salamanca, ni ninguna otra entidad oficial.",
+    "legal_text_2": "Los datos mostrados se obtienen a través de APIs públicas y pueden contener inexactitudes. Uso exclusivo con fines informativos."
+  },
+  "route_results": {
+    "options": "Opciones de ruta",
+    "try_again": "Intentar de nuevo",
+    "your_location": "Tu ubicación",
+    "location_error": "No se pudo obtener tu ubicación",
+    "selected_location": "Ubicación seleccionada",
+    "stop_not_found": "No encontramos la parada. Prueba con un nombre exacto.",
+    "no_routes": "No se encontraron rutas disponibles",
+    "invalid_destination": "Destino no válido",
+    "calc_error": "Error calculando la ruta",
+    "start": "Inicio",
+    "arrival": "Llegada",
+    "from_to": "Desde {from} hasta {to}",
+    "transfers": "trasbordos",
+    "calculating": "Calculando la mejor ruta..."
+  },
+  "line_detail": {
+    "loading": "Cargando línea...",
+    "stops_count": "paradas",
+    "active_bus": "bus activo",
+    "active_buses": "buses activos",
+    "stops_list": "Paradas de la línea",
+    "no_stops": "No se encontraron paradas para esta línea"
+  },
+  "stop_detail": {
+    "next_arrivals": "Próximas llegadas",
+    "refresh": "Actualizar",
+    "last_updated": "Última actualización: ",
+    "from_here": "Desde aquí",
+    "to_here": "Hasta aquí",
+    "plan_route": "Planificar ruta",
+    "how_to_get_there": "Cómo llegar",
+    "available_lines": "Líneas de autobús disponibles",
+    "error_retry": "Reintentar"
+  },
+  "map": {
+    "all_lines": "Todas las líneas",
+    "line_single": "Línea {id}",
+    "lines_count": "{count} líneas",
+    "all": "Todas",
+    "select_all": "Seleccionar todas",
+    "none": "Ninguna",
+    "deselect_all": "Deseleccionar todas",
+    "stops": "Paradas",
+    "buses": "Buses",
+    "routes": "Rutas",
+    "refresh": "Actualizar",
+    "refresh_buses": "Actualizar buses",
+    "my_location": "Mi ubicación",
+    "location": "Ubicación",
+    "no_lines_available": "No hay líneas disponibles",
+    "no_stops_available": "No hay paradas disponibles",
+    "description": "Mapa interactivo de todas las líneas y paradas de autobús en tiempo real."
+  },
+  "help": {
+    "title": "Ayuda y Preguntas Frecuentes",
+    "subtitle": "Información sobre el funcionamiento de BusSalamanca",
+    "estimations": {
+      "title": "Tiempos de Estimación",
+      "p1": "Los tiempos de llegada que se muestran en la aplicación son estimaciones y aproximaciones calculadas según los datos anteriores y la posición actual de los autobuses.",
+      "p2": "Al tratarse de estimaciones en tiempo real que dependen del tráfico, incidencias en la vía o paradas prolongadas, pueden contener errores o variar repentinamente. No representan una garantía exacta del momento de llegada del autobús."
+    },
+    "locations": {
+      "title": "Ubicación de los Autobuses",
+      "p1": "La ubicación de los autobuses en el mapa también puede tener un margen de error. En ocasiones, el GPS de los vehículos pierde señal o no se actualiza con la frecuencia deseada.",
+      "p2": "Esto puede provocar que veas que un autobús 'salta' de forma brusca en el mapa, o que parezca estar detenido cuando en realidad sigue en movimiento."
+    },
+    "data": {
+      "title": "Origen de los Datos",
+      "p1": "Todos los datos utilizados en BusSalamanca provienen directamente de la información pública y oficial ofrecida por Salamanca de Transportes.",
+      "p2": "Al no ser nosotros los generadores de esta información original, no podemos ofrecer garantías sobre su disponibilidad, exactitud o veracidad en todo momento. Nuestra aplicación actúa únicamente como un visor mejorado y accesible de dichos datos."
+    },
+    "refresh": {
+      "title": "Actualización de la Pantalla",
+      "p1": "La aplicación intenta mantener los datos lo más frescos posibles sin necesidad de que recargues la página. Sin embargo, si notas que la información lleva varios minutos sin cambiar o se ha perdido la conexión de red momentáneamente, te recomendamos actualizar la pantalla manualmente tirando hacia abajo (en móviles) o utilizando el botón de refrescar de tu navegador."
+    }
+  },
+  "route_loader": {
+    "origin": "Origen",
+    "destination": "Destino",
+    "calculating": "Calculando la mejor ruta..."
+  },
+  "search_input": {
+    "placeholder": "Buscar..."
+  },
+  "lines": {
+    "title": "Líneas",
+    "description": "Ver todas las líneas de autobús disponibles en Salamanca con seguimiento en tiempo real.",
+    "available": "líneas disponibles",
+    "search": "Buscar líneas por nombre o ID..."
+  },
+  "stops": {
+    "title": "Paradas",
+    "description": "Encuentra paradas de autobús cerca de ti o busca en toda la red.",
+    "available": "paradas disponibles",
+    "sort_nearby": "Ordenar por cercanía",
+    "no_nearby": "No hay paradas cerca",
+    "try_disabling": "Intenta desactivar el filtro de cercanía o busca por nombre"
+  },
+  "map_preview": {
+    "permission_denied": "Permiso denegado",
+    "permission_desc": "No se pudo acceder a la ubicación. Por favor, revisa los permisos del navegador.",
+    "location_far": "Ubicación lejana",
+    "location_far_desc": "Estás a más de 15km de Salamanca.",
+    "timeout_desc": "No se pudo obtener la ubicación en este momento. Inténtalo de nuevo.",
+    "error_desc": "Error al obtener la ubicación.",
+    "location_error": "Error de ubicación",
+    "exit_fullscreen": "Salir de pantalla completa",
+    "view_full_map": "Ver mapa completo",
+    "exit": "Salir",
+    "zoom_out": "Alejar",
+    "zoom_in": "Acercar",
+    "center_location": "Centrar en mi ubicación",
+    "reset_north": "Restablecer Norte",
+    "reset_2d": "Restablecer vista 2D"
+  },
+  "route": {
+    "beta_warning": "Versión Beta",
+    "beta_desc": "El planificador de rutas está en fase experimental y puede contener errores. Por favor, verifica las rutas sugeridas.",
+    "title": "Planificar Ruta",
+    "select_map": "Seleccionar en el mapa",
+    "origin": "Origen",
+    "destination": "Destino",
+    "confirm_location": "Confirmar ubicación",
+    "search_route": "Buscar ruta",
+    "from_here": "Desde aquí",
+    "to_here": "Hasta aquí",
+    "searching": "Buscando..."
+  },
+  "notifications": {
+    "unsupported_browser": "Tu navegador no soporta notificaciones nativas.",
+    "following_line": "Siguiendo línea {line}",
+    "will_notify": "Te avisaremos sobre su llegada a la parada.",
+    "permission_denied": "Permiso denegado",
+    "enable_notifications": "Debes habilitar las notificaciones en tu navegador.",
+    "bus_at_stop": "¡Autobús en tu parada!",
+    "bus_should_be_here": "El autobús de la línea {line} ya debería estar aquí.",
+    "arriving_now": "¡Llegando ahora!",
+    "minutes_remaining": "Faltan {mins} min para tu parada",
+    "estimate_suffix": "(Estimación)",
+    "line_destination": "Línea {line} - {destination}",
+    "title": "Centro de Notificaciones",
+    "subtitle": "Gestiona tus avisos de llegada activos",
+    "empty_title": "Sin notificaciones activas",
+    "empty_desc": "No estás siguiendo ningún autobús en este momento.",
+    "go_to_map": "Ir al mapa",
+    "clear_all": "Borrar todas",
+    "view_line": "Ver línea",
+    "view_stop": "Ver parada",
+    "stop_tracking": "Dejar de seguir",
+    "estimating": "Calculando..."
+  }
+}

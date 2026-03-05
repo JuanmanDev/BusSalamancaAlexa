@@ -1,0 +1,238 @@
+{
+  "general": {
+    "loading": "Daten werden geladen...",
+    "search": "Suchen",
+    "search_placeholder": "Haltestelle oder Linie suchen...",
+    "cancel": "Abbrechen",
+    "close": "Schließen"
+  },
+  "nav": {
+    "home": "Startseite",
+    "lines": "Linien",
+    "stops": "Haltestellen",
+    "map": "Karte",
+    "route": "Route",
+    "settings_title": "Einstellungen",
+    "change_theme": "Design ändern"
+  },
+  "index": {
+    "title": "Bus Salamanca",
+    "subtitle": "Echtzeit-Ankunftszeiten prüfen",
+    "favorites": "Favoriten",
+    "nearby_stops": "Haltestellen in der Nähe",
+    "closest_first": "(die nächsten zuerst)",
+    "no_nearby_stops": "Keine Haltestellen im Umkreis von 500m",
+    "locating": "Standort wird ermittelt...",
+    "access_denied": "Zugriff verweigert",
+    "enable_location": "Aktivieren Sie die Standortberechtigung in Ihrem Browser",
+    "activate_location": "Standort aktivieren",
+    "find_closest_stops": "Die nächsten Haltestellen finden",
+    "activate_location_btn": "Standort aktivieren",
+    "recent": "Zuletzt gesucht",
+    "clear": "Löschen",
+    "all_lines": "Alle Linien",
+    "see_itineraries": "Reisepläne ansehen",
+    "see_map": "Karte ansehen",
+    "stops_and_buses": "Haltestellen und Busse",
+    "alexa_skill": "Alexa Skill",
+    "ask_assistant": "Fragen Sie Ihren Assistenten nach dem Bus"
+  },
+  "arrivals": {
+    "unknown_destination": "Unbekanntes Ziel",
+    "estimate": "Schätzung",
+    "no_arrivals": "Keine Ankünfte geplant",
+    "minutes": "min",
+    "notify": "Mit Benachrichtigungen warnen",
+    "minutes_short": "Min"
+  },
+  "search_modal": {
+    "lines": "Linien",
+    "stops": "Haltestellen",
+    "stop": "Haltestelle",
+    "no_results": "Keine Ergebnisse gefunden",
+    "type_to_search": "Tippen, um nach Haltestellen oder Linien zu suchen"
+  },
+  "settings": {
+    "title": "Einstellungen",
+    "subtitle": "Passen Sie Ihre Erfahrung in BusSalamanca an",
+    "appearance": "Erscheinungsbild",
+    "theme_desc": "Wählen Sie das Design der Anwendung",
+    "language": "Sprache",
+    "language_desc": "Wählen Sie eine Sprache",
+    "system": "System",
+    "light": "Hell",
+    "dark": "Dunkel",
+    "map": "Karte",
+    "smooth_animations": "Flüssige Animationen",
+    "smooth_animations_desc": "Aktivieren oder deaktivieren Sie dynamische Kamerabewegungen auf der Karte.",
+    "offline": "Offline-Modus",
+    "offline_desc": "Installieren Sie die App auf Ihrem Gerät, um Haltestellen und Linien ohne Internetverbindung abzurufen.",
+    "update_app": "Anwendung aktualisieren",
+    "install_app": "Anwendung installieren",
+    "app_installed": "Bereit zur Installation oder bereits installiert",
+    "help": "Hilfe und Informationen",
+    "help_desc": "Erfahren Sie, wie die Anwendung funktioniert, Informationsquellen und häufig gestellte Fragen.",
+    "view_help": "Hilfe-Seite ansehen",
+    "links": "Nützliche Links",
+    "dev_web": "Entwicklerseite (Juanma)",
+    "official_web": "Offizielle Website der Busse",
+    "alexa_skill_btn": "Alexa Skill",
+    "source_code": "Quellcode (GitHub)",
+    "footer_created_by": "Erstellt von",
+    "legal_notice": "Rechtlicher Hinweis:",
+    "legal_text_1": "Dieses Projekt ist Open Source und rechtlich nicht mit dem öffentlichen Verkehrsunternehmen von Salamanca, dem Stadtrat oder einer offiziellen Einrichtung verbunden oder unterstützt.",
+    "legal_text_2": "Die angezeigten Daten werden über öffentliche APIs abgerufen und können Ungenauigkeiten enthalten. Nur zu Informationszwecken."
+  },
+  "route_results": {
+    "options": "Routenoptionen",
+    "try_again": "Erneut",
+    "your_location": "Ihr Standort",
+    "location_error": "Fehler Standort",
+    "selected_location": "Ort",
+    "stop_not_found": "Nicht gefunden",
+    "no_routes": "Keine Routen",
+    "invalid_destination": "Ungültig",
+    "calc_error": "Fehler",
+    "start": "Start",
+    "arrival": "Ziel",
+    "from_to": "Von {from} nach {to}",
+    "transfers": "Umstiege",
+    "calculating": "Berechne..."
+  },
+  "line_detail": {
+    "loading": "Lädt...",
+    "stops_count": "Halt",
+    "active_bus": "Bus",
+    "active_buses": "Busse",
+    "stops_list": "Haltestellen",
+    "no_stops": "Keine Halt"
+  },
+  "stop_detail": {
+    "next_arrivals": "Nächste Busse",
+    "refresh": "Aktualisieren",
+    "last_updated": "Stand: ",
+    "from_here": "Von hier",
+    "to_here": "Hierhin",
+    "plan_route": "Route",
+    "how_to_get_there": "Wie dorthin",
+    "available_lines": "Linien",
+    "error_retry": "Neu"
+  },
+  "map": {
+    "all_lines": "Alle Linien",
+    "line_single": "Linie {id}",
+    "lines_count": "{count} Linien",
+    "all": "Alle",
+    "select_all": "Alle ausw.",
+    "none": "Keine",
+    "deselect_all": "Abwählen",
+    "stops": "Haltestellen",
+    "buses": "Busse",
+    "routes": "Routen",
+    "refresh": "Akt.",
+    "refresh_buses": "Busse",
+    "my_location": "Mein Ort",
+    "location": "Ort",
+    "no_lines_available": "Keine",
+    "no_stops_available": "Keine",
+    "description": "Interaktive Karte aller Buslinien und Haltestellen in Echtzeit."
+  },
+  "help": {
+    "title": "Hilfe",
+    "subtitle": "Info",
+    "estimations": {
+      "title": "Zeit",
+      "p1": "Schätzung",
+      "p2": "Kann variieren"
+    },
+    "locations": {
+      "title": "GPS",
+      "p1": "Signal",
+      "p2": "Verlust"
+    },
+    "data": {
+      "title": "Daten",
+      "p1": "S-T",
+      "p2": "Keine Gewähr"
+    },
+    "refresh": {
+      "title": "Refresh",
+      "p1": "Autom."
+    }
+  },
+  "route_loader": {
+    "origin": "Von",
+    "destination": "Nach",
+    "calculating": "Berechne..."
+  },
+  "search_input": {
+    "placeholder": "Suche..."
+  },
+  "lines": {
+    "title": "Linien",
+    "description": "Busse",
+    "available": "Linien",
+    "search": "Suche..."
+  },
+  "stops": {
+    "title": "Haltestellen",
+    "description": "Haltestellen",
+    "available": "Halt",
+    "sort_nearby": "In der Nähe",
+    "no_nearby": "Keine in der Nähe",
+    "try_disabling": "Keine Filter"
+  },
+  "map_preview": {
+    "permission_denied": "Nein",
+    "permission_desc": "Kein Zugriff",
+    "location_far": "Weit",
+    "location_far_desc": "Weit",
+    "timeout_desc": "Zeit",
+    "error_desc": "Fehler",
+    "location_error": "Ort Fehler",
+    "exit_fullscreen": "Verlassen",
+    "view_full_map": "Karte",
+    "exit": "Raus",
+    "zoom_out": "-",
+    "zoom_in": "+",
+    "center_location": "Mein Ort",
+    "reset_north": "Nord",
+    "reset_2d": "2D"
+  },
+  "route": {
+    "beta_warning": "Beta-Version",
+    "beta_desc": "Der Routenplaner befindet sich in der Beta-Phase und könnte suboptimale Routen vorschlagen.",
+    "title": "Route planen",
+    "select_map": "Auf der Karte auswählen",
+    "origin": "Start",
+    "destination": "Ziel",
+    "confirm_location": "Standort bestätigen",
+    "search_route": "Route suchen",
+    "from_here": "Von hier",
+    "to_here": "Hierhin",
+    "searching": "Suche..."
+  },
+  "notifications": {
+    "unsupported_browser": "Ihr Browser unterstützt keine nativen Benachrichtigungen.",
+    "following_line": "Linie {line} folgen",
+    "will_notify": "Wir benachrichtigen Sie, wenn es an der Haltestelle ankommt.",
+    "permission_denied": "Zugriff verweigert",
+    "enable_notifications": "Sie müssen Benachrichtigungen in Ihrem Browser aktivieren.",
+    "bus_at_stop": "Bus an Ihrer Haltestelle!",
+    "bus_should_be_here": "Der Bus der Linie {line} sollte bereits hier sein.",
+    "arriving_now": "Kommt jetzt an!",
+    "minutes_remaining": "Noch {mins} Min. bis zu Ihrer Haltestelle",
+    "estimate_suffix": "(Schätzung)",
+    "line_destination": "Linie {line} - {destination}",
+    "title": "Benachrichtigungscenter",
+    "subtitle": "Verwalten Sie Ihre aktiven Ankunftsbenachrichtigungen",
+    "empty_title": "Keine aktiven Benachrichtigungen",
+    "empty_desc": "Sie verfolgen derzeit keinen Bus.",
+    "go_to_map": "Zur Karte gehen",
+    "clear_all": "Alle löschen",
+    "view_line": "Linie anzeigen",
+    "view_stop": "Haltestelle anzeigen",
+    "stop_tracking": "Verfolgung beenden",
+    "estimating": "Schätzung..."
+  }
+}

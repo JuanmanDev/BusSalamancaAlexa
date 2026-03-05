@@ -1,0 +1,238 @@
+{
+  "general": {
+    "loading": "데이터 로드 중...",
+    "search": "검색",
+    "search_placeholder": "정류장 또는 노선 검색...",
+    "cancel": "취소",
+    "close": "닫기"
+  },
+  "nav": {
+    "home": "홈",
+    "lines": "노선",
+    "stops": "정류장",
+    "map": "지도",
+    "route": "경로",
+    "settings_title": "설정",
+    "change_theme": "테마 변경"
+  },
+  "index": {
+    "title": "Bus Salamanca",
+    "subtitle": "실시간 도착 시간 확인",
+    "favorites": "즐겨찾기",
+    "nearby_stops": "주변 정류장",
+    "closest_first": "(가까운 순)",
+    "no_nearby_stops": "500m 이내에 정류장이 없습니다",
+    "locating": "위치 파악 중...",
+    "access_denied": "접근 거부",
+    "enable_location": "브라우저에서 위치 정보 접근을 허용하세요",
+    "activate_location": "현재 위치 활성화",
+    "find_closest_stops": "가장 가까운 정류장 찾기",
+    "activate_location_btn": "위치 켜기",
+    "recent": "최근 검색",
+    "clear": "지우기",
+    "all_lines": "모든 노선",
+    "see_itineraries": "여정 보기",
+    "see_map": "지도 보기",
+    "stops_and_buses": "정류장 및 버스",
+    "alexa_skill": "Alexa 스킬",
+    "ask_assistant": "버스를 음성 어시스턴트에게 물어보세요"
+  },
+  "arrivals": {
+    "unknown_destination": "알 수 없는 목적지",
+    "estimate": "예상",
+    "no_arrivals": "예정된 도착 없음",
+    "minutes": "분",
+    "notify": "알림 받기",
+    "minutes_short": "분"
+  },
+  "search_modal": {
+    "lines": "노선",
+    "stops": "정류장",
+    "stop": "정류장",
+    "no_results": "결과를 찾을 수 없습니다",
+    "type_to_search": "입력하여 정류장 또는 노선 검색"
+  },
+  "settings": {
+    "title": "설정",
+    "subtitle": "BusSalamanca 환경 맞춤 설정",
+    "appearance": "모양",
+    "theme_desc": "앱 테마 선택",
+    "language": "언어",
+    "language_desc": "언어 선택",
+    "system": "시스템",
+    "light": "라이트",
+    "dark": "다크",
+    "map": "지도",
+    "smooth_animations": "부드러운 애니메이션",
+    "smooth_animations_desc": "지도에서 동적인 카메라 이동 활성화/비활성화",
+    "offline": "오프라인 모드",
+    "offline_desc": "기기에 앱을 설치하여 인터넷 연결 없이도 정류장과 노선 정보를 확인하세요.",
+    "update_app": "앱 업데이트",
+    "install_app": "앱 설치",
+    "app_installed": "설치할 준비가 완료되었거나 이미 설치된 앱",
+    "help": "도움말 및 정보",
+    "help_desc": "앱의 작동 방식, 데이터 소스, 자주 묻는 질문(FAQ) 확인",
+    "view_help": "도움말 페이지 보기",
+    "links": "유용한 링크",
+    "dev_web": "개발자 웹사이트 (Juanma)",
+    "official_web": "공식 버스 웹사이트",
+    "alexa_skill_btn": "Alexa 스킬",
+    "source_code": "소스 코드 (GitHub)",
+    "footer_created_by": "제작자",
+    "legal_notice": "면책 조항:",
+    "legal_text_1": "이 프로젝트는 오픈 소스이며, 살라망카 대중교통 회사, 시의회 또는 어떤 공식 단체와도 법적으로 승인받거나 제휴 및 관련이 없습니다.",
+    "legal_text_2": "표시되는 데이터는 공개 API를 통해 수집되었으므로 오류가 있을 수 있습니다. 정보 제공 목적으로만 사용하십시오."
+  },
+  "route_results": {
+    "options": "선택",
+    "try_again": "다시해",
+    "your_location": "나의장소",
+    "location_error": "에러",
+    "selected_location": "선택함",
+    "stop_not_found": "찾을수없음",
+    "no_routes": "경로없음",
+    "invalid_destination": "안됨",
+    "calc_error": "에러",
+    "start": "가기",
+    "arrival": "오기",
+    "from_to": "{from} 로 {to}",
+    "transfers": "환승해요",
+    "calculating": "기다려..."
+  },
+  "line_detail": {
+    "loading": "정보...",
+    "stops_count": "정류장",
+    "active_bus": "버스가있다",
+    "active_buses": "버스들",
+    "stops_list": "보여주는이곳",
+    "no_stops": "오류이거나데이터없음"
+  },
+  "stop_detail": {
+    "next_arrivals": "오기위한시간",
+    "refresh": "버튼의클릭",
+    "last_updated": "마지막:",
+    "from_here": "지금",
+    "to_here": "여기에도착",
+    "plan_route": "루트",
+    "how_to_get_there": "가는방법들",
+    "available_lines": "이용하기",
+    "error_retry": "한번더"
+  },
+  "map": {
+    "all_lines": "모든버스",
+    "line_single": "선{id}",
+    "lines_count": "{count}노선의모임",
+    "all": "모두",
+    "select_all": "버튼",
+    "none": "없어",
+    "deselect_all": "삭제",
+    "stops": "모든버스가서며지나가는점들위치표시들",
+    "buses": "아이콘들의모양들",
+    "routes": "가는방법",
+    "refresh": "지금새로하기",
+    "refresh_buses": "버스새로하기지도",
+    "my_location": "나의위치로",
+    "location": "장소",
+    "no_lines_available": "노선안보여요",
+    "no_stops_available": "정류소가없다",
+    "description": "모든 버스 노선 및 정류장의 실시간 대화형 지도입니다."
+  },
+  "help": {
+    "title": "도움말기본제공",
+    "subtitle": "내용",
+    "estimations": {
+      "title": "도착추산시간",
+      "p1": "시간들은단지참고에불과하며스페인내버스운행시스템의시간계산에바탕을",
+      "p2": "차가막히거나여러지연의가능성들로그시간이완벽하게정확히맞아떨어지지가"
+    },
+    "locations": {
+      "title": "지도위버스위치",
+      "p1": "버스들의지피에스단말기의오작동이나정보송신지연으로제위치가",
+      "p2": "갑자기버스가순간적으로이동하는모습을보이게될수도있습니다"
+    },
+    "data": {
+      "title": "데이터출처",
+      "p1": "모든버스의실시간위치와정류장오픈api를사용함",
+      "p2": "정확도를보증하지도않고그어떠한책임도"
+    },
+    "refresh": {
+      "title": "자동새로고침",
+      "p1": "문제가있을때는수동으로어플리케이션을끄거나브라우저에서화면을"
+    }
+  },
+  "route_loader": {
+    "origin": "출발",
+    "destination": "도착",
+    "calculating": "검색의중..."
+  },
+  "search_input": {
+    "placeholder": "원하시는목적지나정류장의이름을검색어에입력하세요..."
+  },
+  "lines": {
+    "title": "노선들의모임",
+    "description": "노선들의현황",
+    "available": "이용가는선",
+    "search": "입력을할때용도"
+  },
+  "stops": {
+    "title": "정류장목록",
+    "description": "모든역상세표",
+    "available": "이용이가능함",
+    "sort_nearby": "거리",
+    "no_nearby": "반경",
+    "try_disabling": "아무데나검색"
+  },
+  "map_preview": {
+    "permission_denied": "안된답니다",
+    "permission_desc": "위치지피에스로당신의장소를얻어지도에표시할수가없답니다.",
+    "location_far": "너무멀어요아주많이",
+    "location_far_desc": "기준위치인스페인의도시에서자그마치십오킬로미터밖의상당히초과",
+    "timeout_desc": "시간이지났음기억안남",
+    "error_desc": "오류오류오류",
+    "location_error": "장소에러가났어",
+    "exit_fullscreen": "모든화면",
+    "view_full_map": "더크게볼수가있게끔조",
+    "exit": "나옴이다",
+    "zoom_out": "더먼범위",
+    "zoom_in": "가깝게",
+    "center_location": "이동",
+    "reset_north": "정북으로",
+    "reset_2d": "평면"
+  },
+  "route": {
+    "beta_warning": "베타 버전",
+    "beta_desc": "경로 플래너는 베타 버전이며 최적이 아닌 경로를 제안할 수 있습니다.",
+    "title": "경로 계획",
+    "select_map": "지도에서 선택",
+    "origin": "출발지",
+    "destination": "도착지",
+    "confirm_location": "위치 확인",
+    "search_route": "경로 검색",
+    "from_here": "여기서 출발",
+    "to_here": "여기로 도착",
+    "searching": "검색 중..."
+  },
+  "notifications": {
+    "unsupported_browser": "브라우저가 기본 알림을 지원하지 않습니다.",
+    "following_line": "노선 {line} 추적 중",
+    "will_notify": "정류장 도착 시 알려드립니다.",
+    "permission_denied": "권한 거부됨",
+    "enable_notifications": "브라우저에서 알림을 사용하도록 설정해야 합니다.",
+    "bus_at_stop": "버스가 정류장에 있습니다!",
+    "bus_should_be_here": "노선 {line} 버스가 이미 도착했어야 합니다.",
+    "arriving_now": "지금 도착 중!",
+    "minutes_remaining": "정류장까지 {mins}분 남음",
+    "estimate_suffix": "(예상)",
+    "line_destination": "노선 {line} - {destination}",
+    "title": "알림 센터",
+    "subtitle": "활성 도착 알림 관리",
+    "empty_title": "활성 알림 없음",
+    "empty_desc": "현재 추적 중인 버스가 없습니다.",
+    "go_to_map": "지도로 이동",
+    "clear_all": "모두 지우기",
+    "view_line": "노선 보기",
+    "view_stop": "정류장 보기",
+    "stop_tracking": "추적 중지",
+    "estimating": "계산 중..."
+  }
+}

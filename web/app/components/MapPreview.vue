@@ -10,6 +10,7 @@ const props = withDefaults(defineProps<{
 const mapStore = useMapStore()
 const geolocation = useGeolocation()
 const toast = useToast()
+const { t } = useI18n()
 const clickLocationButton = async () => {
   if (!geolocation.userLocation.value) {
     const success = await geolocation.requestLocation({ timeout: 7000 })
@@ -26,26 +27,26 @@ const clickLocationButton = async () => {
       // Handle errors
       if (geolocation.permissionDenied.value) {
         toast.add({
-          title: 'Permiso denegado',
-          description: 'No se pudo acceder a la ubicación. Por favor, revisa los permisos del navegador.',
+          title: t('map_preview.permission_denied'),
+          description: t('map_preview.permission_desc'),
           color: 'error',
           icon: 'i-lucide-alert-circle'
         })
       } else if (geolocation.isTooFar.value) {
         toast.add({
-          title: 'Ubicación lejana',
-          description: 'Estás a más de 15km de Salamanca.',
+          title: t('map_preview.location_far'),
+          description: t('map_preview.location_far_desc'),
           color: 'warning',
           icon: 'i-lucide-map-pin-off'
         })
       } else {
         // Timeout or other error
         const msg = geolocation.locationError.value === 'Request timeout' 
-          ? 'No se pudo obtener la ubicación en este momento. Inténtalo de nuevo.'
-          : 'Error al obtener la ubicación.'
+          ? t('map_preview.timeout_desc')
+          : t('map_preview.error_desc')
           
         toast.add({
-          title: 'Error de ubicación',
+          title: t('map_preview.location_error'),
           description: msg,
           color: 'warning',
           icon: 'i-lucide-alert-triangle'
@@ -329,7 +330,7 @@ const toggleFullscreen = async () => {
         <!-- Mobile: Bottom-Right -->
         <!-- Desktop: Top-Right -->
         <div class="absolute bottom-4 right-0 mr-4 z-10 pointer-events-auto flex flex-col gap-2">
-          <UTooltip :text="mapStore.isFullscreen ? 'Salir de pantalla completa' : 'Ver mapa completo'" :delay-duration="0">
+          <UTooltip :text="mapStore.isFullscreen ? $t('map_preview.exit_fullscreen') : $t('map_preview.view_full_map')" :delay-duration="0">
             <UButton
               color="neutral"
               variant="solid"
@@ -339,10 +340,10 @@ const toggleFullscreen = async () => {
             >
               <span class="hidden sm:flex items-center">
                 <span class="label-anim" :class="mapStore.isFullscreen ? 'label-visible' : 'label-hidden'">
-                  <span class="label-inner">Salir</span>
+                  <span class="label-inner">{{ $t('map_preview.exit') }}</span>
                 </span>
                 <span class="label-anim" :class="!mapStore.isFullscreen ? 'label-visible' : 'label-hidden'">
-                  <span class="label-inner">Ver mapa completo</span>
+                  <span class="label-inner">{{ $t('map_preview.view_full_map') }}</span>
                 </span>
               </span>
             </UButton>
@@ -351,7 +352,7 @@ const toggleFullscreen = async () => {
     
         <!-- Zoom controls: Bottom-Left -->
         <div class="absolute bottom-4 left-4 z-10 pointer-events-auto flex flex-row gap-2 transition-all duration-500">
-          <UTooltip text="Alejar" :delay-duration="0">
+          <UTooltip :text="$t('map_preview.zoom_out')" :delay-duration="0">
             <UButton
               color="neutral"
               variant="solid"
@@ -361,7 +362,7 @@ const toggleFullscreen = async () => {
             />
           </UTooltip>
           
-          <UTooltip text="Acercar" :delay-duration="0">
+          <UTooltip :text="$t('map_preview.zoom_in')" :delay-duration="0">
             <UButton
               color="neutral"
               variant="solid"
@@ -372,7 +373,7 @@ const toggleFullscreen = async () => {
           </UTooltip>
     
           <!-- Add another button to center on current location by the user -->
-          <UTooltip text="Centrar en mi ubicación" v-if="mapStore.showUserLocationButton" :delay-duration="0">
+          <UTooltip :text="$t('map_preview.center_location')" v-if="mapStore.showUserLocationButton" :delay-duration="0">
             <UButton
               color="neutral"
               variant="solid"
@@ -383,7 +384,7 @@ const toggleFullscreen = async () => {
           </UTooltip>
     
           <!-- Reset Bearing (North) -->
-          <UTooltip text="Restablecer Norte" v-if="Math.abs(mapStore.rotation) > 5" :delay-duration="0">
+          <UTooltip :text="$t('map_preview.reset_north')" v-if="Math.abs(mapStore.rotation) > 5" :delay-duration="0">
             <UButton
               color="neutral"
               variant="solid"
@@ -395,7 +396,7 @@ const toggleFullscreen = async () => {
           </UTooltip>
     
           <!-- Reset Pitch (3D) -->
-          <UTooltip text="Restablecer vista 2D" v-if="mapStore.pitch > 5" :delay-duration="0">
+          <UTooltip :text="$t('map_preview.reset_2d')" v-if="mapStore.pitch > 5" :delay-duration="0">
             <UButton
               color="neutral"
               variant="solid"

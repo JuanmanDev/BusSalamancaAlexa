@@ -1,12 +1,15 @@
 <script setup lang="ts">
 import type { BusStop, BusVehicle } from '~/types/bus'
 
+const { t } = useI18n()
+
 useSeoMeta({
-  title: 'Mapa - Bus Salamanca',
-  description: 'Mapa interactivo de paradas y autobuses de Salamanca',
+  title: computed(() => `${t('nav.map')} - ${t('index.title')}`),
+  description: computed(() => t('map.description')), // fallback or generic
 })
 
 const router = useRouter()
+const localePath = useLocalePath()
 const storage = useStorage()
 const geolocation = useGeolocation()
 const mapStore = useMapStore()
@@ -196,12 +199,12 @@ function centerOnUser() {
 
 function goToStop(stop: BusStop) {
   storage.addRecent('stop', stop.id, stop.name)
-  router.push(`/stop/${stop.id}`)
+  router.push(localePath(`/stop/${stop.id}`))
 }
 
 function goToLine(lineId: string) {
    storage.addRecent('line', lineId, `Línea ${lineId}`)
-   router.push(`/line/${lineId}`)
+   router.push(localePath(`/line/${lineId}`))
 }
 
 function clearSelection() {
@@ -221,7 +224,7 @@ const hasUserLocation = computed(() => useGeolocation().userLocation.value !== n
 </script>
 
 <template>
-  <div class="flex flex-col justify-between flex-1 w-full" ref="mapContainer">
+  <div class="flex flex-col justify-between flex-1 w-full overflow-hidden" ref="mapContainer">
     <!-- Top controls -->
     <div class="pt-4 pointer-events-none">
       <!-- First row: Line filter and actions -->
@@ -240,13 +243,13 @@ const hasUserLocation = computed(() => useGeolocation().userLocation.value !== n
           >
             <template #label>
               <span v-if="mapStore.filterLineIds.length === 0" class="text-gray-500 truncate">
-                Todas las líneas
+                {{ $t('map.all_lines') }}
               </span>
               <span v-else-if="mapStore.filterLineIds.length === 1" class="truncate">
-                Línea {{ mapStore.filterLineIds[0] }}
+                {{ $t('map.line_single', { id: mapStore.filterLineIds[0] }) }}
               </span>
               <span v-else class="truncate">
-                {{ mapStore.filterLineIds.length }} líneas
+                {{ $t('map.lines_count', { count: mapStore.filterLineIds.length }) }}
               </span>
             </template>
           </USelectMenu>
@@ -258,19 +261,19 @@ const hasUserLocation = computed(() => useGeolocation().userLocation.value !== n
             class="px-3 py-1.5 text-xs font-medium rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex items-center gap-1 h-full"
             :class="mapStore.filterLineIds.length === lineSelectItems.length && lineSelectItems.length > 0 ? 'text-primary-600 bg-primary-50 dark:bg-primary-900/30' : 'text-gray-600 dark:text-gray-400'"
             @click="selectAllLines"
-            title="Seleccionar todas"
+            :title="$t('map.select_all')"
           >
             <UIcon name="i-lucide-check-check" class="w-4 h-4" />
-            <span class="hidden sm:inline">Todas</span>
+            <span class="hidden sm:inline">{{ $t('map.all') }}</span>
           </button>
           <button
             class="px-3 py-1.5 text-xs font-medium rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex items-center gap-1 h-full"
             :class="mapStore.filterLineIds.length === 0 ? 'text-primary-600 bg-primary-50 dark:bg-primary-900/30' : 'text-gray-600 dark:text-gray-400'"
             @click="selectNoLines"
-            title="Deseleccionar todas"
+            :title="$t('map.deselect_all')"
           >
             <UIcon name="i-lucide-x" class="w-4 h-4" />
-            <span class="hidden sm:inline">Ninguna</span>
+            <span class="hidden sm:inline">{{ $t('map.none') }}</span>
           </button>
         </div>
 
@@ -280,18 +283,18 @@ const hasUserLocation = computed(() => useGeolocation().userLocation.value !== n
             <UCheckbox v-model="showStops" />
             <UIcon name="i-lucide-map-pin" class="w-4 h-4" :class="showStops ? 'text-primary-500' : 'text-gray-400'" />
             {{ displayedStopsCount }}
-            <span class="text-xs hidden sm:inline" :class="showStops ? 'text-gray-900 dark:text-white' : 'text-gray-400'">Paradas</span>
+            <span class="text-xs hidden sm:inline" :class="showStops ? 'text-gray-900 dark:text-white' : 'text-gray-400'">{{ $t('map.stops') }}</span>
           </label>
           <label class="flex items-center gap-1.5 cursor-pointer select-none">
             <UCheckbox v-model="showBuses" />
             <UIcon name="i-lucide-bus" class="w-4 h-4" :class="showBuses ? 'text-green-500' : 'text-gray-400'" />
             {{ displayedVehiclesCount }}
-            <span class="text-xs hidden sm:inline" :class="showBuses ? 'text-gray-900 dark:text-white' : 'text-gray-400'">Buses</span>
+            <span class="text-xs hidden sm:inline" :class="showBuses ? 'text-gray-900 dark:text-white' : 'text-gray-400'">{{ $t('map.buses') }}</span>
           </label>
           <label class="flex items-center gap-1.5 cursor-pointer select-none">
             <UCheckbox v-model="showRoutes" />
             <UIcon name="i-lucide-route" class="w-4 h-4" :class="showRoutes ? 'text-blue-500' : 'text-gray-400'" />
-            <span class="text-xs hidden sm:inline" :class="showRoutes ? 'text-gray-900 dark:text-white' : 'text-gray-400'">Rutas</span>
+            <span class="text-xs hidden sm:inline" :class="showRoutes ? 'text-gray-900 dark:text-white' : 'text-gray-400'">{{ $t('map.routes') }}</span>
           </label>
         </div>
 
@@ -301,14 +304,14 @@ const hasUserLocation = computed(() => useGeolocation().userLocation.value !== n
           :class="isRefreshing ? 'opacity-50' : ''"
           :disabled="isRefreshing"
           @click="refresh"
-          title="Actualizar buses"
+          :title="$t('map.refresh_buses')"
         >
           <UIcon 
             name="i-lucide-refresh-cw" 
             class="w-4 h-4 text-gray-600 dark:text-gray-400"
             :class="isRefreshing ? 'animate-spin' : ''"
           />
-          <span class="hidden md:inline text-xs font-medium text-gray-700 dark:text-gray-300">Actualizar</span>
+          <span class="hidden md:inline text-xs font-medium text-gray-700 dark:text-gray-300">{{ $t('map.refresh') }}</span>
         </button>
 
         <!-- Center on user -->
@@ -316,10 +319,10 @@ const hasUserLocation = computed(() => useGeolocation().userLocation.value !== n
           v-if="hasUserLocation"
           class="glass-card px-3 py-1.5 h-10 flex items-center justify-center gap-2 hover:scale-105 transition-transform pointer-events-auto"
           @click="centerOnUser"
-          title="Mi ubicación"
+          :title="$t('map.my_location')"
         >
           <UIcon name="i-lucide-navigation" class="w-4 h-4 text-primary-500" />
-          <span class="hidden md:inline text-xs font-medium text-gray-700 dark:text-gray-300">Ubicación</span>
+          <span class="hidden md:inline text-xs font-medium text-gray-700 dark:text-gray-300">{{ $t('map.location') }}</span>
         </button>
       </div>
     </div>

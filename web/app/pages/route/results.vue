@@ -8,6 +8,7 @@ const { findRoutes } = useRouting()
 const { fetchStops } = useBusService()
 const { userLocation } = useGeolocation()
 const mapStore = useMapStore()
+const { t } = useI18n()
 
 const isLoading = ref(true)
 const error = ref<string | null>(null)
@@ -50,14 +51,14 @@ async function calculateRoutes() {
         // 1. Resolve Origin
         if (originQuery === 'user') {
             if (userLocation.value) {
-                origin = { lat: userLocation.value.lat, lng: userLocation.value.lng, name: 'Tu ubicación' }
+                origin = { lat: userLocation.value.lat, lng: userLocation.value.lng, name: t('route_results.your_location') }
             } else {
                  // Try to get location?
-                 error.value = 'No se pudo obtener tu ubicación'
+                 error.value = t('route_results.location_error')
                  return
             }
         } else {
-             const loc = parseLoc(originQuery, route.query.originName as string)
+             const loc = parseLoc(originQuery, route.query.originName as string || t('route_results.selected_location'))
              if (loc) {
                  origin = loc
              } else {
@@ -69,7 +70,7 @@ async function calculateRoutes() {
         }
         
         // 2. Resolve Destination
-        const destLoc = parseLoc(destQuery, route.query.destinationName as string)
+        const destLoc = parseLoc(destQuery, route.query.destinationName as string || t('route_results.selected_location'))
         if (destLoc) {
             destination = destLoc
         } else {
@@ -78,7 +79,7 @@ async function calculateRoutes() {
                  destination = { lat: stop.latitude, lng: stop.longitude, name: stop.name }
             } else {
                 // TODO: Geocoding or "Select on Map" fallback
-                error.value = `No encontramos la parada "${destQuery}". Prueba con un nombre de parada exacto.`
+                error.value = t('route_results.stop_not_found').replace('{query}', destQuery)
                 // return // For now fail if not found
             }
         }
@@ -95,15 +96,15 @@ async function calculateRoutes() {
             if (routes.value.length > 0) {
                 selectRoute(routes.value[0]!.id)
             } else {
-                error.value = 'No se encontraron rutas disponibles'
+                error.value = t('route_results.no_routes')
             }
         } else if (!destination && !error.value) {
-             error.value = 'Destino no válido'
+             error.value = t('route_results.invalid_destination')
         }
         
     } catch (e) {
         console.error(e)
-        error.value = 'Error calculando la ruta'
+        error.value = t('route_results.calc_error')
     } finally {
         isLoading.value = false
     }
@@ -153,7 +154,7 @@ function getSegmentColor(type: string, lineId?: string) {
                 <template #header>
                     <div class="flex items-center gap-3">
                         <UButton icon="i-lucide-arrow-left" variant="ghost" color="neutral" @click="router.back()" />
-                        <h2 class="font-bold text-lg">Opciones de ruta</h2>
+                        <h2 class="font-bold text-lg">{{ $t('route_results.options') }}</h2>
                     </div>
                 </template>
                 
@@ -169,7 +170,7 @@ function getSegmentColor(type: string, lineId?: string) {
                 <div v-else-if="error" class="py-6 text-center text-red-500">
                     <UIcon name="i-lucide-alert-circle" class="w-8 h-8 mx-auto mb-2" />
                     <p>{{ error }}</p>
-                    <UButton label="Intentar de nuevo" variant="ghost" class="mt-2" @click="calculateRoutes" />
+                    <UButton :label="$t('route_results.try_again')" variant="ghost" class="mt-2" @click="calculateRoutes" />
                 </div>
                 
                 <div v-else class="space-y-4 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
@@ -214,7 +215,7 @@ function getSegmentColor(type: string, lineId?: string) {
                                     <UIcon name="i-lucide-circle" class="w-3 h-3 fill-current" />
                                 </div>
                                 <div class="pt-1">
-                                    <p class="font-medium dark:text-white">Inicio</p>
+                                    <p class="font-medium dark:text-white">{{ $t('route_results.start') }}</p>
                                 </div>
                              </div>
 
@@ -244,14 +245,14 @@ function getSegmentColor(type: string, lineId?: string) {
                                     <UIcon name="i-lucide-map-pin" class="w-4 h-4" />
                                 </div>
                                 <div class="pt-1">
-                                    <p class="font-medium dark:text-white">Llegada</p>
+                                    <p class="font-medium dark:text-white">{{ $t('route_results.arrival') }}</p>
                                 </div>
                              </div>
                         </div>
                         
                         <!-- Brief Summary (If not selected) -->
                         <div v-else class="text-sm text-gray-500 flex items-center gap-2">
-                            <span>{{ option.transfers }} trasbordos</span>
+                            <span>{{ option.transfers }} {{ $t('route_results.transfers') }}</span>
                         </div>
                     </div>
                 </div>

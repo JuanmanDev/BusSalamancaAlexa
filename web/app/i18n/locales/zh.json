@@ -1,0 +1,238 @@
+{
+  "general": {
+    "loading": "数据加载中...",
+    "search": "搜索",
+    "search_placeholder": "搜索公交站或线路...",
+    "cancel": "取消",
+    "close": "关闭"
+  },
+  "nav": {
+    "home": "首页",
+    "lines": "线路",
+    "stops": "公交站",
+    "map": "地图",
+    "route": "路线",
+    "settings_title": "设置",
+    "change_theme": "换肤"
+  },
+  "index": {
+    "title": "Bus Salamanca",
+    "subtitle": "查看实时到达时间",
+    "favorites": "收藏",
+    "nearby_stops": "附近公交站",
+    "closest_first": "（距离最近优先）",
+    "no_nearby_stops": "500米范围内没有公交站",
+    "locating": "正在获取位置...",
+    "access_denied": "访问被拒绝",
+    "enable_location": "请在您的浏览器中启用位置权限",
+    "activate_location": "开启您的位置信息",
+    "find_closest_stops": "找到最近的公交站",
+    "activate_location_btn": "开启位置",
+    "recent": "最近的搜索",
+    "clear": "清除",
+    "all_lines": "所有线路",
+    "see_itineraries": "查看行程路线",
+    "see_map": "查看地图",
+    "stops_and_buses": "公交站和公交车信息",
+    "alexa_skill": "Alexa 技能",
+    "ask_assistant": "向您的语音助手询问公交车信息"
+  },
+  "arrivals": {
+    "unknown_destination": "未知目的地",
+    "estimate": "预计",
+    "no_arrivals": "没有预计到达计划",
+    "minutes": "分钟",
+    "notify": "添加行程提醒",
+    "minutes_short": "分钟"
+  },
+  "search_modal": {
+    "lines": "线路",
+    "stops": "公交站",
+    "stop": "公交站",
+    "no_results": "未找到相关结果",
+    "type_to_search": "请键入以搜索公交站或线路"
+  },
+  "settings": {
+    "title": "设置",
+    "subtitle": "在此轻松管理您的 BusSalamanca 应用程序首选项",
+    "appearance": "外观",
+    "theme_desc": "选择应用程序主题",
+    "language": "语言",
+    "language_desc": "选择一种语言",
+    "system": "跟随系统",
+    "light": "浅色",
+    "dark": "深色",
+    "map": "地图",
+    "smooth_animations": "平滑动画",
+    "smooth_animations_desc": "在地图上启用或禁用动态相机的移动效果。",
+    "offline": "离线模式",
+    "offline_desc": "在您的设备上安装改应用程序，这样即使没有互联网连接也可以查看公交站和线路信息。",
+    "update_app": "更新应用程序",
+    "install_app": "安装应用程序",
+    "app_installed": "准备好安装或者该应用已被安装了",
+    "help": "帮助和信息",
+    "help_desc": "全面了解该应用程序的工作原理，数据来源说明及解答常见问题。",
+    "view_help": "查看帮助页面",
+    "links": "实用链接",
+    "dev_web": "开发者网站（Juanma）",
+    "official_web": "官方公交车总网",
+    "alexa_skill_btn": "Alexa 技能",
+    "source_code": "项目源代码（GitHub）",
+    "footer_created_by": "开发和设计者",
+    "legal_notice": "法律声明：",
+    "legal_text_1": "这是一个开源项目，与萨拉曼卡公共交通公司、市议会或任何其他官方实体的合法关联公司概无关系且也未参与官方的合作审批程序与背书支持。",
+    "legal_text_2": "显示的数据源均从公共 API 接口获得，因此可能也会存在误差。该资料仅用以作参考说明之用。"
+  },
+  "route_results": {
+    "options": "选项",
+    "try_again": "重试",
+    "your_location": "位置",
+    "location_error": "错误",
+    "selected_location": "选择的位置",
+    "stop_not_found": "找不到",
+    "no_routes": "无路线",
+    "invalid_destination": "无效",
+    "calc_error": "错误",
+    "start": "起点",
+    "arrival": "终点",
+    "from_to": "{from} 到 {to}",
+    "transfers": "换乘",
+    "calculating": "计算..."
+  },
+  "line_detail": {
+    "loading": "加载...",
+    "stops_count": "站点",
+    "active_bus": "巴士",
+    "active_buses": "巴士在运营",
+    "stops_list": "所有站点",
+    "no_stops": "无法获取"
+  },
+  "stop_detail": {
+    "next_arrivals": "下班公交车",
+    "refresh": "刷新",
+    "last_updated": "最新：",
+    "from_here": "出发",
+    "to_here": "到达这",
+    "plan_route": "路线",
+    "how_to_get_there": "路线去",
+    "available_lines": "所有这",
+    "error_retry": "重试"
+  },
+  "map": {
+    "all_lines": "所有线路",
+    "line_single": "这{id}巴士",
+    "lines_count": "{count}线路数",
+    "all": "全",
+    "select_all": "选全部",
+    "none": "皆不",
+    "deselect_all": "取消全部",
+    "stops": "站点",
+    "buses": "公交",
+    "routes": "去这里",
+    "refresh": "去刷新",
+    "refresh_buses": "更新巴士",
+    "my_location": "我的定位对于你",
+    "location": "我的位置",
+    "no_lines_available": "不工作",
+    "no_stops_available": "没站点在这",
+    "description": "所有公交线路和站点的实时交互式地图。"
+  },
+  "help": {
+    "title": "你的疑问这里帮你",
+    "subtitle": "程序说明",
+    "estimations": {
+      "title": "去到你的站",
+      "p1": "预测",
+      "p2": "如果堵车或者其他的自然灾害这可能会发生很多变化在这段时间里."
+    },
+    "locations": {
+      "title": "系统说明",
+      "p1": "可能定位错误通过卫星因为信号不太好在这.",
+      "p2": "跳跃现象"
+    },
+    "data": {
+      "title": "谁的公开数据",
+      "p1": "官方发布的这通过各种途径在这.",
+      "p2": "我们不保证如果因为这有问题."
+    },
+    "refresh": {
+      "title": "关于重新加载",
+      "p1": "我们会尝试但是如果出了问题请你使用刷新对你设备和页面的操作在这个系统里."
+    }
+  },
+  "route_loader": {
+    "origin": "去",
+    "destination": "到",
+    "calculating": "走..."
+  },
+  "search_input": {
+    "placeholder": "请输入..."
+  },
+  "lines": {
+    "title": "线路总览",
+    "description": "查看线路",
+    "available": "可这",
+    "search": "查这里用名称..."
+  },
+  "stops": {
+    "title": "所有的站",
+    "description": "查找站点。",
+    "available": "可选的站这",
+    "sort_nearby": "按距离站排序",
+    "no_nearby": "附近无点距离",
+    "try_disabling": "移除靠近筛选"
+  },
+  "map_preview": {
+    "permission_denied": "它被拒绝",
+    "permission_desc": "无法获取位置权限或者没给它从设备去找到你在地图在这.",
+    "location_far": "距离太远",
+    "location_far_desc": "超过15公里",
+    "timeout_desc": "它超时了",
+    "error_desc": "有错误发生了",
+    "location_error": "对于位置出错了这是警告",
+    "exit_fullscreen": "退出占用你全部屏幕这",
+    "view_full_map": "点开更大",
+    "exit": "不看了",
+    "zoom_out": "缩小从这视野",
+    "zoom_in": "放大看到这",
+    "center_location": "拉回到你自己",
+    "reset_north": "正北",
+    "reset_2d": "地图"
+  },
+  "route": {
+    "beta_warning": "测试版",
+    "beta_desc": "路线规划器处于测试阶段，可能会建议次优路线。",
+    "title": "规划路线",
+    "select_map": "在地图上选择",
+    "origin": "起点",
+    "destination": "终点",
+    "confirm_location": "确认位置",
+    "search_route": "搜索路线",
+    "from_here": "从这里出发",
+    "to_here": "到达这里",
+    "searching": "搜索中..."
+  },
+  "notifications": {
+    "unsupported_browser": "您的浏览器不支持原生通知。",
+    "following_line": "正在追踪路线 {line}",
+    "will_notify": "我们会在其到达站点时通知您。",
+    "permission_denied": "访问被拒绝",
+    "enable_notifications": "您必须在浏览器中启用通知。",
+    "bus_at_stop": "公交车已到站！",
+    "bus_should_be_here": "路线 {line} 的公交车应该已经到了。",
+    "arriving_now": "马上进站！",
+    "minutes_remaining": "距您的站点还有 {mins} 分钟",
+    "estimate_suffix": "(预计)",
+    "line_destination": "路线 {line} - {destination}",
+    "title": "通知中心",
+    "subtitle": "管理您的活动到达提醒",
+    "empty_title": "没有活动的通知",
+    "empty_desc": "您目前没有追踪任何公交车。",
+    "go_to_map": "前往地图",
+    "clear_all": "全部清除",
+    "view_line": "查看线路",
+    "view_stop": "查看站点",
+    "stop_tracking": "停止追踪",
+    "estimating": "估算中..."
+  }
+}

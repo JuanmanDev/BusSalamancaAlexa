@@ -3,10 +3,13 @@ import type { BusStop, BusLine } from '~/types/bus'
 
 const route = useRoute()
 const router = useRouter()
+const localePath = useLocalePath()
 const storage = useStorage()
 const mapStore = useMapStore()
 
 const lineId = computed(() => route.params.id as string)
+
+const { t } = useI18n()
 
 // Load data
 const { data: allLines, status: linesStatus } = await useBusLines()
@@ -48,8 +51,8 @@ const routeParts = computed(() => lineInfo.value ? getRouteParts(lineInfo.value.
 
 // Set page meta
 useSeoMeta({
-  title: () => lineInfo.value ? `Línea ${lineId.value} - Bus Salamanca` : `Línea ${lineId.value}`,
-  description: () => `Información de la línea ${lineId.value} de autobús de Salamanca`,
+  title: () => lineInfo.value ? `${t('nav.lines')} ${lineId.value} - ${t('index.title')}` : `${t('nav.lines')} ${lineId.value}`,
+  description: () => `${t('line_detail.stops_list')} ${lineId.value}`,
 })
 
 // Favorite toggle
@@ -63,7 +66,7 @@ function toggleFavorite() {
 
 function goToStop(stop: BusStop) {
   storage.addRecent('stop', stop.id, stop.name)
-  router.push(`/stop/${stop.id}`)
+  router.push(localePath(`/stop/${stop.id}`))
 }
 
 // Vehicles for this line (from store)
@@ -124,7 +127,7 @@ const isLoading = computed(() =>
 
         <!-- Loading -->
         <div v-if="isLoading" class="glass-card p-6">
-          <LoadingSpinner size="lg" text="Cargando línea..." />
+          <LoadingSpinner size="lg" :text="$t('line_detail.loading')" />
         </div>
 
         <template v-else>
@@ -132,9 +135,9 @@ const isLoading = computed(() =>
           <div class="glass-card p-5">
             <!-- Breadcrumb -->
             <div class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 mb-3 relative">
-              <NuxtLink to="/lines" class="hover:text-primary-500 transition-colors">Líneas</NuxtLink>
+              <NuxtLink :to="localePath('/lines')" class="hover:text-primary-500 transition-colors">{{ $t('nav.lines') }}</NuxtLink>
               <UIcon name="i-lucide-chevron-right" class="w-4 h-4" />
-              <span>Línea {{ lineId }}</span>
+              <span>{{ $t('search_modal.lines') }} {{ lineId }}</span>
 
               <button
                 class="p-3 rounded-xl transition-all bg-white/80 dark:bg-gray-800/80 hover:bg-white dark:hover:bg-gray-800 shrink-0 absolute right-0 top-0"
@@ -181,14 +184,14 @@ const isLoading = computed(() =>
                   v-else
                   class="text-xl font-bold text-gray-900 dark:text-white"
                 >
-                  {{ lineInfo?.name || `Línea ${lineId}` }}
+                  {{ lineInfo?.name || `${$t('search_modal.lines')} ${lineId}` }}
                 </p>
 
                 <!-- Stats -->
                 <div class="flex items-center gap-4 mt-3 text-sm">
                   <div class="flex items-center gap-1.5 text-gray-600 dark:text-gray-400">
                     <UIcon name="i-lucide-map-pin" class="w-4 h-4" />
-                    <span>{{ lineStops.length }} paradas</span>
+                    <span>{{ lineStops.length }} {{ $t('line_detail.stops_count') }}</span>
                   </div>
                   <div class="flex items-center gap-1.5">
                     <UIcon 
@@ -197,7 +200,7 @@ const isLoading = computed(() =>
                       :class="lineVehicles.length > 0 ? 'text-green-500' : 'text-gray-400'"
                     />
                     <span :class="lineVehicles.length > 0 ? 'text-green-600 dark:text-green-400 font-medium' : 'text-gray-500'">
-                      {{ lineVehicles.length }} {{ lineVehicles.length === 1 ? 'bus activo' : 'buses activos' }}
+                      {{ lineVehicles.length }} {{ lineVehicles.length === 1 ? $t('line_detail.active_bus') : $t('line_detail.active_buses') }}
                     </span>
                     <UIcon 
                       v-if="isRefreshing"
@@ -215,12 +218,12 @@ const isLoading = computed(() =>
           <div class="glass-card p-5 flex-1 flex flex-col md:min-h-0">
             <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
               <UIcon name="i-lucide-list" class="w-5 h-5 text-primary-500" />
-              Paradas de la línea ({{ lineStops.length }})
+              {{ $t('line_detail.stops_list') }} ({{ lineStops.length }})
             </h2>
 
             <div v-if="lineStops.length === 0" class="text-center py-8 text-gray-500">
               <UIcon name="i-lucide-map-pin-off" class="w-10 h-10 mx-auto mb-3 opacity-50" />
-              <p>No se encontraron paradas para esta línea</p>
+              <p>{{ $t('line_detail.no_stops') }}</p>
             </div>
 
             <div v-else class="space-y-2 max-h-96 md:max-h-none flex-1 overflow-y-auto">
@@ -241,7 +244,7 @@ const isLoading = computed(() =>
                   <p class="font-medium text-gray-900 dark:text-white truncate">
                     {{ stop.name }}
                   </p>
-                  <p class="text-xs text-gray-500">Parada {{ stop.id }}</p>
+                  <p class="text-xs text-gray-500">{{ $t('search_modal.stop') }} {{ stop.id }}</p>
                 </div>
 
                 <UIcon name="i-lucide-chevron-right" class="w-4 h-4 text-gray-400 shrink-0" />

@@ -1,0 +1,238 @@
+{
+  "general": {
+    "loading": "Carregando dados...",
+    "search": "Procurar",
+    "search_placeholder": "Procurar paragem ou linha...",
+    "cancel": "Cancelar",
+    "close": "Fechar"
+  },
+  "nav": {
+    "home": "Início",
+    "lines": "Linhas",
+    "stops": "Paragens",
+    "map": "Mapa",
+    "route": "Rota",
+    "settings_title": "Definições",
+    "change_theme": "Mudar tema"
+  },
+  "index": {
+    "title": "Bus Salamanca",
+    "subtitle": "Verifique os tempos de chegada em tempo real",
+    "favorites": "Favoritos",
+    "nearby_stops": "Paragens próximas",
+    "closest_first": "(as mais próximas primeiro)",
+    "no_nearby_stops": "Nenhuma paragem num raio de 500m",
+    "locating": "A obter localização...",
+    "access_denied": "Acesso negado",
+    "enable_location": "Ative a permissão de localização no seu navegador",
+    "activate_location": "Ative a sua localização",
+    "find_closest_stops": "Encontrar as paragens mais próximas",
+    "activate_location_btn": "Ativar localização",
+    "recent": "Recentes",
+    "clear": "Limpar",
+    "all_lines": "Todas as linhas",
+    "see_itineraries": "Ver itinerários",
+    "see_map": "Ver mapa",
+    "stops_and_buses": "Paragens e autocarros",
+    "alexa_skill": "Skill da Alexa",
+    "ask_assistant": "Pergunte à sua assistente pelo autocarro"
+  },
+  "arrivals": {
+    "unknown_destination": "Destino desconhecido",
+    "estimate": "Estimativa",
+    "no_arrivals": "Nenhuma chegada prevista",
+    "minutes": "min",
+    "notify": "Notificar com alertas",
+    "minutes_short": "min"
+  },
+  "search_modal": {
+    "lines": "Linhas",
+    "stops": "Paragens",
+    "stop": "Paragem",
+    "no_results": "Nenhum resultado encontrado",
+    "type_to_search": "Escreva para procurar paragens ou linhas"
+  },
+  "settings": {
+    "title": "Definições",
+    "subtitle": "Personalize a sua experiência no BusSalamanca",
+    "appearance": "Aparência",
+    "theme_desc": "Selecione o tema da aplicação",
+    "language": "Idioma",
+    "language_desc": "Selecione um idioma",
+    "system": "Sistema",
+    "light": "Claro",
+    "dark": "Escuro",
+    "map": "Mapa",
+    "smooth_animations": "Animações suaves",
+    "smooth_animations_desc": "Ativar ou desativar os movimentos dinâmicos da câmara no mapa.",
+    "offline": "Modo offline",
+    "offline_desc": "Instale a aplicação no seu dispositivo para verificar paragens e linhas sem ligação à internet.",
+    "update_app": "Atualizar Aplicação",
+    "install_app": "Instalar Aplicação",
+    "app_installed": "Pronto para instalar ou aplicação já instalada",
+    "help": "Ajuda e Informações",
+    "help_desc": "Descubra como a aplicação funciona, fontes de dados e perguntas frequentes.",
+    "view_help": "Ver página de ajuda",
+    "links": "Ligações úteis",
+    "dev_web": "Site do programador (Juanma)",
+    "official_web": "Site oficial dos autocarros",
+    "alexa_skill_btn": "Skill da Alexa",
+    "source_code": "Código-fonte (GitHub)",
+    "footer_created_by": "Criado por",
+    "legal_notice": "Aviso Legal:",
+    "legal_text_1": "Este projeto é de código aberto e não é afiliado legalmente, aprovado ou relacionado de qualquer forma com a empresa de transportes públicos de Salamanca, com o Município, ou com qualquer outra entidade oficial.",
+    "legal_text_2": "Os dados apresentados são obtidos através de APIs públicas e podem conter imprecisões. Apenas para fins informativos."
+  },
+  "route_results": {
+    "options": "Opções",
+    "try_again": "Tentar novamente",
+    "your_location": "Sua localização",
+    "location_error": "Erro localização",
+    "selected_location": "Local",
+    "stop_not_found": "Não encontrada",
+    "no_routes": "Sem rotas",
+    "invalid_destination": "Inválido",
+    "calc_error": "Erro",
+    "start": "Início",
+    "arrival": "Fim",
+    "from_to": "De {from} para {to}",
+    "transfers": "troca",
+    "calculating": "Calculando..."
+  },
+  "line_detail": {
+    "loading": "Lendo...",
+    "stops_count": "paradas",
+    "active_bus": "ônibus",
+    "active_buses": "buses",
+    "stops_list": "Paradas",
+    "no_stops": "Nenhuma"
+  },
+  "stop_detail": {
+    "next_arrivals": "Próximos",
+    "refresh": "Atualiza",
+    "last_updated": "Ultima: ",
+    "from_here": "Daqui",
+    "to_here": "Aqui",
+    "plan_route": "Rota",
+    "how_to_get_there": "Como ir",
+    "available_lines": "Linhas",
+    "error_retry": "Tentar"
+  },
+  "map": {
+    "all_lines": "Todas",
+    "line_single": "Linha {id}",
+    "lines_count": "{count} linhas",
+    "all": "Tudo",
+    "select_all": "Tudo",
+    "none": "Nada",
+    "deselect_all": "Desmarcar",
+    "stops": "Paradas",
+    "buses": "Ônibus",
+    "routes": "Rotas",
+    "refresh": "Atualiza",
+    "refresh_buses": "Atualiza",
+    "my_location": "Mim",
+    "location": "Lugar",
+    "no_lines_available": "Nenhuma",
+    "no_stops_available": "Nenhuma",
+    "description": "Mapa interativo de todas as linhas e paradas de ônibus em tempo real."
+  },
+  "help": {
+    "title": "Ajuda",
+    "subtitle": "FAQs",
+    "estimations": {
+      "title": "Tempos",
+      "p1": "Est.",
+      "p2": "Variável"
+    },
+    "locations": {
+      "title": "Gps",
+      "p1": "GPS",
+      "p2": "Falha"
+    },
+    "data": {
+      "title": "Dados",
+      "p1": "Publicos",
+      "p2": "Sem gar."
+    },
+    "refresh": {
+      "title": "A.",
+      "p1": "Auto"
+    }
+  },
+  "route_loader": {
+    "origin": "Ori.",
+    "destination": "Des.",
+    "calculating": "Calc..."
+  },
+  "search_input": {
+    "placeholder": "Busca..."
+  },
+  "lines": {
+    "title": "Linhas",
+    "description": "Tudo",
+    "available": "linhas",
+    "search": "Busca..."
+  },
+  "stops": {
+    "title": "Paradas",
+    "description": "Todas as paradas",
+    "available": "p",
+    "sort_nearby": "Perto",
+    "no_nearby": "Nao perto",
+    "try_disabling": "Buscar nomes"
+  },
+  "map_preview": {
+    "permission_denied": "Negado",
+    "permission_desc": "Negado",
+    "location_far": "Longe",
+    "location_far_desc": "Longe",
+    "timeout_desc": "Tempo",
+    "error_desc": "Erro",
+    "location_error": "Erro",
+    "exit_fullscreen": "Sair",
+    "view_full_map": "Ver",
+    "exit": "Sair",
+    "zoom_out": "-",
+    "zoom_in": "+",
+    "center_location": "Meu",
+    "reset_north": "Norte",
+    "reset_2d": "2D"
+  },
+  "route": {
+    "beta_warning": "Versão Beta",
+    "beta_desc": "O planejador de rotas está em fase experimental e pode sugerir rotas não ideais.",
+    "title": "Planejar Rota",
+    "select_map": "Selecionar no mapa",
+    "origin": "Origem",
+    "destination": "Destino",
+    "confirm_location": "Confirmar localização",
+    "search_route": "Buscar rota",
+    "from_here": "Daqui",
+    "to_here": "Até aqui",
+    "searching": "Buscando..."
+  },
+  "notifications": {
+    "unsupported_browser": "Seu navegador não suporta notificações nativas.",
+    "following_line": "Seguindo a linha {line}",
+    "will_notify": "Avisaremos sobre a chegada na parada.",
+    "permission_denied": "Permissão negada",
+    "enable_notifications": "Você deve ativar as notificações no seu navegador.",
+    "bus_at_stop": "Ônibus na sua parada!",
+    "bus_should_be_here": "O ônibus da linha {line} já deveria estar aqui.",
+    "arriving_now": "Chegando agora!",
+    "minutes_remaining": "Faltam {mins} min para a sua parada",
+    "estimate_suffix": "(Estimativa)",
+    "line_destination": "Linha {line} - {destination}",
+    "title": "Centro de Notificações",
+    "subtitle": "Gerencie seus alertas de chegada ativos",
+    "empty_title": "Nenhuma notificação ativa",
+    "empty_desc": "Você não está rastreando nenhum ônibus no momento.",
+    "go_to_map": "Ir para o mapa",
+    "clear_all": "Limpar tudo",
+    "view_line": "Ver linha",
+    "view_stop": "Ver parada",
+    "stop_tracking": "Parar rastreamento",
+    "estimating": "Calculando..."
+  }
+}

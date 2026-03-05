@@ -1,12 +1,15 @@
 <script setup lang="ts">
 import type { BusStop, BusLine } from '~/types/bus'
 
+const { t } = useI18n()
+
 useSeoMeta({
-  title: 'Bus Salamanca - Horarios en tiempo real',
-  description: 'Consulta los tiempos de llegada de autobuses en Salamanca en tiempo real',
+  title: computed(() => `${t('index.title')} - ${t('index.subtitle')}`),
+  description: computed(() => t('index.subtitle')),
 })
 
 const router = useRouter()
+const localePath = useLocalePath()
 const storage = useStorage()
 const geolocation = useGeolocation()
 const mapStore = useMapStore()
@@ -72,12 +75,12 @@ const enhancedRecents = computed((): EnhancedRecent[] => {
 // Navigation
 function goToStop(stop: BusStop) {
   storage.addRecent('stop', stop.id, stop.name)
-  router.push(`/stop/${stop.id}`)
+  router.push(localePath(`/stop/${stop.id}`))
 }
 
 function goToLine(line: BusLine) {
   storage.addRecent('line', line.id, line.name)
-  router.push(`/line/${line.id}`)
+  router.push(localePath(`/line/${line.id}`))
 }
 
 function toggleFavoriteStop(stop: BusStop) {
@@ -108,7 +111,7 @@ async function handleRequestLocation() {
 
 // Route Search
 function navigateToSearch() {
-  router.push('/route')
+  router.push(localePath('/route'))
 }
 
 // Set map context on mount
@@ -127,18 +130,18 @@ onMounted(async () => {
     <!-- Content (right side on desktop, full width on mobile) -->
     <div class="w-full md:w-[400px] lg:w-[450px] shrink-0 px-4 py-6 space-y-6 pointer-events-auto relative z-10">
       <!-- Hero section -->
-      <div class="glass-card text-center py-6 px-4">
+      <div class="glass-card text-center py-6 px-4 ">
         <h1 class="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-2">
-          Bus Salamanca
+          {{ $t('index.title') }}
         </h1>
-        <p class="text-gray-600 dark:text-gray-400 mb-6">
-          Consulta tiempos de llegada en tiempo real
+        <p class="text-gray-600 dark:text-gray-400">
+          {{ $t('index.subtitle') }}
         </p>
       </div>
 
       <!-- Loading state -->
       <div v-if="isLoading" class="glass-card p-6">
-        <LoadingSpinner size="lg" text="Cargando datos..." />
+        <LoadingSpinner size="lg" :text="$t('general.loading')" />
       </div>
 
       <!-- Favorites -->
@@ -148,17 +151,17 @@ onMounted(async () => {
       >
         <div class="flex items-center gap-2 mb-4">
           <UIcon name="i-lucide-star" class="w-5 h-5 text-amber-500" />
-          <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Favoritos</h2>
+          <h2 class="text-lg font-semibold text-gray-900 dark:text-white">{{ $t('index.favorites') }}</h2>
         </div>
 
         <!-- Favorite stops -->
         <div v-if="storage.favoriteStops.value.length > 0" class="mb-4">
-          <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Paradas</h3>
+          <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">{{ $t('nav.stops') }}</h3>
           <div class="grid grid-cols-1 gap-3">
             <NuxtLink
               v-for="fav in storage.favoriteStops.value"
               :key="`stop-${fav.id}`"
-              :to="`/stop/${fav.id}`"
+              :to="localePath(`/stop/${fav.id}`)"
               class="bg-white/80 dark:bg-gray-800/80 rounded-lg p-3 hover:bg-white dark:hover:bg-gray-800 transition-all"
               :style="{ viewTransitionName: `stop-${fav.id}` }"
             >
@@ -177,14 +180,14 @@ onMounted(async () => {
 
         <!-- Favorite lines -->
         <div v-if="storage.favoriteLines.value.length > 0">
-          <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Líneas</h3>
+          <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">{{ $t('nav.lines') }}</h3>
           
           <!-- 1 or 2 lines layout -->
           <div v-if="storage.favoriteLines.value.length <= 2" class="flex flex-col gap-3">
             <NuxtLink
               v-for="fav in storage.favoriteLines.value"
               :key="`line-${fav.id}`"
-              :to="`/line/${fav.id}`"
+              :to="localePath(`/line/${fav.id}`)"
               class="bg-white/80 dark:bg-gray-800/80 rounded-lg p-3 hover:bg-white dark:hover:bg-gray-800 transition-all flex items-center gap-3"
               :style="{ viewTransitionName: `line-${fav.id}` }"
             >
@@ -219,7 +222,7 @@ onMounted(async () => {
               <NuxtLink
                 v-for="fav in storage.favoriteLines.value"
                 :key="`line-${fav.id}`"
-                :to="`/line/${fav.id}`"
+                :to="localePath(`/line/${fav.id}`)"
                 class="bg-white/80 dark:bg-gray-800/80 rounded-lg p-3 hover:bg-white dark:hover:bg-gray-800 transition-all flex flex-col items-center gap-2 shrink-0 w-[40%] snap-start"
                 :style="{ viewTransitionName: `line-${fav.id}` }"
               >
@@ -266,7 +269,7 @@ onMounted(async () => {
                 <div class="absolute inset-0 w-10 h-10 rounded-full bg-primary-500/30 animate-ping" />
               </div>
               <p class="text-gray-600 dark:text-gray-400 font-medium">
-                Obteniendo ubicación...
+                {{ $t('index.locating') }}
               </p>
             </div>
           </div>
@@ -278,8 +281,8 @@ onMounted(async () => {
           >
             <div class="flex items-center gap-2 mb-4">
               <UIcon name="i-lucide-navigation" class="w-5 h-5 text-primary-500" />
-              <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Paradas cercanas</h2>
-              <span class="text-xs text-gray-500">(más cercanas primero)</span>
+              <h2 class="text-lg font-semibold text-gray-900 dark:text-white">{{ $t('index.nearby_stops') }}</h2>
+              <span class="text-xs text-gray-500">{{ $t('index.closest_first') }}</span>
             </div>
             <BusStops
               :stops="nearbyStops"
@@ -298,7 +301,7 @@ onMounted(async () => {
           >
             <div class="text-center py-4">
               <UIcon name="i-lucide-map-pin-off" class="w-10 h-10 mx-auto text-gray-400 mb-3" />
-              <p class="text-gray-600 dark:text-gray-400">No hay paradas en un radio de 500m</p>
+              <p class="text-gray-600 dark:text-gray-400">{{ $t('index.no_nearby_stops') }}</p>
             </div>
           </div>
 
@@ -309,9 +312,9 @@ onMounted(async () => {
             class="text-center py-4"
           >
             <UIcon name="i-lucide-x-circle" class="w-10 h-10 mx-auto text-red-500 mb-3" />
-            <h3 class="font-semibold text-gray-900 dark:text-white mb-2">Acceso denegado</h3>
+            <h3 class="font-semibold text-gray-900 dark:text-white mb-2">{{ $t('index.access_denied') }}</h3>
             <p class="text-sm text-gray-600 dark:text-gray-400">
-              Activa el permiso de ubicación en tu navegador
+              {{ $t('index.enable_location') }}
             </p>
           </div>
 
@@ -322,12 +325,12 @@ onMounted(async () => {
             class="text-center py-4"
           >
             <UIcon name="i-lucide-map-pin" class="w-10 h-10 mx-auto text-primary-500 mb-3" />
-            <h3 class="font-semibold text-gray-900 dark:text-white mb-2">Activa tu ubicación</h3>
+            <h3 class="font-semibold text-gray-900 dark:text-white mb-2">{{ $t('index.activate_location') }}</h3>
             <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
-              Encuentra las paradas más cercanas
+              {{ $t('index.find_closest_stops') }}
             </p>
             <UButton icon="i-lucide-navigation" @click="handleRequestLocation">
-              Activar ubicación
+              {{ $t('index.activate_location_btn') }}
             </UButton>
           </div>
         </Transition>
@@ -338,20 +341,20 @@ onMounted(async () => {
         <div class="flex items-center justify-between mb-4">
           <div class="flex items-center gap-2">
             <UIcon name="i-lucide-clock" class="w-5 h-5 text-gray-400" />
-            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Recientes</h2>
+            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">{{ $t('index.recent') }}</h2>
           </div>
           <button 
             class="text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
             @click="storage.clearRecents"
           >
-            Limpiar
+            {{ $t('index.clear') }}
           </button>
         </div>
         <div class="space-y-2">
           <NuxtLink
             v-for="recent in enhancedRecents"
             :key="`${recent.type}-${recent.id}`"
-            :to="recent.type === 'stop' ? `/stop/${recent.id}` : `/line/${recent.id}`"
+            :to="localePath(recent.type === 'stop' ? `/stop/${recent.id}` : `/line/${recent.id}`)"
             class="flex items-center gap-3 bg-white/80 dark:bg-gray-800/80 rounded-lg px-4 py-3 hover:bg-white dark:hover:bg-gray-800 transition-all"
           >
             <div 
@@ -372,7 +375,7 @@ onMounted(async () => {
                 {{ recent.type === 'stop' ? recent.destination : recent.name }}
               </p>
               <p class="text-xs text-gray-500 truncate">
-                {{ recent.type === 'stop' ? `Parada ${recent.id}` : `Línea ${recent.id}` }}
+                {{ recent.type === 'stop' ? `${$t('search_modal.stop')} ${recent.id}` : `${$t('search_modal.lines')} ${recent.id}` }}
               </p>
             </div>
             <UIcon name="i-lucide-chevron-right" class="w-4 h-4 text-gray-400 shrink-0" />
@@ -383,21 +386,21 @@ onMounted(async () => {
       <!-- Quick actions -->
       <div class="grid grid-cols-2 gap-4">
         <NuxtLink
-          to="/lines"
+          :to="localePath('/lines')"
           class="bg-gradient-to-br from-primary-500 to-primary-600 rounded-xl p-6 text-white shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all"
         >
           <UIcon name="i-lucide-route" class="w-8 h-8 mb-3" />
-          <h3 class="font-semibold">Todas las líneas</h3>
-          <p class="text-sm text-white/80">Ver itinerarios</p>
+          <h3 class="font-semibold">{{ $t('index.all_lines') }}</h3>
+          <p class="text-sm text-white/80">{{ $t('index.see_itineraries') }}</p>
         </NuxtLink>
 
         <NuxtLink
-          to="/map"
+          :to="localePath('/map')"
           class="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl p-6 text-white shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all"
         >
           <UIcon name="i-lucide-map" class="w-8 h-8 mb-3" />
-          <h3 class="font-semibold">Ver mapa</h3>
-          <p class="text-sm text-white/80">Paradas y buses</p>
+          <h3 class="font-semibold">{{ $t('index.see_map') }}</h3>
+          <p class="text-sm text-white/80">{{ $t('index.stops_and_buses') }}</p>
         </NuxtLink>
 
         <NuxtLink
@@ -409,8 +412,8 @@ onMounted(async () => {
             <img src="https://m.media-amazon.com/images/I/41E21ldSofL.png" alt="Bus Salamanca Alexa Skill" class="w-12 h-12 object-contain rounded-lg" />
           </div>
           <div>
-            <h3 class="font-semibold text-lg">Skill de Alexa</h3>
-            <p class="text-sm text-white/90">Pregunta a tu asistente por el bus</p>
+            <h3 class="font-semibold text-lg">{{ $t('index.alexa_skill') }}</h3>
+            <p class="text-sm text-white/90">{{ $t('index.ask_assistant') }}</p>
           </div>
         </NuxtLink>
       </div>

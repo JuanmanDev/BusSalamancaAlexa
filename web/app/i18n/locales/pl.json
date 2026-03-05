@@ -1,0 +1,238 @@
+{
+  "general": {
+    "loading": "Ładowanie danych...",
+    "search": "Szukaj",
+    "search_placeholder": "Szukaj przystanku lub linii...",
+    "cancel": "Anuluj",
+    "close": "Zamknij"
+  },
+  "nav": {
+    "home": "Główna",
+    "lines": "Linie",
+    "stops": "Przystanki",
+    "map": "Mapa",
+    "route": "Trasa",
+    "settings_title": "Ustawienia",
+    "change_theme": "Zmień motyw"
+  },
+  "index": {
+    "title": "Bus Salamanca",
+    "subtitle": "Sprawdzaj godziny przyjazdu w czasie rzeczywistym",
+    "favorites": "Ulubione",
+    "nearby_stops": "Zlokalizowane w pobliżu",
+    "closest_first": "(od najbliższego)",
+    "no_nearby_stops": "Brak przystanków w promieniu 500m",
+    "locating": "Pobieranie lokalizacji...",
+    "access_denied": "Brak dostępu",
+    "enable_location": "Włącz dostęp do lokalizacji w przeglądarce",
+    "activate_location": "Włącz lokalizację",
+    "find_closest_stops": "Znajdź najbliższe przystanki",
+    "activate_location_btn": "Włącz lokalizację",
+    "recent": "Ostatnie",
+    "clear": "Wyczyść",
+    "all_lines": "Wszystkie linie",
+    "see_itineraries": "Zobacz trasy",
+    "see_map": "Zobacz mapę",
+    "stops_and_buses": "Przystanki i autobusy",
+    "alexa_skill": "Alexa Skill",
+    "ask_assistant": "Zapytaj swojego asystenta o autobus"
+  },
+  "arrivals": {
+    "unknown_destination": "Nieznany cel podróży",
+    "estimate": "Szacowany",
+    "no_arrivals": "Brak zaplanowanych przyjazdów",
+    "minutes": "min",
+    "notify": "Powiadomienia",
+    "minutes_short": "min"
+  },
+  "search_modal": {
+    "lines": "Linie",
+    "stops": "Przystanki",
+    "stop": "Przystanek",
+    "no_results": "Brak wyników",
+    "type_to_search": "Zacznij pisać, aby wyszukać"
+  },
+  "settings": {
+    "title": "Ustawienia",
+    "subtitle": "Dostosuj swoje wrażenia w aplikacji BusSalamanca",
+    "appearance": "Wygląd",
+    "theme_desc": "Wybierz motyw aplikacji",
+    "language": "Język",
+    "language_desc": "Wybierz język",
+    "system": "System",
+    "light": "Jasny",
+    "dark": "Ciemny",
+    "map": "Mapa",
+    "smooth_animations": "Płynne animacje",
+    "smooth_animations_desc": "Włącz lub wyłącz dynamiczne ruchy kamery na mapie.",
+    "offline": "Tryb Offline",
+    "offline_desc": "Zainstaluj aplikację na urządzeniu, by sprawdzać informacje bez internetu.",
+    "update_app": "Zaktualizuj aplikację",
+    "install_app": "Zainstaluj aplikację",
+    "app_installed": "Gotowe do instalacji lub już zainstalowano",
+    "help": "Pomoc i informacje",
+    "help_desc": "Sprawdź, jak korzystać z aplikacji, FAQ i inne.",
+    "view_help": "Zobacz stronę pomocy",
+    "links": "Przydatne linki",
+    "dev_web": "Strona programisty (Juanma)",
+    "official_web": "Oficjalna strona autobusów",
+    "alexa_skill_btn": "Alexa Skill",
+    "source_code": "Kod źródłowy (GitHub)",
+    "footer_created_by": "Stworzone przez",
+    "legal_notice": "Nota Prawna:",
+    "legal_text_1": "Projekt ten jest oprogramowaniem open source i nie został w żaden sposób stworzony przez wydział transportu publicznego, nie jest również przez nich oficjalnie powiązany ani sponsorowany.",
+    "legal_text_2": "Wyświetlane dane są zbierane przy użyciu publicznie zrównanego źródła API i mogą zawierać błędy. Użycie jedynie poglądowe."
+  },
+  "route_results": {
+    "options": "Opcje",
+    "try_again": "Ponów",
+    "your_location": "Twoja",
+    "location_error": "Błąd",
+    "selected_location": "Wybrana",
+    "stop_not_found": "Brak",
+    "no_routes": "Brak tras",
+    "invalid_destination": "Źle",
+    "calc_error": "Błąd",
+    "start": "Start",
+    "arrival": "Cel",
+    "from_to": "Od {from} do {to}",
+    "transfers": "przesiadka",
+    "calculating": "Obliczanie..."
+  },
+  "line_detail": {
+    "loading": "Ładuje...",
+    "stops_count": "przystanki",
+    "active_bus": "autobus",
+    "active_buses": "autobusy",
+    "stops_list": "Przystanki",
+    "no_stops": "Brak"
+  },
+  "stop_detail": {
+    "next_arrivals": "Następne",
+    "refresh": "Odśwież",
+    "last_updated": "Update:",
+    "from_here": "Stąd",
+    "to_here": "Tu",
+    "plan_route": "Zaplanuj",
+    "how_to_get_there": "Jak dojechać",
+    "available_lines": "Drogi",
+    "error_retry": "Ponów"
+  },
+  "map": {
+    "all_lines": "Wszystkie",
+    "line_single": "Linia {id}",
+    "lines_count": "{count} Linie",
+    "all": "Wszys.",
+    "select_all": "All",
+    "none": "Nic",
+    "deselect_all": "Anuluj",
+    "stops": "Przystanki",
+    "buses": "Autobus",
+    "routes": "Trasy",
+    "refresh": "Odśwież",
+    "refresh_buses": "Odśwież...",
+    "my_location": "Ja",
+    "location": "Miejsce",
+    "no_lines_available": "Brak",
+    "no_stops_available": "Brak",
+    "description": "Interaktywna mapa wszystkich linii autobusowych i przystanków w czasie rzeczywistym."
+  },
+  "help": {
+    "title": "Pomoc",
+    "subtitle": "FAQ",
+    "estimations": {
+      "title": "Czas",
+      "p1": "Głównie okrągły",
+      "p2": "różne czasy"
+    },
+    "locations": {
+      "title": "Lokalizacje GPS",
+      "p1": "Słabo",
+      "p2": "Gubi się"
+    },
+    "data": {
+      "title": "Dane",
+      "p1": "Publiczne",
+      "p2": "Bez gwar."
+    },
+    "refresh": {
+      "title": "Z.",
+      "p1": "Auto"
+    }
+  },
+  "route_loader": {
+    "origin": "Od",
+    "destination": "Do",
+    "calculating": "Zlicz..."
+  },
+  "search_input": {
+    "placeholder": "Szukaj..."
+  },
+  "lines": {
+    "title": "Linie",
+    "description": "Lista",
+    "available": "l.",
+    "search": "Szukaj..."
+  },
+  "stops": {
+    "title": "Przysr.",
+    "description": "Szukaj blisko",
+    "available": "s",
+    "sort_nearby": "Blisko",
+    "no_nearby": "Brak w pobliżu",
+    "try_disabling": "Wyszukaj"
+  },
+  "map_preview": {
+    "permission_denied": "Odmowo",
+    "permission_desc": "Brak lokalizacji",
+    "location_far": "Daleko",
+    "location_far_desc": "Nie jesteś",
+    "timeout_desc": "Timeout",
+    "error_desc": "Błąd",
+    "location_error": "Błąd",
+    "exit_fullscreen": "Zamknij mapę",
+    "view_full_map": "zobacz",
+    "exit": "Wyłącz",
+    "zoom_out": "-",
+    "zoom_in": "+",
+    "center_location": "Scentruj",
+    "reset_north": "Północ na górę",
+    "reset_2d": "2D"
+  },
+  "route": {
+    "beta_warning": "Wersja Beta",
+    "beta_desc": "Planer tras jest w fazie eksperymentalnej i może sugerować nieoptymalne trasy.",
+    "title": "Zaplanuj trasę",
+    "select_map": "Wybierz na mapie",
+    "origin": "Miejsce startu",
+    "destination": "Cel podróży",
+    "confirm_location": "Potwierdź lokalizację",
+    "search_route": "Szukaj trasy",
+    "from_here": "Stąd",
+    "to_here": "Dotąd",
+    "searching": "Szukanie..."
+  },
+  "notifications": {
+    "unsupported_browser": "Twoja przeglądarka nie obsługuje natywnych powiadomień.",
+    "following_line": "Śledzenie linii {line}",
+    "will_notify": "Powiadomimy Cię o jej przybyciu na przystanek.",
+    "permission_denied": "Odmowa dostępu",
+    "enable_notifications": "Musisz włączyć powiadomienia w przeglądarce.",
+    "bus_at_stop": "Autobus na Twoim przystanku!",
+    "bus_should_be_here": "Autobus linii {line} powinien już tu być.",
+    "arriving_now": "Właśnie przyjeżdża!",
+    "minutes_remaining": "Zostało {mins} min do Twojego przystanku",
+    "estimate_suffix": "(Szacunek)",
+    "line_destination": "Linia {line} - {destination}",
+    "title": "Centrum powiadomień",
+    "subtitle": "Zarządzaj aktywnymi alertami o przyjeździe",
+    "empty_title": "Brak aktywnych powiadomień",
+    "empty_desc": "Obecnie nie śledzisz żadnego autobusu.",
+    "go_to_map": "Przejdź do mapy",
+    "clear_all": "Wyczyść wszystko",
+    "view_line": "Zobacz linię",
+    "view_stop": "Zobacz przystanek",
+    "stop_tracking": "Zatrzymaj śledzenie",
+    "estimating": "Szacowanie..."
+  }
+}
