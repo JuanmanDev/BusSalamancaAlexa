@@ -1,0 +1,227 @@
+{
+  "general": {
+    "loading": "جاري تحميل البيانات...",
+    "search": "بحث",
+    "search_placeholder": "ابحث عن موقف أو خط...",
+    "cancel": "إلغاء",
+    "close": "إغلاق"
+  },
+  "nav": {
+    "home": "الرئيسية",
+    "lines": "الخطوط",
+    "stops": "المواقف",
+    "map": "الخريطة",
+    "route": "المسار",
+    "settings_title": "الإعدادات",
+    "change_theme": "تغيير المظهر"
+  },
+  "index": {
+    "title": "Bus Salamanca",
+    "subtitle": "تحقق من أوقات الوصول في الوقت الفعلي",
+    "favorites": "المفضلة",
+    "nearby_stops": "مواقف قريبة",
+    "closest_first": "(الأقرب أولاً)",
+    "no_nearby_stops": "لا توجد مواقف ضمن مسافة 500 متر",
+    "locating": "جاري تحديد الموقع...",
+    "access_denied": "تم رفض الوصول",
+    "enable_location": "قم بتمكين إذن الموقع في متصفحك",
+    "activate_location": "قم بتفعيل موقعك",
+    "find_closest_stops": "ابحث عن أقرب المواقف",
+    "activate_location_btn": "تفعيل الموقع",
+    "recent": "الأحدث",
+    "clear": "مسح",
+    "all_lines": "جميع الخطوط",
+    "see_itineraries": "عرض المسارات",
+    "see_map": "عرض الخريطة",
+    "stops_and_buses": "المواقف والحافلات",
+    "alexa_skill": "مهارة Alexa",
+    "ask_assistant": "اسأل مساعدك عن الحافلة"
+  },
+  "arrivals": {
+    "unknown_destination": "وجهة غير معروفة",
+    "estimate": "تقدير",
+    "no_arrivals": "لا توجد وصولات مجدولة",
+    "minutes": "دقيقة",
+    "notify": "الإشعار باستخدام التنبيهات"
+  },
+  "search_modal": {
+    "lines": "الخطوط",
+    "stops": "المواقف",
+    "stop": "موقف",
+    "no_results": "لم يتم العثور على نتائج",
+    "type_to_search": "اكتب للبحث عن مواقف أو خطوط"
+  },
+  "settings": {
+    "title": "الإعدادات",
+    "subtitle": "قم بتخصيص تجربتك في تطبيق BusSalamanca",
+    "appearance": "المظهر",
+    "theme_desc": "حدد مظهر التطبيق",
+    "language": "اللغة",
+    "language_desc": "حدد لغة",
+    "system": "النظام",
+    "light": "فاتح",
+    "dark": "داكن",
+    "map": "الخريطة",
+    "smooth_animations": "الرسوم المتحركة السلسة",
+    "smooth_animations_desc": "قم بتمكين أو تعطيل حركة الكاميرا الديناميكية على الخريطة.",
+    "offline": "وضع عدم الاتصال",
+    "offline_desc": "قم بتثبيت التطبيق على جهازك للتحقق من المواقف والخطوط بدون اتصال بالإنترنت.",
+    "update_app": "تحديث التطبيق",
+    "install_app": "تثبيت التطبيق",
+    "app_installed": "جاهز للتثبيت أو تم التثبيت بالفعل",
+    "help": "المساعدة والمعلومات",
+    "help_desc": "اكتشف كيف يعمل التطبيق ومصادر البيانات والأسئلة الشائعة.",
+    "view_help": "عرض صفحة المساعدة",
+    "links": "روابط مفيدة",
+    "dev_web": "موقع المطور (Juanma)",
+    "official_web": "موقع الحافلة الرسمي",
+    "alexa_skill_btn": "مهارة Alexa",
+    "source_code": "الكود المصدري (GitHub)",
+    "footer_created_by": "تم الإنشاء بواسطة",
+    "legal_notice": "إشعار قانوني:",
+    "legal_text_1": "هذا المشروع مفتوح المصدر وليس له أي ارتباط أو اعتماد قانوني بأي حال من الأحوال مع شركة النقل العام في سالامانكا أو مجلس المدينة أو أي كيان رسمي آخر.",
+    "legal_text_2": "يتم الحصول على البيانات المعروضة من خلال واجهات برمجة التطبيقات العامة (APIs) وقد تحتوي على أخطاء عدم الدقة. للاستخدام الإعلامي فقط."
+  },
+  "route_results": {
+    "options": "خيارات المسار",
+    "try_again": "ثانية",
+    "your_location": "موقعك",
+    "location_error": "لا يمكن الحصول على الموقع",
+    "selected_location": "موقع",
+    "stop_not_found": "غير موجودة",
+    "no_routes": "لا مسارات",
+    "invalid_destination": "غير صالحة",
+    "calc_error": "خطأ",
+    "start": "بدء",
+    "arrival": "وصول",
+    "from_to": "من {from} الى {to}",
+    "transfers": "نقل",
+    "calculating": "حساب..."
+  },
+  "line_detail": {
+    "loading": "جاري...",
+    "stops_count": "محطات",
+    "active_bus": "باص",
+    "active_buses": "باصات",
+    "stops_list": "محطات",
+    "no_stops": "لا محطات هنا"
+  },
+  "stop_detail": {
+    "next_arrivals": "رحلات",
+    "refresh": "تحديث",
+    "last_updated": "البيانات:",
+    "from_here": "اذهب",
+    "to_here": "الى",
+    "plan_route": "مسار",
+    "how_to_get_there": "طريق المشي؟",
+    "available_lines": "الكل متوفرة",
+    "error_retry": "إعادة تحميل."
+  },
+  "map": {
+    "all_lines": "خطوطك",
+    "line_single": "{id} خط",
+    "lines_count": "{count} مسارات هنا",
+    "all": "كله",
+    "select_all": "اختر كله على مرة",
+    "none": "لا شيء",
+    "deselect_all": "إزالة",
+    "stops": "توقفات المحطات باص",
+    "buses": "الباصات في خريطتك متوافرة",
+    "routes": "مسار باص يومي",
+    "refresh": "يحدث الآن الخادم",
+    "refresh_buses": "تحديث حافلة",
+    "my_location": "اين تقع",
+    "location": "المدينة",
+    "no_lines_available": "لا شيء",
+    "no_stops_available": "لا محطة",
+    "description": "خريطة تفاعلية لجميع خطوط الحافلات والمحطات في الوقت الفعلي."
+  },
+  "help": {
+    "title": "مساعدة",
+    "subtitle": "دعم للبرنامج",
+    "estimations": {
+      "title": "مدة",
+      "p1": "تقريبا",
+      "p2": "متغير"
+    },
+    "locations": {
+      "title": "الباصات بالمكاس",
+      "p1": "اخطا من جي بي اس ممكن",
+      "p2": "متغير ممكن كالباص يقفز"
+    },
+    "data": {
+      "title": "البيانات للحافلات",
+      "p1": "المصدر",
+      "p2": "لايوجد"
+    },
+    "refresh": {
+      "title": "تحديث",
+      "p1": "تحديث"
+    }
+  },
+  "route_loader": {
+    "origin": "أصل",
+    "destination": "وجهة",
+    "calculating": "حساب..."
+  },
+  "search_input": {
+    "placeholder": "بحثك..."
+  },
+  "lines": {
+    "title": "خطوطك",
+    "description": "ابحث واعرف",
+    "available": "تتوفر",
+    "search": "أدخل هنا للبحث"
+  },
+  "stops": {
+    "title": "محطات التوقف للمسارات",
+    "description": "يوجد الكثير بالقرب.",
+    "available": "تتوفر محلية",
+    "sort_nearby": "المسافة",
+    "no_nearby": "لايوجد قريب",
+    "try_disabling": "فحص"
+  },
+  "map_preview": {
+    "permission_denied": "مرفوض جدا",
+    "permission_desc": "مرفوض",
+    "location_far": "بعيد الان",
+    "location_far_desc": "غير متواجد",
+    "timeout_desc": "وقت",
+    "error_desc": "خطا بحد",
+    "location_error": "خطأ",
+    "exit_fullscreen": "اخرج من عرض كامل",
+    "view_full_map": "عرض كل الشاشة",
+    "exit": "قفل",
+    "zoom_out": "الخروج",
+    "zoom_in": "التكبير",
+    "center_location": "ضع الموقع بالمنتصف لترى نفسك",
+    "reset_north": "شمال",
+    "reset_2d": "2D"
+  },
+  "route": {
+    "beta_warning": "نسخة تجريبية",
+    "beta_desc": "مخطط الطريق في المرحلة التجريبية وقد يقترح مسارات غير مثالية.",
+    "title": "تخطيط المسار",
+    "select_map": "تحديد على الخريطة",
+    "origin": "نقطة الانطلاق",
+    "destination": "الوجهة",
+    "confirm_location": "تأكيد الموقع",
+    "search_route": "البحث عن مسار",
+    "from_here": "من هنا",
+    "to_here": "إلى هنا",
+    "searching": "جارٍ البحث..."
+  },
+  "notifications": {
+    "unsupported_browser": "متصفحك لا يدعم الإشعارات الأصلية.",
+    "following_line": "تتبع الخط {line}",
+    "will_notify": "سنعلمك عند وصوله إلى المحطة.",
+    "permission_denied": "تم رفض الإذن",
+    "enable_notifications": "يجب عليك تمكين الإشعارات في متصفحك.",
+    "bus_at_stop": "الحافلة في محطتك!",
+    "bus_should_be_here": "يجب أن تكون حافلة الخط {line} هنا الآن.",
+    "arriving_now": "تصل الآن!",
+    "minutes_remaining": "تبقى {mins} دقيقة لمحطتك",
+    "estimate_suffix": "(تقدير)",
+    "line_destination": "الخط {line} - {destination}"
+  }
+}

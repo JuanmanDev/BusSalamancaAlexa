@@ -1,0 +1,227 @@
+{
+  "general": {
+    "loading": "Loading data...",
+    "search": "Search",
+    "search_placeholder": "Search stop or line...",
+    "cancel": "Cancel",
+    "close": "Close"
+  },
+  "nav": {
+    "home": "Home",
+    "lines": "Lines",
+    "stops": "Stops",
+    "map": "Map",
+    "route": "Route",
+    "settings_title": "Settings",
+    "change_theme": "Change theme"
+  },
+  "index": {
+    "title": "Bus Salamanca",
+    "subtitle": "Check real-time arrival times",
+    "favorites": "Favorites",
+    "nearby_stops": "Nearby stops",
+    "closest_first": "(closest first)",
+    "no_nearby_stops": "No stops within 500m",
+    "locating": "Getting location...",
+    "access_denied": "Access denied",
+    "enable_location": "Enable location permission in your browser",
+    "activate_location": "Activate your location",
+    "find_closest_stops": "Find the closest stops",
+    "activate_location_btn": "Activate location",
+    "recent": "Recent",
+    "clear": "Clear",
+    "all_lines": "All lines",
+    "see_itineraries": "View itineraries",
+    "see_map": "View map",
+    "stops_and_buses": "Stops and buses",
+    "alexa_skill": "Alexa Skill",
+    "ask_assistant": "Ask your assistant about the bus"
+  },
+  "arrivals": {
+    "unknown_destination": "Unknown destination",
+    "estimate": "Estimate",
+    "no_arrivals": "No arrivals scheduled",
+    "minutes": "min",
+    "notify": "Notify with alerts"
+  },
+  "search_modal": {
+    "lines": "Lines",
+    "stops": "Stops",
+    "stop": "Stop",
+    "no_results": "No results found",
+    "type_to_search": "Type to search for stops or lines"
+  },
+  "settings": {
+    "title": "Settings",
+    "subtitle": "Customize your experience on BusSalamanca",
+    "appearance": "Appearance",
+    "theme_desc": "Select the application theme",
+    "language": "Language",
+    "language_desc": "Select language",
+    "system": "System",
+    "light": "Light",
+    "dark": "Dark",
+    "map": "Map",
+    "smooth_animations": "Smooth animations",
+    "smooth_animations_desc": "Enable or disable dynamic camera movements on the map.",
+    "offline": "Offline Mode",
+    "offline_desc": "Install the app on your device to check stops and lines without an internet connection.",
+    "update_app": "Update Application",
+    "install_app": "Install Application",
+    "app_installed": "Ready to install or already installed",
+    "help": "Help and Information",
+    "help_desc": "Find out how the application works, data sources, and FAQs.",
+    "view_help": "View Help page",
+    "links": "Useful Links",
+    "dev_web": "Developer Website (Juanma)",
+    "official_web": "Official Bus Website",
+    "alexa_skill_btn": "Alexa Skill",
+    "source_code": "Source Code (GitHub)",
+    "footer_created_by": "Created by",
+    "legal_notice": "Legal Notice:",
+    "legal_text_1": "This is an open source project and is not legally affiliated with or endorsed by the public transport company of Salamanca, the City Council, or any official entity.",
+    "legal_text_2": "The data displayed is obtained via public APIs and may contain inaccuracies. For informational purposes only."
+  },
+  "route_results": {
+    "options": "Route options",
+    "try_again": "Try again",
+    "your_location": "Your location",
+    "location_error": "Could not get your location",
+    "selected_location": "Selected location",
+    "stop_not_found": "Stop not found. Try an exact name.",
+    "no_routes": "No routes available",
+    "invalid_destination": "Invalid destination",
+    "calc_error": "Error calculating route",
+    "start": "Start",
+    "arrival": "Arrival",
+    "from_to": "From {from} to {to}",
+    "transfers": "transfers",
+    "calculating": "Calculating the best route..."
+  },
+  "line_detail": {
+    "loading": "Loading line...",
+    "stops_count": "stops",
+    "active_bus": "active bus",
+    "active_buses": "active buses",
+    "stops_list": "Stops on the line",
+    "no_stops": "No stops found for this line"
+  },
+  "stop_detail": {
+    "next_arrivals": "Next arrivals",
+    "refresh": "Refresh",
+    "last_updated": "Last updated: ",
+    "from_here": "From here",
+    "to_here": "To here",
+    "plan_route": "Plan route",
+    "how_to_get_there": "How to get there",
+    "available_lines": "Available bus lines",
+    "error_retry": "Retry"
+  },
+  "map": {
+    "all_lines": "All lines",
+    "line_single": "Line {id}",
+    "lines_count": "{count} lines",
+    "all": "All",
+    "select_all": "Select all",
+    "none": "None",
+    "deselect_all": "Deselect all",
+    "stops": "Stops",
+    "buses": "Buses",
+    "routes": "Routes",
+    "refresh": "Refresh",
+    "refresh_buses": "Refresh buses",
+    "my_location": "My location",
+    "location": "Location",
+    "no_lines_available": "No lines available",
+    "no_stops_available": "No stops available",
+    "description": "Interactive map of all bus lines and stops in real time."
+  },
+  "help": {
+    "title": "Help and FAQs",
+    "subtitle": "Information about how BusSalamanca works",
+    "estimations": {
+      "title": "Arrival Estimations",
+      "p1": "The arrival times shown in the application are estimations and approximations calculated based on previous data and the current position of the buses.",
+      "p2": "Since these are real-time estimations that depend on traffic, road incidents, or prolonged stops, they may contain errors or vary suddenly. They do not represent an exact guarantee of the bus's arrival time."
+    },
+    "locations": {
+      "title": "Bus Locations",
+      "p1": "The location of the buses on the map can also have a margin of error. Sometimes, the vehicles' GPS loses signal or does not update as frequently as desired.",
+      "p2": "This can cause a bus to appear to 'jump' suddenly on the map, or seem to be stopped when it is actually moving."
+    },
+    "data": {
+      "title": "Data Source",
+      "p1": "All the data used in BusSalamanca comes directly from public and official information provided by Salamanca de Transportes.",
+      "p2": "Since we are not the creators of this original information, we cannot offer guarantees regarding its availability, accuracy, or truthfulness at all times. Our application merely acts as an improved and accessible viewer of such data."
+    },
+    "refresh": {
+      "title": "Refreshing the Screen",
+      "p1": "The application tries to keep the data as fresh as possible without you needing to reload the page. However, if you notice that the information hasn't changed for several minutes or the network connection was briefly lost, we recommend refreshing the screen manually by pulling down (on mobile) or using your browser's refresh button."
+    }
+  },
+  "route_loader": {
+    "origin": "Origin",
+    "destination": "Destination",
+    "calculating": "Calculating the best route..."
+  },
+  "search_input": {
+    "placeholder": "Search..."
+  },
+  "lines": {
+    "title": "Lines",
+    "description": "View all available bus lines in Salamanca with real-time tracking.",
+    "available": "available lines",
+    "search": "Search lines by name or ID..."
+  },
+  "stops": {
+    "title": "Stops",
+    "description": "Find bus stops near you or search across the entire network.",
+    "available": "available stops",
+    "sort_nearby": "Sort by closest",
+    "no_nearby": "No stops nearby",
+    "try_disabling": "Try disabling the nearby filter or search by name"
+  },
+  "map_preview": {
+    "permission_denied": "Permission denied",
+    "permission_desc": "Location access could not be granted. Please check your browser permissions.",
+    "location_far": "Location too far",
+    "location_far_desc": "You are more than 15km away from Salamanca.",
+    "timeout_desc": "Could not get location at this time. Please try again.",
+    "error_desc": "Error getting location.",
+    "location_error": "Location error",
+    "exit_fullscreen": "Exit fullscreen",
+    "view_full_map": "View full map",
+    "exit": "Exit",
+    "zoom_out": "Zoom out",
+    "zoom_in": "Zoom in",
+    "center_location": "Center on my location",
+    "reset_north": "Reset North",
+    "reset_2d": "Reset 2D view"
+  },
+  "route": {
+    "beta_warning": "Beta Version",
+    "beta_desc": "The route planner is in beta and might suggest sub-optimal routes.",
+    "title": "Plan Route",
+    "select_map": "Select on map",
+    "origin": "Origin",
+    "destination": "Destination",
+    "confirm_location": "Confirm location",
+    "search_route": "Search route",
+    "from_here": "From here",
+    "to_here": "To here",
+    "searching": "Searching..."
+  },
+  "notifications": {
+    "unsupported_browser": "Your browser does not support native notifications.",
+    "following_line": "Following line {line}",
+    "will_notify": "We will notify you about its arrival at the stop.",
+    "permission_denied": "Permission denied",
+    "enable_notifications": "You must enable notifications in your browser.",
+    "bus_at_stop": "Bus at your stop!",
+    "bus_should_be_here": "The line {line} bus should be here by now.",
+    "arriving_now": "Arriving now!",
+    "minutes_remaining": "{mins} min left for your stop",
+    "estimate_suffix": "(Estimate)",
+    "line_destination": "Line {line} - {destination}"
+  }
+}

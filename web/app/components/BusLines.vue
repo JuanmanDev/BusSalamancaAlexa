@@ -130,7 +130,7 @@ function getRouteParts(name: string): { origin: string; destination: string } | 
       class="text-center py-6 text-gray-500 dark:text-gray-400"
     >
       <UIcon name="i-lucide-route" class="w-10 h-10 mx-auto mb-3 opacity-50" />
-      <p>No hay líneas disponibles</p>
+      <p>{{ $t('map.no_lines_available') }}</p>
     </div>
   </div>
 </template>

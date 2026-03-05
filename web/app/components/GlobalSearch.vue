@@ -111,7 +111,7 @@ onMounted(() => {
       @click="openSearch"
     >
       <UIcon name="i-lucide-search" class="w-5 h-5" />
-      <span class="hidden sm:inline font-medium">Buscar</span>
+      <span class="hidden sm:inline font-medium">{{ $t('general.search') }}</span>
       <kbd class="hidden md:inline-flex items-center gap-0.5 px-1.5 py-0.5 border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 rounded text-xs select-none">
         <span class="text-xs">{{ metaSymbol }}</span><span>K</span>
       </kbd>
@@ -122,10 +122,10 @@ onMounted(() => {
       <Transition name="fade">
         <div 
           v-if="isOpen"
-          class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-start justify-center pt-[15vh]"
+          class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-start justify-center pt-4 sm:pt-[15vh] px-2 sm:px-0 pb-4"
           @click.self="closeSearch"
         >
-          <div class="w-full max-w-lg mx-4 bg-white dark:bg-gray-900 rounded-2xl shadow-2xl overflow-hidden animate-in slide-in-from-top-4">
+          <div class="w-full max-w-lg mx-auto bg-white dark:bg-gray-900 rounded-2xl shadow-2xl flex flex-col max-h-[85dvh] sm:max-h-[80vh] overflow-hidden animate-in slide-in-from-top-4">
             <!-- Search input -->
             <div class="flex items-center gap-3 p-4 border-b border-gray-200 dark:border-gray-800">
               <UIcon name="i-lucide-search" class="w-5 h-5 text-gray-400" />
@@ -133,7 +133,7 @@ onMounted(() => {
                 ref="inputRef"
                 type="text"
                 :value="modelValue"
-                placeholder="Buscar parada o línea..."
+                :placeholder="$t('general.search_placeholder')"
                 class="flex-1 bg-transparent text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none text-lg"
                 @input="emit('update:modelValue', ($event.target as HTMLInputElement).value)"
               />
@@ -146,12 +146,12 @@ onMounted(() => {
             </div>
 
             <!-- Results -->
-            <div class="max-h-80 overflow-y-auto">
+            <div class="flex-1 min-h-0 overflow-y-auto sm:max-h-80">
               <template v-if="hasResults">
                 <!-- Lines -->
                 <div v-if="results.lines.length > 0" class="p-2">
                   <p class="px-2 py-1 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                    Líneas
+                    {{ $t('search_modal.lines') }}
                   </p>
                   <button
                     v-for="line in results.lines"
@@ -173,7 +173,7 @@ onMounted(() => {
                 <!-- Stops -->
                 <div v-if="results.stops.length > 0" class="p-2">
                   <p class="px-2 py-1 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                    Paradas
+                    {{ $t('search_modal.stops') }}
                   </p>
                   <button
                     v-for="stop in results.stops"
@@ -188,7 +188,7 @@ onMounted(() => {
                       <p class="text-sm font-medium text-gray-900 dark:text-white truncate">
                         {{ stop.name }}
                       </p>
-                      <p class="text-xs text-gray-500">Parada {{ stop.id }}</p>
+                      <p class="text-xs text-gray-500">{{ $t('search_modal.stop') }} {{ stop.id }}</p>
                     </div>
                   </button>
                 </div>
@@ -200,7 +200,7 @@ onMounted(() => {
                 class="p-8 text-center text-gray-500 dark:text-gray-400"
               >
                 <UIcon name="i-lucide-search-x" class="w-10 h-10 mx-auto mb-2 opacity-50" />
-                <p>No se encontraron resultados</p>
+                <p>{{ $t('search_modal.no_results') }}</p>
               </div>
 
               <!-- Empty state -->
@@ -208,7 +208,7 @@ onMounted(() => {
                 v-else
                 class="p-6 text-center text-gray-500 dark:text-gray-400"
               >
-                <p class="text-sm">Escribe para buscar paradas o líneas</p>
+                <p class="text-sm">{{ $t('search_modal.type_to_search') }}</p>
               </div>
             </div>
           </div>

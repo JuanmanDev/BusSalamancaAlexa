@@ -1,0 +1,227 @@
+{
+  "general": {
+    "loading": "データを読み込んでいます...",
+    "search": "検索",
+    "search_placeholder": "バス停や路線を検索...",
+    "cancel": "キャンセル",
+    "close": "閉じる"
+  },
+  "nav": {
+    "home": "ホーム",
+    "lines": "路線",
+    "stops": "バス停",
+    "map": "マップ",
+    "route": "ルート",
+    "settings_title": "設定",
+    "change_theme": "テーマの変更"
+  },
+  "index": {
+    "title": "Bus Salamanca",
+    "subtitle": "リアルタイムの到着時間を確認",
+    "favorites": "お気に入り",
+    "nearby_stops": "近くのバス停",
+    "closest_first": "（近い順）",
+    "no_nearby_stops": "500m以内にバス停はありません",
+    "locating": "位置情報を取得中...",
+    "access_denied": "アクセス拒否",
+    "enable_location": "ブラウザで位置情報へのアクセスを許可してください",
+    "activate_location": "位置情報を有効にする",
+    "find_closest_stops": "最も近いバス停を検索",
+    "activate_location_btn": "位置情報をオン",
+    "recent": "最近の検索",
+    "clear": "クリア",
+    "all_lines": "すべての路線",
+    "see_itineraries": "ルートを確認",
+    "see_map": "マップを見る",
+    "stops_and_buses": "バス停とバス",
+    "alexa_skill": "Alexa スキル",
+    "ask_assistant": "音声アシスタントにバスの時間を聞く"
+  },
+  "arrivals": {
+    "unknown_destination": "不明な行先",
+    "estimate": "推測",
+    "no_arrivals": "到着予定はありません",
+    "minutes": "分",
+    "notify": "通知でアラート"
+  },
+  "search_modal": {
+    "lines": "路線",
+    "stops": "バス停",
+    "stop": "バス停",
+    "no_results": "結果が見つかりません",
+    "type_to_search": "入力してバス停や路線を検索"
+  },
+  "settings": {
+    "title": "設定",
+    "subtitle": "BusSalamancaの体験をカスタマイズ",
+    "appearance": "外観",
+    "theme_desc": "アプリのテーマを選択",
+    "language": "言語",
+    "language_desc": "言語を選択",
+    "system": "システム",
+    "light": "ライト",
+    "dark": "ダーク",
+    "map": "マップ",
+    "smooth_animations": "スムーズなアニメーション",
+    "smooth_animations_desc": "マップ上のダイナミックなカメラの動きを有効または無効にします。",
+    "offline": "オフラインモード",
+    "offline_desc": "デバイスにアプリをインストールして、インターネット接続なしでバス停と路線を確認します。",
+    "update_app": "アプリを更新",
+    "install_app": "アプリをインストール",
+    "app_installed": "インストール準備完了、またはすでにインストールされています",
+    "help": "ヘルプと情報",
+    "help_desc": "アプリの仕組み、データソース、よくある質問（FAQ）について確認します。",
+    "view_help": "ヘルプページを見る",
+    "links": "リンク",
+    "dev_web": "開発者ウェブサイト（Juanma）",
+    "official_web": "公式バスウェブサイト",
+    "alexa_skill_btn": "Alexa スキル",
+    "source_code": "ソースコード (GitHub)",
+    "footer_created_by": "作成者",
+    "legal_notice": "免責事項：",
+    "legal_text_1": "このプロジェクトはオープンソースであり、サラマンカの公共交通機関、市議会、またはいかなる公式団体とも法的に提携、承認、関連付けられているものではありません。",
+    "legal_text_2": "表示されるデータは公開APIを通じて取得したものであり、不正確な内容が含まれる場合があります。情報提供のみを目的としています。"
+  },
+  "route_results": {
+    "options": "オプション",
+    "try_again": "リトライ",
+    "your_location": "位置",
+    "location_error": "エラー",
+    "selected_location": "選択中",
+    "stop_not_found": "見つからない",
+    "no_routes": "ルート無い",
+    "invalid_destination": "ダメ",
+    "calc_error": "エラー",
+    "start": "行く",
+    "arrival": "つく",
+    "from_to": "{from} から {to}",
+    "transfers": "乗り換え",
+    "calculating": "待つ..."
+  },
+  "line_detail": {
+    "loading": "情報...",
+    "stops_count": "停留所",
+    "active_bus": "バス",
+    "active_buses": "バス",
+    "stops_list": "一覧",
+    "no_stops": "無いです。"
+  },
+  "stop_detail": {
+    "next_arrivals": "時刻",
+    "refresh": "変更",
+    "last_updated": "最新:",
+    "from_here": "セット",
+    "to_here": "目的地",
+    "plan_route": "道のルート",
+    "how_to_get_there": "行くの",
+    "available_lines": "利用",
+    "error_retry": "もう一度"
+  },
+  "map": {
+    "all_lines": "全部バス",
+    "line_single": "線{id}",
+    "lines_count": "{count}路線数",
+    "all": "すべて。",
+    "select_all": "一括で複数のこれを選択する",
+    "none": "ない。",
+    "deselect_all": "取り消す。",
+    "stops": "駅のような。",
+    "buses": "バス。",
+    "routes": "行き方",
+    "refresh": "更新する",
+    "refresh_buses": "動きを反映",
+    "my_location": "所",
+    "location": "この場所",
+    "no_lines_available": "路線無い。",
+    "no_stops_available": "停留所無し",
+    "description": "すべてのバス路線と停留所のリアルタイムなインタラクティブマップ。"
+  },
+  "help": {
+    "title": "わからない時は",
+    "subtitle": "内容",
+    "estimations": {
+      "title": "バス",
+      "p1": "ここで表示しているのは全部予想してある値のもので実際違う。",
+      "p2": "実際の道路の様子によっては全然来ないときだってあるよ。"
+    },
+    "locations": {
+      "title": "バス位置",
+      "p1": "GPS",
+      "p2": "ワープ"
+    },
+    "data": {
+      "title": "データ",
+      "p1": "公表。",
+      "p2": "完璧な動作がない。"
+    },
+    "refresh": {
+      "title": "更新機能",
+      "p1": "自分でブラウザの機能などを使って更新"
+    }
+  },
+  "route_loader": {
+    "origin": "出発地",
+    "destination": "到着地",
+    "calculating": "検索中..."
+  },
+  "search_input": {
+    "placeholder": "ここへ入力をして..."
+  },
+  "lines": {
+    "title": "路線一覧",
+    "description": "路線一覧",
+    "available": "利用可能の",
+    "search": "文字を入力"
+  },
+  "stops": {
+    "title": "停留所",
+    "description": "全ての駅の検索",
+    "available": "駅",
+    "sort_nearby": "近くある順",
+    "no_nearby": "全く存在しないよ。",
+    "try_disabling": "フィルタを解除"
+  },
+  "map_preview": {
+    "permission_denied": "位置がない",
+    "permission_desc": "ブラウザとかのGPSなどを使うように設定されていない",
+    "location_far": "距離がかなり遠い",
+    "location_far_desc": "15キロメートル以上の超過",
+    "timeout_desc": "時間が経過した",
+    "error_desc": "エラーが出た",
+    "location_error": "エラー",
+    "exit_fullscreen": "全画面状態を全閉じ",
+    "view_full_map": "見やすいように画面",
+    "exit": "元の表示",
+    "zoom_out": "遠く",
+    "zoom_in": "近接",
+    "center_location": "自分",
+    "reset_north": "北へ",
+    "reset_2d": "平面的"
+  },
+  "route": {
+    "beta_warning": "ベータ版",
+    "beta_desc": "ルートプランナーはベータ版であり、最適なルートを提案しない場合があります。",
+    "title": "ルートを計画する",
+    "select_map": "地図上で選択",
+    "origin": "出発地",
+    "destination": "目的地",
+    "confirm_location": "位置を確認する",
+    "search_route": "ルートを検索",
+    "from_here": "ここから",
+    "to_here": "ここへ",
+    "searching": "検索中..."
+  },
+  "notifications": {
+    "unsupported_browser": "お使いのブラウザはネイティブ通知をサポートしていません。",
+    "following_line": "路線 {line} を追跡中",
+    "will_notify": "停留所への到着をお知らせします。",
+    "permission_denied": "アクセス拒否",
+    "enable_notifications": "ブラウザの通知を有効にする必要があります。",
+    "bus_at_stop": "バスが停留所に到着しました！",
+    "bus_should_be_here": "路線 {line} のバスは既に到着しているはずです。",
+    "arriving_now": "まもなく到着！",
+    "minutes_remaining": "停留所まであと {mins} 分",
+    "estimate_suffix": "（推定）",
+    "line_destination": "路線 {line} - {destination}"
+  }
+}

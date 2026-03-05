@@ -87,7 +87,7 @@ function goToLine(lineId: string) {
                   <!-- Destination - truncated on one line -->
                   <div class="flex-1 min-w-0">
                     <p class="font-medium text-gray-900 dark:text-white truncate text-sm">
-                      {{ arrival.destination || 'Destino desconocido' }}
+                      {{ arrival.destination || $t('arrivals.unknown_destination') }}
                     </p>
                     <div class="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 truncate">
                       <span>Línea {{ arrival.lineId }} · {{ formatArrivalTime(arrival.expectedArrivalTime) }}</span>
@@ -105,19 +105,19 @@ function goToLine(lineId: string) {
                       {{ arrival.minutesRemaining }}
                     </p>
                     <div class="flex items-center gap-1">
-                      <p class="text-xs text-gray-500 dark:text-gray-400 uppercase">min</p>
+                      <p class="text-xs text-gray-500 dark:text-gray-400 uppercase">{{ $t('arrivals.minutes') }}</p>
                       <button 
                         @click.stop="notification.toggleTracking(arrival.lineId)"
                         class="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center justify-center shrink-0"
                         :class="notification.trackedLineId.value === arrival.lineId ? 'text-primary-500 bg-primary-50 dark:bg-primary-900/30' : 'text-gray-400'"
-                        title="Avisar con notificaciones"
+                        :title="$t('arrivals.notify')"
                       >
                         <UIcon :name="notification.trackedLineId.value === arrival.lineId ? 'i-lucide-bell-ring' : 'i-lucide-bell'" class="w-4 h-4 animate-pulse-subtle" v-if="notification.trackedLineId.value === arrival.lineId" />
                         <UIcon name="i-lucide-bell" class="w-4 h-4" v-else />
                       </button>
                     </div>
                     <span v-if="arrival.isEstimate" class="mt-1 text-[10px] bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-400 px-1 rounded">
-                        Estimación
+                        {{ $t('arrivals.estimate') }}
                     </span>
                   </div>
                 </div>
@@ -131,7 +131,7 @@ function goToLine(lineId: string) {
             class="text-center py-8 text-gray-500 dark:text-gray-400"
           >
             <UIcon name="i-lucide-bus" class="w-10 h-10 mx-auto mb-3 opacity-50" />
-            <p>No hay llegadas previstas</p>
+            <p>{{ $t('arrivals.no_arrivals') }}</p>
           </div>
         </div>
       </div>

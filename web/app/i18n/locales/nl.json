@@ -1,0 +1,227 @@
+{
+  "general": {
+    "loading": "Gegevens laden...",
+    "search": "Zoeken",
+    "search_placeholder": "Zoek halte of lijn...",
+    "cancel": "Annuleren",
+    "close": "Sluiten"
+  },
+  "nav": {
+    "home": "Home",
+    "lines": "Lijnen",
+    "stops": "Haltes",
+    "map": "Kaart",
+    "route": "Route",
+    "settings_title": "Instellingen",
+    "change_theme": "Thema wijzigen"
+  },
+  "index": {
+    "title": "Bus Salamanca",
+    "subtitle": "Bekijk realtime aankomsttijden",
+    "favorites": "Favorieten",
+    "nearby_stops": "Haltes in de buurt",
+    "closest_first": "(dichtstbijzijnde eerst)",
+    "no_nearby_stops": "Geen haltes binnen 500m",
+    "locating": "Locatie bepalen...",
+    "access_denied": "Toegang geweigerd",
+    "enable_location": "Schakel locatietoegang in via uw browser",
+    "activate_location": "Activeer uw locatie",
+    "find_closest_stops": "Vind de dichtstbijzijnde haltes",
+    "activate_location_btn": "Locatie inschakelen",
+    "recent": "Recent",
+    "clear": "Wissen",
+    "all_lines": "Alle lijnen",
+    "see_itineraries": "Bekijk routes",
+    "see_map": "Bekijk kaart",
+    "stops_and_buses": "Haltes en bussen",
+    "alexa_skill": "Alexa Skill",
+    "ask_assistant": "Vraag je assistent om de bus"
+  },
+  "arrivals": {
+    "unknown_destination": "Onbekende bestemming",
+    "estimate": "Schatting",
+    "no_arrivals": "Geen geplande aankomsten",
+    "minutes": "min",
+    "notify": "Meldingen ontvangen"
+  },
+  "search_modal": {
+    "lines": "Lijnen",
+    "stops": "Haltes",
+    "stop": "Halte",
+    "no_results": "Geen resultaten gevonden",
+    "type_to_search": "Typ om haltes of lijnen te zoeken"
+  },
+  "settings": {
+    "title": "Instellingen",
+    "subtitle": "Pas je BusSalamanca ervaring aan",
+    "appearance": "Weergave",
+    "theme_desc": "Selecteer het app-thema",
+    "language": "Taal",
+    "language_desc": "Selecteer een taal",
+    "system": "Systeem",
+    "light": "Licht",
+    "dark": "Donker",
+    "map": "Kaart",
+    "smooth_animations": "Soepele animaties",
+    "smooth_animations_desc": "Schakel dynamische camerabewegingen op de kaart in of uit.",
+    "offline": "Offline-modus",
+    "offline_desc": "Installeer de app op je apparaat om haltes en lijnen te bekijken zonder internetverbinding.",
+    "update_app": "App bijwerken",
+    "install_app": "App installeren",
+    "app_installed": "Klaar om te installeren of app al geïnstalleerd",
+    "help": "Help en Informatie",
+    "help_desc": "Ontdek hoe de app werkt, databronnen en veelgestelde vragen.",
+    "view_help": "Help-pagina bekijken",
+    "links": "Handige links",
+    "dev_web": "Website ontwikkelaar (Juanma)",
+    "official_web": "Officiële website stadsbus",
+    "alexa_skill_btn": "Alexa Skill",
+    "source_code": "Broncode (GitHub)",
+    "footer_created_by": "Gemaakt door",
+    "legal_notice": "Juridische kennisgeving:",
+    "legal_text_1": "Dit project is open-source en is wettelijk niet gelieerd, onderschreven of op enigerlei wijze verbonden met het openbaarvervoerbedrijf van Salamanca, de gemeente of enige officiële entiteit.",
+    "legal_text_2": "De weergegeven gegevens zijn verkregen via openbare API's en kunnen onjuistheden bevatten. Uitsluitend voor informatieve doeleinden."
+  },
+  "route_results": {
+    "options": "Opties",
+    "try_again": "Nog eens",
+    "your_location": "Uw locatie",
+    "location_error": "Fout",
+    "selected_location": "Locatie",
+    "stop_not_found": "Halte niet",
+    "no_routes": "Geen routes",
+    "invalid_destination": "Fout",
+    "calc_error": "Fout",
+    "start": "Start",
+    "arrival": "Aankomst",
+    "from_to": "Van {from} naar {to}",
+    "transfers": "overstap",
+    "calculating": "Breken..."
+  },
+  "line_detail": {
+    "loading": "Laadt...",
+    "stops_count": "haltes",
+    "active_bus": "bus",
+    "active_buses": "bussen",
+    "stops_list": "Haltes",
+    "no_stops": "Geen halte"
+  },
+  "stop_detail": {
+    "next_arrivals": "Bussen",
+    "refresh": "Vernieuw",
+    "last_updated": "Update:",
+    "from_here": "Van hier",
+    "to_here": "Hier",
+    "plan_route": "Route",
+    "how_to_get_there": "Hoe naar",
+    "available_lines": "Lijnen",
+    "error_retry": "Weer"
+  },
+  "map": {
+    "all_lines": "Alles",
+    "line_single": "Lijn {id}",
+    "lines_count": "{count} lijn",
+    "all": "Alles",
+    "select_all": "Alles",
+    "none": "Niks",
+    "deselect_all": "Wis",
+    "stops": "Haltes",
+    "buses": "Bus",
+    "routes": "Routes",
+    "refresh": "Vernieuw",
+    "refresh_buses": "Bussen",
+    "my_location": "Mij",
+    "location": "Plek",
+    "no_lines_available": "Niemand",
+    "no_stops_available": "Niemand",
+    "description": "Interactieve kaart van alle buslijnen en haltes in real-time."
+  },
+  "help": {
+    "title": "Hulp",
+    "subtitle": "FAQs",
+    "estimations": {
+      "title": "Tijdem",
+      "p1": "Gok",
+      "p2": "Anders"
+    },
+    "locations": {
+      "title": "GPS",
+      "p1": "GPS is slecht",
+      "p2": "Slecht"
+    },
+    "data": {
+      "title": "De Data",
+      "p1": "Pub",
+      "p2": "Geen"
+    },
+    "refresh": {
+      "title": "Ref",
+      "p1": "Auto"
+    }
+  },
+  "route_loader": {
+    "origin": "Vanaf",
+    "destination": "Naar",
+    "calculating": "Reken..."
+  },
+  "search_input": {
+    "placeholder": "Zoek..."
+  },
+  "lines": {
+    "title": "Lijnen",
+    "description": "Die Lijnen",
+    "available": "lijnen",
+    "search": "Zoek..."
+  },
+  "stops": {
+    "title": "Haltes",
+    "description": "Haltes",
+    "available": "haltes",
+    "sort_nearby": "In de buurt",
+    "no_nearby": "Niet in buurt",
+    "try_disabling": "Zoek zonder filters"
+  },
+  "map_preview": {
+    "permission_denied": "Kan niet",
+    "permission_desc": "Geen toestemming.",
+    "location_far": "Ver",
+    "location_far_desc": "Te ver weg",
+    "timeout_desc": "Time on",
+    "error_desc": "Fout",
+    "location_error": "Fout",
+    "exit_fullscreen": "Weg van dit",
+    "view_full_map": "Kijkt",
+    "exit": "Gaan",
+    "zoom_out": "-",
+    "zoom_in": "+",
+    "center_location": "Naar mij",
+    "reset_north": "Nord",
+    "reset_2d": "2D"
+  },
+  "route": {
+    "beta_warning": "Bètaversie",
+    "beta_desc": "De routeplanner bevindt zich in de bètafase en kan suboptimale routes voorstellen.",
+    "title": "Route plannen",
+    "select_map": "Selecteer op kaart",
+    "origin": "Vertrekpunt",
+    "destination": "Bestemming",
+    "confirm_location": "Locatie bevestigen",
+    "search_route": "Route zoeken",
+    "from_here": "Vanaf hier",
+    "to_here": "Naar hier",
+    "searching": "Zoeken..."
+  },
+  "notifications": {
+    "unsupported_browser": "Je browser ondersteunt geen eigen meldingen.",
+    "following_line": "Volgt lijn {line}",
+    "will_notify": "We laten het je weten als hij bij de halte aankomt.",
+    "permission_denied": "Geen toestemming",
+    "enable_notifications": "Je moet meldingen in je browser inschakelen.",
+    "bus_at_stop": "Bus bij je halte!",
+    "bus_should_be_here": "De bus van lijn {line} zou er al moeten zijn.",
+    "arriving_now": "Komt nu aan!",
+    "minutes_remaining": "Nog {mins} min tot je halte",
+    "estimate_suffix": "(Schatting)",
+    "line_destination": "Lijn {line} - {destination}"
+  }
+}

@@ -1,12 +1,15 @@
 <script setup lang="ts">
+const { t } = useI18n()
 const props = withDefaults(defineProps<{
   modelValue: string
   placeholder?: string
   autofocus?: boolean
 }>(), {
-  placeholder: 'Buscar...',
+  placeholder: '',
   autofocus: false,
 })
+
+const computedPlaceholder = computed(() => props.placeholder || t('search_input.placeholder'))
 
 const emit = defineEmits<{
   'update:modelValue': [value: string]
@@ -36,7 +39,7 @@ onMounted(() => {
       ref="inputRef"
       type="text"
       :value="modelValue"
-      :placeholder="placeholder"
+      :placeholder="computedPlaceholder"
       class="w-full pl-11 pr-10 py-3 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200"
       @input="emit('update:modelValue', ($event.target as HTMLInputElement).value)"
     />

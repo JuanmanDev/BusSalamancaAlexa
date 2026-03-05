@@ -4,19 +4,20 @@ const searchQuery = ref('')
 const mapStore = useMapStore()
 const colorMode = useColorMode()
 const { watchLocation } = useGeolocation()
+const localePath = useLocalePath()
 
 // Navigation items
 const navItems = [
-  { to: '/', icon: 'i-lucide-home', label: 'Inicio' },
-  { to: '/lines', icon: 'i-lucide-list', label: 'Líneas' },
-  { to: '/stops', icon: 'i-lucide-map-pin', label: 'Paradas' },
-  { to: '/map', icon: 'i-lucide-map', label: 'Mapa' },
-  { to: '/route', icon: 'i-lucide-waypoints', label: 'Ruta' },
+  { to: '/', icon: 'i-lucide-home', label: 'nav.home' },
+  { to: '/lines', icon: 'i-lucide-list', label: 'nav.lines' },
+  { to: '/stops', icon: 'i-lucide-map-pin', label: 'nav.stops' },
+  { to: '/map', icon: 'i-lucide-map', label: 'nav.map' },
+  { to: '/route', icon: 'i-lucide-waypoints', label: 'nav.route' },
 ]
 
 function isActive(path: string) {
-  if (path === '/') return route.path === '/'
-  return route.path.startsWith(path)
+  if (path === '/') return route.path === localePath('/')
+  return route.path.startsWith(localePath(path))
 }
 
 // Check if on fullscreen map page or route page (which keeps map bg)
@@ -53,7 +54,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="min-h-screen flex flex-col relative">
+  <div class="min-h-[100dvh] flex flex-col relative">
     <!-- Background Map Layer (behind everything) -->
     <div class="fixed inset-0 z-0">
       <ClientOnly>
@@ -90,14 +91,14 @@ onMounted(async () => {
           <NuxtLink 
             v-for="item in navItems" 
             :key="item.to" 
-            :to="item.to"
+            :to="localePath(item.to)"
             class="flex items-center gap-2 px-3 py-2 rounded-lg transition-colors"
             :class="isActive(item.to) 
               ? 'text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/30 font-medium' 
               : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800'"
           >
             <UIcon :name="item.icon" class="w-5 h-5" />
-            <span>{{ item.label }}</span>
+            <span>{{ $t(item.label) }}</span>
           </NuxtLink>
         </nav>
 
@@ -107,14 +108,14 @@ onMounted(async () => {
           <button
             @click="colorMode.preference = colorMode.value === 'dark' ? 'light' : 'dark'"
             class="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors flex items-center p-2 rounded-lg"
-            title="Cambiar tema"
+            :title="$t('nav.change_theme')"
           >
             <UIcon :name="colorMode.value === 'dark' ? 'i-lucide-sun' : 'i-lucide-moon'" class="w-5 h-5" />
           </button>
           <NuxtLink
-            to="/settings"
+            :to="localePath('/settings')"
             class="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors flex items-center p-2 rounded-lg"
-            title="Ajustes"
+            :title="$t('nav.settings_title')"
           >
             <UIcon name="i-lucide-settings" class="w-5 h-5" />
           </NuxtLink>
@@ -130,7 +131,7 @@ onMounted(async () => {
           'pt-16 pb-20 md:pb-0': showHeaderAndNav,
           'pt-0 pb-0': !showHeaderAndNav,
           'opacity-100 translate-y-0 visible': showMainContent,
-          'h-screen opacity-0 translate-y-4 invisible overflow-hidden': !showMainContent
+          'min-h-[100dvh] opacity-0 translate-y-4 invisible overflow-hidden': !showMainContent
         }"
       >
         <!-- Content wrapper - allows map to show in gaps -->
@@ -148,14 +149,14 @@ onMounted(async () => {
         <NuxtLink
           v-for="item in navItems"
           :key="item.to"
-          :to="item.to"
+          :to="localePath(item.to)"
           class="flex flex-col items-center gap-1 px-4 py-2 rounded-xl transition-all"
           :class="isActive(item.to)
             ? 'text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/30'
             : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'"
         >
           <UIcon :name="item.icon" class="w-6 h-6" />
-          <span class="text-xs font-medium">{{ item.label }}</span>
+          <span class="text-xs font-medium">{{ $t(item.label) }}</span>
         </NuxtLink>
       </div>
     </nav>

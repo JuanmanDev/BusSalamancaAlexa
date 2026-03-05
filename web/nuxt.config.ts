@@ -18,7 +18,37 @@ export default defineNuxtConfig({
     '@nuxt/icon',
     '@pinia/nuxt',
     '@vite-pwa/nuxt',
+    '@nuxtjs/i18n'
   ],
+
+  i18n: {
+    strategy: 'prefix_and_default',
+    defaultLocale: 'en',
+    lazy: true,
+    restructureDir: ".",
+    langDir: 'app/i18n/locales/',
+    detectBrowserLanguage: {
+      useCookie: true,
+      cookieKey: 'i18n_redirected',
+      redirectOn: 'root',
+      fallbackLocale: 'en',
+    },
+    locales: [
+      { code: 'es', file: 'es.json', name: 'Español' },
+      { code: 'en', file: 'en.json', name: 'English' },
+      { code: 'it', file: 'it.json', name: 'Italiano' },
+      { code: 'fr', file: 'fr.json', name: 'Français' },
+      { code: 'pt', file: 'pt.json', name: 'Português' },
+      { code: 'de', file: 'de.json', name: 'Deutsch' },
+      { code: 'zh', file: 'zh.json', name: '中文 (Mandarin)' },
+      { code: 'ja', file: 'ja.json', name: '日本語' },
+      { code: 'ko', file: 'ko.json', name: '한국어' },
+      { code: 'nl', file: 'nl.json', name: 'Nederlands' },
+      { code: 'pl', file: 'pl.json', name: 'Polski' },
+      { code: 'ro', file: 'ro.json', name: 'Română' },
+      { code: 'ar', file: 'ar.json', name: 'العربية', dir: 'rtl' }
+    ]
+  },
 
   pwa: {
     registerType: 'autoUpdate',

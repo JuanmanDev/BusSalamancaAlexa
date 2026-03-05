@@ -135,7 +135,7 @@ function getDistance(stop: BusStop): string | null {
       class="text-center py-6 text-gray-500 dark:text-gray-400"
     >
       <UIcon name="i-lucide-map-pin-off" class="w-10 h-10 mx-auto mb-3 opacity-50" />
-      <p>No hay paradas disponibles</p>
+      <p>{{ $t('map.no_stops_available') }}</p>
     </div>
   </div>
 </template>

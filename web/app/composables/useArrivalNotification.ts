@@ -2,6 +2,7 @@ import { ref, onBeforeUnmount } from 'vue'
 import { useMapStore } from '~/stores/map'
 
 export function useArrivalNotification() {
+    const { t } = useI18n()
     const trackedLineId = ref<string | null>(null)
     let interval: ReturnType<typeof setInterval> | null = null
 
@@ -17,7 +18,7 @@ export function useArrivalNotification() {
 
     async function startTracking(lineId: string) {
         if (typeof window === 'undefined' || !('Notification' in window)) {
-            alert('Tu navegador no soporta notificaciones nativas.')
+            alert(t('notifications.unsupported_browser'))
             return
         }
 
@@ -32,8 +33,8 @@ export function useArrivalNotification() {
             // Initial notification (with sound/vibration)
             const arrival = mapStore.arrivals.find(a => a.lineId === lineId)
             if (arrival) {
-                new Notification(`Siguiendo línea ${lineId}`, {
-                    body: `Te avisaremos sobre su llegada a la parada.`,
+                new Notification(t('notifications.following_line', { line: lineId }), {
+                    body: t('notifications.will_notify'),
                     tag: 'bus-notification',
                     icon: '/favicon.svg',
                 })
@@ -45,8 +46,8 @@ export function useArrivalNotification() {
         } else {
             const toast = useToast()
             toast.add({
-                title: 'Permiso denegado',
-                description: 'Debes habilitar las notificaciones en tu navegador.',
+                title: t('notifications.permission_denied'),
+                description: t('notifications.enable_notifications'),
                 color: 'warning',
                 icon: 'i-lucide-bell-off'
             })
@@ -73,8 +74,8 @@ export function useArrivalNotification() {
 
         if (!arrival) {
             // The bus disappeared from the arrivals list -> It passed!
-            new Notification('¡Autobús en tu parada!', {
-                body: `El autobús de la línea ${trackedLineId.value} ya debería estar aquí.`,
+            new Notification(t('notifications.bus_at_stop'), {
+                body: t('notifications.bus_should_be_here', { line: trackedLineId.value }),
                 tag: 'bus-notification',
                 icon: '/favicon.svg',
             })
@@ -83,10 +84,10 @@ export function useArrivalNotification() {
         }
 
         const mins = getLocalMinutesRemaining(arrival.expectedArrivalTime)
-        const baseText = mins === 0 ? '¡Llegando ahora!' : `Faltan ${mins} min para tu parada`
-        const textInfo = arrival.isEstimate ? `${baseText} (Estimación)` : baseText
+        const baseText = mins === 0 ? t('notifications.arriving_now') : t('notifications.minutes_remaining', { mins })
+        const textInfo = arrival.isEstimate ? `${baseText} ${t('notifications.estimate_suffix')}` : baseText
 
-        new Notification(`Línea ${arrival.lineId} - ${arrival.destination}`, {
+        new Notification(t('notifications.line_destination', { line: arrival.lineId, destination: arrival.destination }), {
             body: textInfo,
             tag: 'bus-notification',
             icon: '/favicon.svg',
