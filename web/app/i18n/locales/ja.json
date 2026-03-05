@@ -42,7 +42,8 @@
     "estimate": "推測",
     "no_arrivals": "到着予定はありません",
     "minutes": "分",
-    "notify": "通知でアラート"
+    "notify": "通知でアラート",
+    "minutes_short": "分"
   },
   "search_modal": {
     "lines": "路線",
@@ -222,6 +223,16 @@
     "arriving_now": "まもなく到着！",
     "minutes_remaining": "停留所まであと {mins} 分",
     "estimate_suffix": "（推定）",
-    "line_destination": "路線 {line} - {destination}"
+    "line_destination": "路線 {line} - {destination}",
+    "title": "通知センター",
+    "subtitle": "アクティブな到着アラートを管理",
+    "empty_title": "アクティブな通知はありません",
+    "empty_desc": "現在追跡しているバスはありません。",
+    "go_to_map": "マップへ",
+    "clear_all": "すべてクリア",
+    "view_line": "路線を表示",
+    "view_stop": "停留所を表示",
+    "stop_tracking": "追跡を停止",
+    "estimating": "計算中..."
   }
 }

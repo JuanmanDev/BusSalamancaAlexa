@@ -42,7 +42,8 @@
     "estimate": "예상",
     "no_arrivals": "예정된 도착 없음",
     "minutes": "분",
-    "notify": "알림 받기"
+    "notify": "알림 받기",
+    "minutes_short": "분"
   },
   "search_modal": {
     "lines": "노선",
@@ -222,6 +223,16 @@
     "arriving_now": "지금 도착 중!",
     "minutes_remaining": "정류장까지 {mins}분 남음",
     "estimate_suffix": "(예상)",
-    "line_destination": "노선 {line} - {destination}"
+    "line_destination": "노선 {line} - {destination}",
+    "title": "알림 센터",
+    "subtitle": "활성 도착 알림 관리",
+    "empty_title": "활성 알림 없음",
+    "empty_desc": "현재 추적 중인 버스가 없습니다.",
+    "go_to_map": "지도로 이동",
+    "clear_all": "모두 지우기",
+    "view_line": "노선 보기",
+    "view_stop": "정류장 보기",
+    "stop_tracking": "추적 중지",
+    "estimating": "계산 중..."
   }
 }

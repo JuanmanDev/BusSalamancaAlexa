@@ -42,7 +42,8 @@
     "estimate": "Szacowany",
     "no_arrivals": "Brak zaplanowanych przyjazdów",
     "minutes": "min",
-    "notify": "Powiadomienia"
+    "notify": "Powiadomienia",
+    "minutes_short": "min"
   },
   "search_modal": {
     "lines": "Linie",
@@ -222,6 +223,16 @@
     "arriving_now": "Właśnie przyjeżdża!",
     "minutes_remaining": "Zostało {mins} min do Twojego przystanku",
     "estimate_suffix": "(Szacunek)",
-    "line_destination": "Linia {line} - {destination}"
+    "line_destination": "Linia {line} - {destination}",
+    "title": "Centrum powiadomień",
+    "subtitle": "Zarządzaj aktywnymi alertami o przyjeździe",
+    "empty_title": "Brak aktywnych powiadomień",
+    "empty_desc": "Obecnie nie śledzisz żadnego autobusu.",
+    "go_to_map": "Przejdź do mapy",
+    "clear_all": "Wyczyść wszystko",
+    "view_line": "Zobacz linię",
+    "view_stop": "Zobacz przystanek",
+    "stop_tracking": "Zatrzymaj śledzenie",
+    "estimating": "Szacowanie..."
   }
 }

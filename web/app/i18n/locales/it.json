@@ -42,7 +42,8 @@
     "estimate": "Stima",
     "no_arrivals": "Nessun arrivo previsto",
     "minutes": "min",
-    "notify": "Notifica con avvisi"
+    "notify": "Notifica con avvisi",
+    "minutes_short": "min"
   },
   "search_modal": {
     "lines": "Linee",
@@ -222,6 +223,16 @@
     "arriving_now": "In arrivo ora!",
     "minutes_remaining": "Mancano {mins} min alla tua fermata",
     "estimate_suffix": "(Stima)",
-    "line_destination": "Linea {line} - {destination}"
+    "line_destination": "Linea {line} - {destination}",
+    "title": "Centro Notifiche",
+    "subtitle": "Gestisci i tuoi avvisi di arrivo attivi",
+    "empty_title": "Nessuna notifica attiva",
+    "empty_desc": "Al momento non stai tracciando alcun autobus.",
+    "go_to_map": "Vai alla mappa",
+    "clear_all": "Cancella tutto",
+    "view_line": "Visualizza linea",
+    "view_stop": "Visualizza fermata",
+    "stop_tracking": "Interrompi tracciamento",
+    "estimating": "Calcolo..."
   }
 }

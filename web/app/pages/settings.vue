@@ -155,15 +155,26 @@ const handleLanguageChange = (val: any) => {
         
         <div class="flex flex-col gap-2">
           <p class="text-sm text-gray-500 dark:text-gray-400 mb-2">{{ $t('settings.help_desc') }}</p>
-          <UButton
-            :to="localePath('/help')"
-            color="primary"
-            variant="soft"
-            icon="i-lucide-info"
-            class="justify-center w-full sm:w-auto sm:justify-start"
-          >
-            {{ $t('settings.view_help') }}
-          </UButton>
+          <div class="flex flex-col sm:flex-row gap-2">
+            <UButton
+              :to="localePath('/help')"
+              color="primary"
+              variant="soft"
+              icon="i-lucide-info"
+              class="justify-center w-full sm:w-auto sm:justify-start"
+            >
+              {{ $t('settings.view_help') }}
+            </UButton>
+            <UButton
+              :to="localePath('/notifications')"
+              color="neutral"
+              variant="soft"
+              icon="i-lucide-bell"
+              class="justify-center w-full sm:w-auto sm:justify-start"
+            >
+              {{ $t('notifications.title') }}
+            </UButton>
+          </div>
         </div>
       </section>
 

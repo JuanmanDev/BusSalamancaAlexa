@@ -42,7 +42,8 @@
     "estimate": "Estimativa",
     "no_arrivals": "Nenhuma chegada prevista",
     "minutes": "min",
-    "notify": "Notificar com alertas"
+    "notify": "Notificar com alertas",
+    "minutes_short": "min"
   },
   "search_modal": {
     "lines": "Linhas",
@@ -222,6 +223,16 @@
     "arriving_now": "Chegando agora!",
     "minutes_remaining": "Faltam {mins} min para a sua parada",
     "estimate_suffix": "(Estimativa)",
-    "line_destination": "Linha {line} - {destination}"
+    "line_destination": "Linha {line} - {destination}",
+    "title": "Centro de Notificações",
+    "subtitle": "Gerencie seus alertas de chegada ativos",
+    "empty_title": "Nenhuma notificação ativa",
+    "empty_desc": "Você não está rastreando nenhum ônibus no momento.",
+    "go_to_map": "Ir para o mapa",
+    "clear_all": "Limpar tudo",
+    "view_line": "Ver linha",
+    "view_stop": "Ver parada",
+    "stop_tracking": "Parar rastreamento",
+    "estimating": "Calculando..."
   }
 }

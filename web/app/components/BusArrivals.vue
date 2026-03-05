@@ -7,6 +7,7 @@ const props = defineProps<{
 }>()
 
 const router = useRouter()
+const route = useRoute()
 const notification = useArrivalNotification()
 
 function getTimeColor(minutes: number): string {
@@ -65,7 +66,7 @@ function goToLine(lineId: string) {
           >
             <div
               v-for="arrival in arrivals"
-              :key="`${arrival.lineId}-${arrival.expectedArrivalTime.getTime()}`"
+              :key="`${arrival.lineId}-${new Date(arrival.expectedArrivalTime).getTime()}`"
               class="bg-white/80 dark:bg-gray-800/80 rounded-lg p-2 hover:bg-white dark:hover:bg-gray-800 transition-all border border-transparent"
                :class="{ 'border-yellow-400/30 dark:border-yellow-400/20 bg-yellow-50/50 dark:bg-yellow-900/10': arrival.isEstimate }"
             >
@@ -90,19 +91,19 @@ function goToLine(lineId: string) {
                       {{ arrival.destination || $t('arrivals.unknown_destination') }}
                     </p>
                     <div class="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 truncate">
-                      <span>Línea {{ arrival.lineId }} · {{ formatArrivalTime(arrival.expectedArrivalTime) }}</span>
+                      <span>Línea {{ arrival.lineId }} · {{ formatArrivalTime(new Date(arrival.expectedArrivalTime)) }}</span>
                     </div>
                   </div>
                 </div>
 
                 <!-- Notification button -->
                 <button 
-                  @click.stop="notification.toggleTracking(arrival.lineId)"
+                  @click.stop="notification.toggleTracking(arrival.lineId, route.params.id as string, arrival.destination || '', new Date(arrival.expectedArrivalTime).getTime(), typeof arrival.expectedArrivalTime === 'string' ? arrival.expectedArrivalTime : arrival.expectedArrivalTime.toISOString(), arrival.vehicleRef)"
                   class="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center justify-center shrink-0"
-                  :class="notification.trackedLineId.value === arrival.lineId ? 'text-primary-500 bg-primary-50 dark:bg-primary-900/30' : 'text-gray-400'"
+                  :class="notification.isTracking(arrival.lineId, route.params.id as string, new Date(arrival.expectedArrivalTime).getTime()) ? 'text-primary-500 bg-primary-50 dark:bg-primary-900/30' : 'text-gray-400'"
                   :title="$t('arrivals.notify')"
                 >
-                  <UIcon :name="notification.trackedLineId.value === arrival.lineId ? 'i-lucide-bell-ring' : 'i-lucide-bell'" class="w-6 h-6 animate-pulse-subtle opacity-25" v-if="notification.trackedLineId.value === arrival.lineId" />
+                  <UIcon :name="notification.isTracking(arrival.lineId, route.params.id as string, new Date(arrival.expectedArrivalTime).getTime()) ? 'i-lucide-bell-ring' : 'i-lucide-bell'" class="w-6 h-6 animate-pulse-subtle opacity-25" v-if="notification.isTracking(arrival.lineId, route.params.id as string, new Date(arrival.expectedArrivalTime).getTime())" />
                   <UIcon name="i-lucide-bell" class="w-6 h-6 opacity-50" v-else />
                 </button>
 

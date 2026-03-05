@@ -5,6 +5,7 @@ const mapStore = useMapStore()
 const colorMode = useColorMode()
 const { watchLocation } = useGeolocation()
 const localePath = useLocalePath()
+const notification = useArrivalNotification()
 
 // Navigation items
 const navItems = [
@@ -81,7 +82,7 @@ onMounted(async () => {
       >
       <div class="mx-auto px-4 h-16 flex items-center justify-between">
         <!-- Logo -->
-        <NuxtLink to="/" class="flex items-center gap-2 font-bold text-xl text-primary-600 dark:text-primary-400">
+        <NuxtLink :to="localePath('/')" class="flex items-center gap-2 font-bold text-xl text-primary-600 dark:text-primary-400">
           <UIcon name="i-lucide-bus" class="w-8 h-8" />
           <span class="hidden sm:inline md:hidden lg:inline">BusSalamanca</span>
         </NuxtLink>
@@ -112,6 +113,16 @@ onMounted(async () => {
           >
             <UIcon :name="colorMode.value === 'dark' ? 'i-lucide-sun' : 'i-lucide-moon'" class="w-5 h-5" />
           </button>
+          
+          <NuxtLink
+            :to="localePath('/notifications')"
+            class="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors flex items-center p-2 rounded-lg relative"
+            :title="$t('notifications.title')"
+          >
+            <UIcon name="i-lucide-bell" class="w-5 h-5" />
+            <span v-if="notification.activeNotifications.value.length > 0" class="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full animate-pulse-subtle"></span>
+          </NuxtLink>
+
           <NuxtLink
             :to="localePath('/settings')"
             class="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors flex items-center p-2 rounded-lg"

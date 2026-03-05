@@ -42,7 +42,8 @@
     "estimate": "Schatting",
     "no_arrivals": "Geen geplande aankomsten",
     "minutes": "min",
-    "notify": "Meldingen ontvangen"
+    "notify": "Meldingen ontvangen",
+    "minutes_short": "min"
   },
   "search_modal": {
     "lines": "Lijnen",
@@ -222,6 +223,16 @@
     "arriving_now": "Komt nu aan!",
     "minutes_remaining": "Nog {mins} min tot je halte",
     "estimate_suffix": "(Schatting)",
-    "line_destination": "Lijn {line} - {destination}"
+    "line_destination": "Lijn {line} - {destination}",
+    "title": "Meldingencentrum",
+    "subtitle": "Beheer uw actieve aankomstwaarschuwingen",
+    "empty_title": "Geen actieve meldingen",
+    "empty_desc": "U volgt momenteel geen enkele bus.",
+    "go_to_map": "Naar kaart gaan",
+    "clear_all": "Alles wissen",
+    "view_line": "Lijn bekijken",
+    "view_stop": "Halte bekijken",
+    "stop_tracking": "Volgen stoppen",
+    "estimating": "Schatten..."
   }
 }

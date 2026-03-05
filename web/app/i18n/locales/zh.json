@@ -42,7 +42,8 @@
     "estimate": "预计",
     "no_arrivals": "没有预计到达计划",
     "minutes": "分钟",
-    "notify": "添加行程提醒"
+    "notify": "添加行程提醒",
+    "minutes_short": "分钟"
   },
   "search_modal": {
     "lines": "线路",
@@ -222,6 +223,16 @@
     "arriving_now": "马上进站！",
     "minutes_remaining": "距您的站点还有 {mins} 分钟",
     "estimate_suffix": "(预计)",
-    "line_destination": "路线 {line} - {destination}"
+    "line_destination": "路线 {line} - {destination}",
+    "title": "通知中心",
+    "subtitle": "管理您的活动到达提醒",
+    "empty_title": "没有活动的通知",
+    "empty_desc": "您目前没有追踪任何公交车。",
+    "go_to_map": "前往地图",
+    "clear_all": "全部清除",
+    "view_line": "查看线路",
+    "view_stop": "查看站点",
+    "stop_tracking": "停止追踪",
+    "estimating": "估算中..."
   }
 }

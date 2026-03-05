@@ -42,7 +42,8 @@
     "estimate": "Schätzung",
     "no_arrivals": "Keine Ankünfte geplant",
     "minutes": "min",
-    "notify": "Mit Benachrichtigungen warnen"
+    "notify": "Mit Benachrichtigungen warnen",
+    "minutes_short": "Min"
   },
   "search_modal": {
     "lines": "Linien",
@@ -222,6 +223,16 @@
     "arriving_now": "Kommt jetzt an!",
     "minutes_remaining": "Noch {mins} Min. bis zu Ihrer Haltestelle",
     "estimate_suffix": "(Schätzung)",
-    "line_destination": "Linie {line} - {destination}"
+    "line_destination": "Linie {line} - {destination}",
+    "title": "Benachrichtigungscenter",
+    "subtitle": "Verwalten Sie Ihre aktiven Ankunftsbenachrichtigungen",
+    "empty_title": "Keine aktiven Benachrichtigungen",
+    "empty_desc": "Sie verfolgen derzeit keinen Bus.",
+    "go_to_map": "Zur Karte gehen",
+    "clear_all": "Alle löschen",
+    "view_line": "Linie anzeigen",
+    "view_stop": "Haltestelle anzeigen",
+    "stop_tracking": "Verfolgung beenden",
+    "estimating": "Schätzung..."
   }
 }

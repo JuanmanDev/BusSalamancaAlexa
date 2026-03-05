@@ -42,7 +42,8 @@
     "estimate": "Estimate",
     "no_arrivals": "No arrivals scheduled",
     "minutes": "min",
-    "notify": "Notify with alerts"
+    "notify": "Notify with alerts",
+    "minutes_short": "min"
   },
   "search_modal": {
     "lines": "Lines",
@@ -222,6 +223,16 @@
     "arriving_now": "Arriving now!",
     "minutes_remaining": "{mins} min left for your stop",
     "estimate_suffix": "(Estimate)",
-    "line_destination": "Line {line} - {destination}"
+    "line_destination": "Line {line} - {destination}",
+    "title": "Notification Center",
+    "subtitle": "Manage your active arrival alerts",
+    "empty_title": "No active notifications",
+    "empty_desc": "You are not tracking any bus right now.",
+    "go_to_map": "Go to map",
+    "clear_all": "Clear all",
+    "view_line": "View line",
+    "view_stop": "View stop",
+    "stop_tracking": "Stop tracking",
+    "estimating": "Estimating..."
   }
 }

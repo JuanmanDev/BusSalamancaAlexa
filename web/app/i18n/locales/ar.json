@@ -42,7 +42,8 @@
     "estimate": "تقدير",
     "no_arrivals": "لا توجد وصولات مجدولة",
     "minutes": "دقيقة",
-    "notify": "الإشعار باستخدام التنبيهات"
+    "notify": "الإشعار باستخدام التنبيهات",
+    "minutes_short": "يق"
   },
   "search_modal": {
     "lines": "الخطوط",
@@ -222,6 +223,16 @@
     "arriving_now": "تصل الآن!",
     "minutes_remaining": "تبقى {mins} دقيقة لمحطتك",
     "estimate_suffix": "(تقدير)",
-    "line_destination": "الخط {line} - {destination}"
+    "line_destination": "الخط {line} - {destination}",
+    "title": "مركز الإشعارات",
+    "subtitle": "إدارة تنبيهات الوصول النشطة",
+    "empty_title": "لا يوجد إشعارات نشطة",
+    "empty_desc": "أنت لا تتتبع أي حافلة في الوقت الحالي.",
+    "go_to_map": "الذهاب إلى الخريطة",
+    "clear_all": "مسح الكل",
+    "view_line": "عرض الخط",
+    "view_stop": "عرض المحطة",
+    "stop_tracking": "إيقاف التتبع",
+    "estimating": "جاري الحساب..."
   }
 }

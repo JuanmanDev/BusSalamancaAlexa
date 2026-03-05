@@ -42,7 +42,8 @@
     "estimate": "Aproximativ",
     "no_arrivals": "Nu există sosiri planificate",
     "minutes": "min",
-    "notify": "Notificați prin alerte"
+    "notify": "Notificați prin alerte",
+    "minutes_short": "min"
   },
   "search_modal": {
     "lines": "Linii",
@@ -222,6 +223,16 @@
     "arriving_now": "Sosește acum!",
     "minutes_remaining": "Au mai rămas {mins} min până la stație",
     "estimate_suffix": "(Estimare)",
-    "line_destination": "Linia {line} - {destination}"
+    "line_destination": "Linia {line} - {destination}",
+    "title": "Centrul de Notificări",
+    "subtitle": "Gestionează alarmele de sosire active",
+    "empty_title": "Fără notificări active",
+    "empty_desc": "Nu urmăriți niciun autobuz în acest moment.",
+    "go_to_map": "Mergeți la hartă",
+    "clear_all": "Ștergeți tot",
+    "view_line": "Vezi linia",
+    "view_stop": "Vezi stația",
+    "stop_tracking": "Opriți urmărirea",
+    "estimating": "Estimare..."
   }
 }
