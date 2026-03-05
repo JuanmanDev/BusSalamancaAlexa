@@ -185,14 +185,14 @@ html {
 
 /* Glass card utility */
 .glass-card {
-  background: rgb(255 255 255 / 0.9);
-  backdrop-filter: blur(12px);
+  background: rgb(255 255 255 / 0.5);
+  backdrop-filter: blur(7px);
   border-radius: 0.75rem;
   box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
 }
 
 .dark .glass-card {
-  background: rgb(17 24 39 / 0.9);
+  background: rgb(17 24 39 / 0.5);
 }
 
 /* View Transitions */

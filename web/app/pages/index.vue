@@ -130,11 +130,11 @@ onMounted(async () => {
     <!-- Content (right side on desktop, full width on mobile) -->
     <div class="w-full md:w-[400px] lg:w-[450px] shrink-0 px-4 py-6 space-y-6 pointer-events-auto relative z-10">
       <!-- Hero section -->
-      <div class="glass-card text-center py-6 px-4">
+      <div class="glass-card text-center py-6 px-4 ">
         <h1 class="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-2">
           {{ $t('index.title') }}
         </h1>
-        <p class="text-gray-600 dark:text-gray-400 mb-6">
+        <p class="text-gray-600 dark:text-gray-400">
           {{ $t('index.subtitle') }}
         </p>
       </div>
