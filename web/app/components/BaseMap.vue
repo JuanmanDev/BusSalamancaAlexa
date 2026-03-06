@@ -419,6 +419,14 @@ watch(
 
 // ===== Stop/Vehicle Handlers =====
 function handleStopClick(stop: BusStop) {
+  if (mapStore.currentContext === 'route') {
+    // In route mode, just set the highlight so the route page watcher catches it
+    // Do not enter fullscreen or change the view aggressively
+    mapStore.highlightStopId = stop.id
+    emit('stopClick', stop)
+    return
+  }
+
   if (!mapStore.isFullscreen) {
     mapStore.setFullscreen(true, true) // skip position update — focusOnStop handles it
   }

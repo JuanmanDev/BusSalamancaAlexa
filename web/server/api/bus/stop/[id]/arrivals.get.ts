@@ -1,4 +1,5 @@
 import { fetchArrivals } from '../../../../utils/siri'
+import { recordArrival } from '../../../../utils/arrivalHistory'
 
 // In-memory cache for stop arrivals: stopId -> { data, timestamp }
 const arrivalsCache = new Map<string, { data: any[], timestamp: number }>()
@@ -21,6 +22,18 @@ export default defineEventHandler(async (event) => {
     let newArrivals: any[] = []
     try {
         newArrivals = await fetchArrivals(stopId)
+
+        // Record to history store for travel time learning
+        for (const arrival of newArrivals) {
+            if (arrival.vehicleRef && arrival.lineId) {
+                recordArrival(
+                    stopId,
+                    arrival.lineId,
+                    arrival.vehicleRef,
+                    new Date(arrival.expectedArrivalTime).getTime()
+                )
+            }
+        }
     } catch (error) {
         // If fetch fails but we have a valid cache, return cached data as fallback
         if (cached && (now - cached.timestamp < CACHE_TTL)) {

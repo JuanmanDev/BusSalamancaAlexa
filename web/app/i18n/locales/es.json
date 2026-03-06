@@ -97,7 +97,9 @@
     "arrival": "Llegada",
     "from_to": "Desde {from} hasta {to}",
     "transfers": "trasbordos",
-    "calculating": "Calculando la mejor ruta..."
+    "calculating": "Calculando la mejor ruta...",
+    "from": "Desde",
+    "to_stop": "hasta"
   },
   "line_detail": {
     "loading": "Cargando línea...",
@@ -210,7 +212,9 @@
     "search_route": "Buscar ruta",
     "from_here": "Desde aquí",
     "to_here": "Hasta aquí",
-    "searching": "Buscando..."
+    "searching": "Buscando...",
+    "instruction_walk": "Caminar",
+    "instruction_bus": "Autobús"
   },
   "notifications": {
     "unsupported_browser": "Tu navegador no soporta notificaciones nativas.",

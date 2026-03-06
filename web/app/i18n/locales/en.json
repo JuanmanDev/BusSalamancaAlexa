@@ -97,7 +97,9 @@
     "arrival": "Arrival",
     "from_to": "From {from} to {to}",
     "transfers": "transfers",
-    "calculating": "Calculating the best route..."
+    "calculating": "Calculating the best route...",
+    "from": "From",
+    "to_stop": "to"
   },
   "line_detail": {
     "loading": "Loading line...",
@@ -210,7 +212,9 @@
     "search_route": "Search route",
     "from_here": "From here",
     "to_here": "To here",
-    "searching": "Searching..."
+    "searching": "Searching...",
+    "instruction_walk": "Walk",
+    "instruction_bus": "Bus"
   },
   "notifications": {
     "unsupported_browser": "Your browser does not support native notifications.",

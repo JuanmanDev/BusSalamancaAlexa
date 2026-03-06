@@ -2,6 +2,8 @@
  * Types for Bus Salamanca SIRI data
  */
 
+import type { RouteConfidence } from '~/types/routing'
+
 export interface BusLine {
     id: string
     name: string
@@ -82,4 +84,6 @@ export interface RouteOption {
     departureTime: Date
     arrivalTime: Date
     tags: string[]
+    confidence?: RouteConfidence
+    historicalBasis?: number
 }

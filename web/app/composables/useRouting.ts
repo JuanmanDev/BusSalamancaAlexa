@@ -1,498 +1,424 @@
 /**
  * Composable for client-side routing logic
- * Constructs a graph from stops and lines and calculates paths
- * Uses K-Shortest Paths (Iterative Penalty Method) to generate multiple options
+ *
+ * Uses TransitGraph singleton for persistent graph topology.
+ * Implements Dijkstra + K-Shortest Paths (Iterative Penalty Method).
+ * Integrates historical segment stats from server for accurate ETAs.
+ *
+ * Architecture:
+ * - TransitGraph (singleton): Builds once, caches nodes/edges, applies historical weights
+ * - useRouting (composable): Provides findRoutes() using the shared graph
+ * - BinaryHeapPQ: O(n·log(n)) priority queue (replaces O(n²) array sort)
  */
 
 import type { BusStop, BusLine, BusArrival, RouteOption, RouteSegment } from '~/types/bus'
-
-// --- Graph Types ---
-
-interface Node {
-    id: string
-    lat: number
-    lng: number
-    name: string
-    lines: string[]
-}
-
-interface Edge {
-    from: string
-    to: string
-    weight: number // Base travel duration in seconds
-    type: 'walk' | 'bus' | 'wait'
-    lineId?: string
-    distance: number // Meters
-}
-
-// Map of [StopID] -> [LineID] -> NextArrivalTimestamp (ms)
-type ArrivalMap = Map<string, Map<string, number>>
+import type { GraphEdge, ArrivalMap, RoutingConfig, SegmentStats, RouteConfidence } from '~/types/routing'
+import { DEFAULT_ROUTING_CONFIG } from '~/types/routing'
+import { getTransitGraph, BinaryHeapPQ } from '~/utils/TransitGraph'
+import { haversineDistance } from '~/utils/geo'
 
 export function useRouting() {
     const { fetchStops, fetchLines, fetchArrivals } = useBusService()
+    const graph = getTransitGraph()
+    const config = DEFAULT_ROUTING_CONFIG
 
-    // --- Config ---
-    const WALKING_SPEED_MPS = 1.1 // ~4 km/h
-    const BUS_SPEED_MPS = 5.5 // ~20 km/h average in city (including stops)
-    const MAX_WALK_DISTANCE = 800 // meters for transfers/start/end
-    const TRANSFER_PENALTY_SECONDS = 300 // 5 min penalty
-    const INITIAL_WAIT_SECONDS = 300 // 5 mins avg wait
-    const BOARDING_PENALTY_SECONDS = 300 // 5 min penalty (additional cost weight)
-
-    // --- State ---
-    const graphNodes = ref<Map<string, Node>>(new Map())
-    const graphEdges = ref<Map<string, Edge[]>>(new Map())
-    const isBuildingGraph = ref(false)
-    const allStopsCache = ref<BusStop[]>([])
-
-    // --- Helpers ---
-
-    function getDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
-        const R = 6371e3 // metres
-        const φ1 = lat1 * Math.PI / 180
-        const φ2 = lat2 * Math.PI / 180
-        const Δφ = (lat2 - lat1) * Math.PI / 180
-        const Δλ = (lon2 - lon1) * Math.PI / 180
-
-        const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
-            Math.cos(φ1) * Math.cos(φ2) *
-            Math.sin(Δλ / 2) * Math.sin(Δλ / 2)
-        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
-
-        return R * c
-    }
+    // --- Graph Lifecycle ---
 
     /**
-     * Build the directed graph
-     * Uses explicit line definitions from fetchLines() to determine connectivity
+     * Ensure graph is built. Idempotent — only builds on first call.
      */
-    async function buildGraph() {
-        if (isBuildingGraph.value || graphNodes.value.size > 0) return
+    async function ensureGraph(): Promise<void> {
+        if (graph.isBuilt) return
 
-        isBuildingGraph.value = true
-
-        // Fetch data in parallel
         const [stops, lines] = await Promise.all([
             fetchStops(),
-            fetchLines()
+            fetchLines(),
         ])
 
-        allStopsCache.value = stops
-        const nodes = new Map<string, Node>()
-        const edges = new Map<string, Edge[]>()
+        graph.build(stops, lines, config)
 
-        // 1. Create Nodes
-        stops.forEach(stop => {
-            if (stop.latitude && stop.longitude) {
-                nodes.set(stop.id, {
-                    id: stop.id,
-                    lat: stop.latitude,
-                    lng: stop.longitude,
-                    name: stop.name,
-                    lines: stop.lines || []
-                })
-                edges.set(stop.id, [])
+        // Fetch and apply historical stats (non-blocking enhancement)
+        try {
+            const response = await $fetch<{ stats: SegmentStats[] }>('/api/bus/arrival-stats')
+            if (response?.stats?.length > 0) {
+                graph.applyHistoricalStats(response.stats)
             }
-        })
-
-        // 2. Create Bus Edges (Sequential based on Lines)
-        lines.forEach(line => {
-            if (!line.directions) return
-
-            line.directions.forEach(direction => {
-                const routeStops = direction.stops
-
-                for (let i = 0; i < routeStops.length - 1; i++) {
-                    const fromStop = routeStops[i]
-                    const toStop = routeStops[i + 1]
-
-                    if (!fromStop || !toStop) continue
-
-                    const fromId = fromStop.id
-                    const toId = toStop.id
-
-                    const fromNode = nodes.get(fromId)
-                    const toNode = nodes.get(toId)
-
-                    if (!fromNode || !toNode) continue
-
-                    const dist = getDistance(fromNode.lat, fromNode.lng, toNode.lat, toNode.lng)
-                    const duration = Math.max(30, dist / BUS_SPEED_MPS) // Min 30s per stop
-
-                    if (!edges.has(fromId)) edges.set(fromId, [])
-
-                    // Check if edge already exists for this line (avoid duplicates if multiple directions share logic? Usually distinct)
-                    edges.get(fromId)?.push({
-                        from: fromId,
-                        to: toId,
-                        weight: duration,
-                        type: 'bus',
-                        lineId: line.id,
-                        distance: dist
-                    })
-                }
-            })
-        })
-
-        // 3. Create Walking Transfers
-        // Optimize: Use spatial indexing if large. For < 500 stops, O(N^2) is ~250k checks, likely < 50ms.
-        const nodeArray = Array.from(nodes.values())
-
-        for (let i = 0; i < nodeArray.length; i++) {
-            for (let j = i + 1; j < nodeArray.length; j++) {
-                const n1 = nodeArray[i]
-                const n2 = nodeArray[j]
-
-                const dist = getDistance(n1.lat, n1.lng, n2.lat, n2.lng)
-
-                if (dist < 300) { // Valid transfer distance (tightened to 300m for transfers)
-                    const walkTime = dist / WALKING_SPEED_MPS
-
-                    edges.get(n1.id)?.push({ from: n1.id, to: n2.id, weight: walkTime, type: 'walk', distance: dist })
-                    edges.get(n2.id)?.push({ from: n2.id, to: n1.id, weight: walkTime, type: 'walk', distance: dist })
-                }
-            }
+        } catch (e) {
+            console.warn('[Routing] Could not load historical stats, using default weights')
         }
-
-        graphNodes.value = nodes
-        graphEdges.value = edges
-        isBuildingGraph.value = false
-        console.log('[Routing] Graph built. Nodes:', nodes.size)
     }
 
     /**
-     * Find K shortest paths using simplistic penalty method
-     * 1. Run Dijkstra -> Path 1
-     * 2. "Penalize" edges used in Path 1 (increase weight)
-     * 3. Run Dijkstra -> Path 2
-     * 4. ... Repeat K times
+     * Find K shortest paths using Dijkstra + penalty method
      */
     async function findRoutes(
-        origin: { lat: number; lng: number, name?: string },
-        destination: { lat: number; lng: number, name?: string },
+        origin: { lat: number; lng: number; name?: string },
+        destination: { lat: number; lng: number; name?: string },
         departureTime: Date = new Date()
     ): Promise<RouteOption[]> {
 
-        if (graphNodes.value.size === 0) {
-            await buildGraph()
-        }
+        await ensureGraph()
 
         const startId = 'ORIGIN'
         const endId = 'DESTINATION'
 
-        // Temporary Graph Extensions (Virtual Nodes/Edges)
-        const localEdges = new Map<string, Edge[]>()
+        // --- Virtual edges for origin/destination ---
+        const localEdges = new Map<string, GraphEdge[]>()
 
-        // 1. Connect Origin -> Nearby Stops
-        const startNeighbors: Edge[] = []
-        const allStops = Array.from(graphNodes.value.values())
+        // Connect Origin → nearby stops
+        const startNeighbors: GraphEdge[] = []
+        const allNodes = graph.getAllNodes()
 
-        // Find nearby stops to Origin
-        allStops.forEach(stop => {
-            const d = getDistance(origin.lat, origin.lng, stop.lat, stop.lng)
-            if (d < MAX_WALK_DISTANCE) {
+        for (const [, stop] of allNodes) {
+            const d = haversineDistance(origin.lat, origin.lng, stop.lat, stop.lng)
+            if (d < config.maxWalkDistance) {
                 startNeighbors.push({
                     from: startId,
                     to: stop.id,
-                    weight: d / WALKING_SPEED_MPS,
+                    weight: d / config.walkingSpeedMps,
                     type: 'walk',
-                    distance: d
+                    distance: d,
                 })
             }
-        })
+        }
 
-        // Direct Walk (Start -> End)
-        const directDist = getDistance(origin.lat, origin.lng, destination.lat, destination.lng)
-        if (directDist < 3000) { // Allow direct walk up to 3km
+        // Direct walk origin → destination
+        const directDist = haversineDistance(origin.lat, origin.lng, destination.lat, destination.lng)
+        if (directDist < config.maxDirectWalkDistance) {
             startNeighbors.push({
                 from: startId,
                 to: endId,
-                weight: directDist / WALKING_SPEED_MPS,
+                weight: directDist / config.walkingSpeedMps,
                 type: 'walk',
-                distance: directDist
+                distance: directDist,
             })
         }
 
         localEdges.set(startId, startNeighbors)
 
-        // 2. Connect Stops -> Destination
-        // Since graph is directed A->B, and we can walk FROM any stop TO destination
-        allStops.forEach(stop => {
-            const d = getDistance(stop.lat, stop.lng, destination.lat, destination.lng)
-            if (d < MAX_WALK_DISTANCE) {
-                const walkTime = d / WALKING_SPEED_MPS
-                const edge: Edge = { from: stop.id, to: endId, weight: walkTime, type: 'walk', distance: d }
-
+        // Connect stops → Destination
+        for (const [, stop] of allNodes) {
+            const d = haversineDistance(stop.lat, stop.lng, destination.lat, destination.lng)
+            if (d < config.maxWalkDistance) {
+                const edge: GraphEdge = {
+                    from: stop.id, to: endId,
+                    weight: d / config.walkingSpeedMps,
+                    type: 'walk', distance: d,
+                }
                 if (!localEdges.has(stop.id)) localEdges.set(stop.id, [])
                 localEdges.get(stop.id)!.push(edge)
             }
-        })
+        }
 
-        // --- Arrival Times ---
+        // --- Fetch real-time arrivals for nearby stops ---
         const arrivalCache: ArrivalMap = new Map()
 
-        // Fetch arrivals for the closest stops to origin to get real-time start
-        startNeighbors.sort((a, b) => a.distance - b.distance)
-        const closestStops = startNeighbors.slice(0, 5) // Top 5 closest stops
+        const stopsToQuery = startNeighbors
+            .filter(e => e.to !== endId)
+            .sort((a, b) => a.distance - b.distance)
+            .slice(0, 8) // Expanded from 5 to 8 for better coverage
 
-        await Promise.all(closestStops.map(async (edge) => {
-            if (edge.to === endId) return
+        await Promise.all(stopsToQuery.map(async (edge) => {
             try {
                 const arr = await fetchArrivals(edge.to)
                 const map = new Map<string, number>()
 
-                arr.forEach(a => {
-                    // Use expectedArrivalTime if available
+                arr.forEach((a: BusArrival) => {
                     const ts = a.expectedArrivalTime ? new Date(a.expectedArrivalTime).getTime() : 0
                     if (ts > 0 && (!map.has(a.lineId) || ts < map.get(a.lineId)!)) {
                         map.set(a.lineId, ts)
                     }
                 })
                 arrivalCache.set(edge.to, map)
-            } catch (e) { /* ignore */ }
+            } catch (_e) { /* ignore */ }
         }))
 
-        // --- Pathfinding ---
-        const getNeighbors = (id: string): Edge[] => {
-            const global = graphEdges.value.get(id) || []
+        // --- Neighbor lookup combining graph + local edges ---
+        const getNeighbors = (id: string): GraphEdge[] => {
+            const graphEdges = graph.getNeighbors(id)
             const local = localEdges.get(id) || []
-            return [...global, ...local]
+            return [...graphEdges, ...local]
         }
 
-        const K = 3
-        const foundPaths: ReturnType<typeof dijkstra>[] = []
+        // --- K-Shortest Paths ---
+        const K = config.kPaths
+        const foundPaths: DijkstraResult[] = []
         const penalizedEdges = new Map<string, number>()
 
         for (let k = 0; k < K; k++) {
             const pathData = dijkstra(
-                startId,
-                endId,
-                getNeighbors,
-                penalizedEdges,
-                departureTime.getTime(),
-                arrivalCache
+                startId, endId,
+                getNeighbors, penalizedEdges,
+                departureTime.getTime(), arrivalCache, config
             )
 
             if (!pathData) break
 
             // Uniqueness check
             const pathKey = pathData.path.map(e => `${e.from}|${e.to}`).join(',')
-            const isDuplicate = foundPaths.some(p => p && p.path.map(e => `${e.from}|${e.to}`).join(',') === pathKey)
+            const isDuplicate = foundPaths.some(p =>
+                p.path.map(e => `${e.from}|${e.to}`).join(',') === pathKey
+            )
 
             if (!isDuplicate) {
                 foundPaths.push(pathData)
             } else {
-                k--
-                // Punish heavily to force deviation
+                k-- // Retry
                 pathData.path.forEach(edge => {
                     const key = `${edge.from}|${edge.to}`
-                    const cur = penalizedEdges.get(key) || 0
-                    penalizedEdges.set(key, cur + 5000)
+                    penalizedEdges.set(key, (penalizedEdges.get(key) || 0) + 5000)
                 })
-                if (k < -5) break // safety
+                if (k < -5) break // Safety valve
                 continue
             }
 
-            // Standard Penalty for next iteration
+            // Standard penalty for next iteration
             pathData.path.forEach(edge => {
                 if (edge.type === 'bus') {
                     const key = `${edge.from}|${edge.to}`
-                    const cur = penalizedEdges.get(key) || 0
-                    penalizedEdges.set(key, cur + (edge.weight * 2))
+                    penalizedEdges.set(key, (penalizedEdges.get(key) || 0) + (edge.weight * 2))
                 }
             })
         }
 
-        // Convert
-        return foundPaths.map((p, i) => convertToRouteOption(p!, departureTime, origin, destination, i))
-    }
-
-    function dijkstra(
-        startId: string,
-        endId: string,
-        getNeighbors: (id: string) => Edge[],
-        penalties: Map<string, number>,
-        startTimeMs: number,
-        arrivals: ArrivalMap
-    ) {
-        const dist = new Map<string, number>()
-        // prev stores how we got to a node: edge used, previous node, and arrival time at this node
-        const prev = new Map<string, { edge: Edge, from: string, arrivalTime: number }>()
-        const pq = new PriorityQueue<{ id: string, cost: number, time: number }>(
-            (a, b) => a.cost - b.cost
+        // --- Run one explicitly minimizing walking (preferBus) ---
+        const preferBusPath = dijkstra(
+            startId, endId,
+            getNeighbors, new Map(),
+            departureTime.getTime(), arrivalCache, config, true
         )
-
-        dist.set(startId, 0)
-        pq.enqueue({ id: startId, cost: 0, time: startTimeMs })
-
-        while (!pq.isEmpty()) {
-            const { id, cost, time: currentTime } = pq.dequeue()!
-
-            if (cost > (dist.get(id) ?? Infinity)) continue
-            if (id === endId) {
-                const path: Edge[] = []
-                let curr = endId
-                // Capture final time for accurate duration reporting
-                const finalTime = currentTime
-
-                while (curr !== startId) {
-                    const rec = prev.get(curr)
-                    if (!rec) return null
-                    path.unshift(rec.edge)
-                    curr = rec.from
-                }
-                return { path, cost, arrivalTime: finalTime }
-            }
-
-            for (const edge of getNeighbors(id)) {
-                let edgeDuration = edge.weight // seconds
-                let waitTime = 0
-                let boardingPenalty = 0
-
-                // Get previous edge to check for same-line transfer
-                const lastRecord = prev.get(id)
-                const prevLineId = lastRecord?.edge?.lineId
-                const isContinuingLine = lastRecord && lastRecord.edge.type === 'bus' && prevLineId === edge.lineId
-
-                // Time Logic
-                if (edge.type === 'bus') {
-                    if (isContinuingLine) {
-                        // Case 1: Already on the bus. No wait.
-                        waitTime = 0
-                        boardingPenalty = 0
-                    } else {
-                        // Case 2: Transfer or New Line. Check Schedule.
-                        boardingPenalty = BOARDING_PENALTY_SECONDS
-
-                        const stopArrivals = arrivals.get(edge.from)
-                        const nextArrivalTs = stopArrivals?.get(edge.lineId || '')
-
-                        if (nextArrivalTs !== undefined) {
-                            // Check if the known arrival is in the future relative to NOW (currentTime)
-                            if (nextArrivalTs > currentTime) {
-                                waitTime = (nextArrivalTs - currentTime) / 1000
-                            } else {
-                                // The known arrival has passed.
-                                // Fallback: Assume we just missed it and have to wait 'Average Frequency' (e.g. 15 min)
-                                waitTime = 15 * 60
-                            }
-                        } else {
-                            // No real time data
-                            const isTransfer = lastRecord && lastRecord.edge.type === 'bus'
-                            const isFirstLeg = !lastRecord || lastRecord.edge.type === 'walk'
-                            const isWalkToStop = lastRecord && lastRecord.edge.type === 'walk'
-
-                            if (isFirstLeg || isWalkToStop) waitTime = INITIAL_WAIT_SECONDS // 5 min
-                            else if (isTransfer) waitTime = TRANSFER_PENALTY_SECONDS // 5 min
-                        }
-                    }
-                }
-
-                const penalty = penalties.get(`${edge.from}|${edge.to}`) || 0
-
-                // COST: Includes artificial penalties (boarding, avoiding duplicates)
-                const totalEdgeCost = edgeDuration + waitTime + penalty + boardingPenalty
-
-                // TIME: Real elapsed time (duration + wait)
-                const totalEdgeTime = edgeDuration + waitTime
-
-                const newCost = cost + totalEdgeCost
-                const newTime = currentTime + (totalEdgeTime * 1000)
-
-                if (newCost < (dist.get(edge.to) ?? Infinity)) {
-                    dist.set(edge.to, newCost)
-                    prev.set(edge.to, { edge, from: id, arrivalTime: newTime })
-                    pq.enqueue({ id: edge.to, cost: newCost, time: newTime })
-                }
+        if (preferBusPath) {
+            const pathKey = preferBusPath.path.map(e => `${e.from}|${e.to}`).join(',')
+            const isDuplicate = foundPaths.some(p =>
+                p.path.map(e => `${e.from}|${e.to}`).join(',') === pathKey
+            )
+            if (!isDuplicate) {
+                foundPaths.push(preferBusPath)
             }
         }
-        return null
-    }
 
-    function convertToRouteOption(
-        pathData: { path: Edge[], cost: number, arrivalTime: number },
-        startTime: Date,
-        origin: { lat: number, lng: number, name?: string },
-        dest: { lat: number, lng: number, name?: string },
-        index: number
-    ): RouteOption {
-        const { path, cost, arrivalTime } = pathData
-        const segments: RouteSegment[] = []
-        let currentSeg: RouteSegment | null = null
+        // Determine confidence level
+        const hasRealTimeData = arrivalCache.size > 0
+        const hasHistoricalData = graph.getTotalObservations() > 0
 
-        path.forEach(edge => {
-            // Get node info safely
-            const getNode = (id: string, fallback: { lat: number, lng: number, name?: string }) => {
-                if (id === 'ORIGIN' || id === 'DESTINATION') return fallback
-                const n = graphNodes.value.get(id)
-                return n ? { lat: n.lat, lng: n.lng, name: n.name } : fallback
-            }
-
-            const fromNode = getNode(edge.from, origin)
-            const toNode = getNode(edge.to, dest)
-
-            if (currentSeg && currentSeg.type === 'bus' && edge.type === 'bus' && currentSeg.lineId === edge.lineId) {
-                // Merge
-                currentSeg.to = { id: edge.to, name: toNode.name || 'Parada', location: { lat: toNode.lat, lng: toNode.lng } }
-                currentSeg.duration += edge.weight / 60
-                currentSeg.distance += edge.distance
-                currentSeg.geometry?.push({ lat: toNode.lat, lng: toNode.lng })
-            } else {
-                if (currentSeg) segments.push(currentSeg)
-
-                currentSeg = {
-                    type: edge.type as any,
-                    from: { id: edge.from, name: fromNode.name || 'Origen', location: { lat: fromNode.lat, lng: fromNode.lng } },
-                    to: { id: edge.to, name: toNode.name || 'Destino', location: { lat: toNode.lat, lng: toNode.lng } },
-                    duration: edge.weight / 60,
-                    distance: edge.distance,
-                    lineId: edge.lineId,
-                    instructions: edge.type === 'walk' ? 'Caminar' : `Autobús ${edge.lineId}`,
-                    geometry: [
-                        { lat: fromNode.lat, lng: fromNode.lng },
-                        { lat: toNode.lat, lng: toNode.lng }
-                    ]
-                }
-            }
-        })
-        if (currentSeg) segments.push(currentSeg)
-
-        const totalDurationMinutes = (arrivalTime - startTime.getTime()) / 1000 / 60
-
-        return {
-            id: `route-${index}-${Date.now()}`,
-            segments,
-            totalDuration: Math.max(1, Math.ceil(totalDurationMinutes)),
-            walkingDistance: Math.round(segments.filter(s => s.type === 'walk').reduce((a, b) => a + b.distance, 0)),
-            transfers: Math.max(0, segments.filter(s => s.type === 'bus').length - 1),
-            departureTime: startTime,
-            arrivalTime: new Date(arrivalTime),
-            // Tag logic can use the "cost" (penalty included) to determine quality, or real time?
-            // "Rápido" should probably range on real time.
-            tags: totalDurationMinutes < 20 ? ['Rápido'] : []
-        }
+        return foundPaths.map((p, i) =>
+            convertToRouteOption(p, departureTime, origin, destination, i, hasRealTimeData, hasHistoricalData)
+        )
     }
 
     return {
-        buildGraph,
+        ensureGraph,
         findRoutes,
-        isBuildingGraph
     }
 }
 
-// Minimal Priority Queue
-class PriorityQueue<T> {
-    private items: T[] = []
-    constructor(private compare: (a: T, b: T) => number) { }
+// --- Dijkstra ---
 
-    enqueue(item: T) {
-        this.items.push(item)
-        this.items.sort(this.compare)
+interface DijkstraResult {
+    path: GraphEdge[]
+    cost: number
+    arrivalTime: number
+}
+
+function dijkstra(
+    startId: string,
+    endId: string,
+    getNeighbors: (id: string) => GraphEdge[],
+    penalties: Map<string, number>,
+    startTimeMs: number,
+    arrivals: ArrivalMap,
+    config: RoutingConfig,
+    preferBus: boolean = false
+): DijkstraResult | null {
+
+    const dist = new Map<string, number>()
+    const prev = new Map<string, { edge: GraphEdge; from: string; arrivalTime: number }>()
+
+    const pq = new BinaryHeapPQ<{ id: string; cost: number; time: number }>(
+        (a, b) => a.cost - b.cost
+    )
+
+    dist.set(startId, 0)
+    pq.enqueue({ id: startId, cost: 0, time: startTimeMs })
+
+    while (!pq.isEmpty()) {
+        const { id, cost, time: currentTime } = pq.dequeue()!
+
+        if (cost > (dist.get(id) ?? Infinity)) continue
+
+        if (id === endId) {
+            // Reconstruct path
+            const path: GraphEdge[] = []
+            let curr = endId
+
+            while (curr !== startId) {
+                const rec = prev.get(curr)
+                if (!rec) return null
+                path.unshift(rec.edge)
+                curr = rec.from
+            }
+            return { path, cost, arrivalTime: currentTime }
+        }
+
+        for (const edge of getNeighbors(id)) {
+            let edgeDuration = edge.weight // seconds
+            let waitTime = 0
+            let boardingPenalty = 0
+
+            // Check if continuing on the same bus line
+            const lastRecord = prev.get(id)
+            const prevLineId = lastRecord?.edge?.lineId
+            const isContinuingLine = lastRecord && lastRecord.edge.type === 'bus' && prevLineId === edge.lineId
+
+            if (edge.type === 'bus') {
+                if (isContinuingLine) {
+                    // Already on the bus — no wait
+                    waitTime = 0
+                    boardingPenalty = 0
+                } else {
+                    // Transfer or new line — check schedule
+                    boardingPenalty = config.boardingPenaltySeconds
+
+                    const stopArrivals = arrivals.get(edge.from)
+                    const nextArrivalTs = stopArrivals?.get(edge.lineId || '')
+
+                    if (nextArrivalTs !== undefined) {
+                        if (nextArrivalTs > currentTime) {
+                            waitTime = (nextArrivalTs - currentTime) / 1000
+                        } else {
+                            // Known arrival has passed — assume average frequency
+                            waitTime = 15 * 60
+                        }
+                    } else {
+                        // No real-time data — use defaults
+                        const isFirstLeg = !lastRecord || lastRecord.edge.type === 'walk'
+                        const isTransfer = lastRecord && lastRecord.edge.type === 'bus'
+
+                        if (isFirstLeg) waitTime = config.initialWaitSeconds
+                        else if (isTransfer) waitTime = config.transferPenaltySeconds
+                    }
+                }
+            }
+
+            // Artificial cost adjustments
+            let artificialEdgeDuration = edgeDuration
+            if (edge.type === 'walk') {
+                if (preferBus) {
+                    artificialEdgeDuration *= 5 // 5x walk cost
+                }
+                const isFirstLeg = !lastRecord || lastRecord.edge.from === startId
+                const isLastLeg = edge.to === endId
+                if (lastRecord && lastRecord.edge.type === 'walk' && !isFirstLeg && !isLastLeg) {
+                    artificialEdgeDuration += 600 // 10 min penalty for multiple walks in the middle
+                }
+                if (preferBus && waitTime > config.initialWaitSeconds) {
+                    // If we prefer bus, wait time also shouldn't block us from taking the bus over walking
+                    // but we want waitTime intact, we just don't multiply it.
+                }
+            } else if (edge.type === 'bus' && preferBus) {
+                // Ignore large wait times to prefer bus anyway
+                waitTime = waitTime * 0.2
+            }
+
+            const penalty = penalties.get(`${edge.from}|${edge.to}`) || 0
+
+            // COST: includes artificial penalties
+            const totalEdgeCost = artificialEdgeDuration + waitTime + penalty + boardingPenalty
+
+            // TIME: real elapsed time
+            const totalEdgeTime = edgeDuration + waitTime
+
+            const newCost = cost + totalEdgeCost
+            const newTime = currentTime + (totalEdgeTime * 1000)
+
+            if (newCost < (dist.get(edge.to) ?? Infinity)) {
+                dist.set(edge.to, newCost)
+                prev.set(edge.to, { edge, from: id, arrivalTime: newTime })
+                pq.enqueue({ id: edge.to, cost: newCost, time: newTime })
+            }
+        }
     }
 
-    dequeue(): T | undefined {
-        return this.items.shift()
-    }
+    return null
+}
 
-    isEmpty() { return this.items.length === 0 }
+// --- Route Conversion ---
+
+function convertToRouteOption(
+    pathData: DijkstraResult,
+    startTime: Date,
+    origin: { lat: number; lng: number; name?: string },
+    dest: { lat: number; lng: number; name?: string },
+    index: number,
+    hasRealTimeData: boolean,
+    hasHistoricalData: boolean,
+): RouteOption {
+    const graph = getTransitGraph()
+    const { path, arrivalTime } = pathData
+    const segments: RouteSegment[] = []
+    let currentSeg: RouteSegment | null = null
+
+    path.forEach(edge => {
+        const getNode = (id: string, fallback: { lat: number; lng: number; name?: string }) => {
+            if (id === 'ORIGIN' || id === 'DESTINATION') return fallback
+            const n = graph.getNode(id)
+            return n ? { lat: n.lat, lng: n.lng, name: n.name } : fallback
+        }
+
+        const fromNode = getNode(edge.from, origin)
+        const toNode = getNode(edge.to, dest)
+
+        if (currentSeg && currentSeg.type === 'bus' && edge.type === 'bus' && currentSeg.lineId === edge.lineId) {
+            // Merge consecutive bus edges on same line
+            currentSeg.to = { id: edge.to, name: toNode.name || 'Stop', location: { lat: toNode.lat, lng: toNode.lng } }
+            currentSeg.duration += edge.weight / 60
+            currentSeg.distance += edge.distance
+            currentSeg.geometry?.push({ lat: toNode.lat, lng: toNode.lng })
+        } else {
+            if (currentSeg) segments.push(currentSeg)
+
+            // Use i18n-ready instruction keys instead of hardcoded Spanish
+            const instructions = edge.type === 'walk'
+                ? 'route.instruction_walk'
+                : `route.instruction_bus`
+
+            currentSeg = {
+                type: edge.type as any,
+                from: { id: edge.from, name: fromNode.name || 'Origin', location: { lat: fromNode.lat, lng: fromNode.lng } },
+                to: { id: edge.to, name: toNode.name || 'Destination', location: { lat: toNode.lat, lng: toNode.lng } },
+                duration: edge.weight / 60,
+                distance: edge.distance,
+                lineId: edge.lineId,
+                instructions,
+                geometry: [
+                    { lat: fromNode.lat, lng: fromNode.lng },
+                    { lat: toNode.lat, lng: toNode.lng },
+                ],
+            }
+        }
+    })
+    if (currentSeg) segments.push(currentSeg)
+
+    const totalDurationMinutes = (arrivalTime - startTime.getTime()) / 1000 / 60
+
+    // Determine confidence based on data quality
+    let confidence: RouteConfidence = 'low'
+    if (hasRealTimeData && hasHistoricalData) confidence = 'high'
+    else if (hasRealTimeData || hasHistoricalData) confidence = 'medium'
+
+    const tags: string[] = []
+    if (totalDurationMinutes < 20) tags.push('fast')
+
+    return {
+        id: `route-${index}-${Date.now()}`,
+        segments,
+        totalDuration: Math.max(1, Math.ceil(totalDurationMinutes)),
+        walkingDistance: Math.round(segments.filter(s => s.type === 'walk').reduce((a, b) => a + b.distance, 0)),
+        transfers: Math.max(0, segments.filter(s => s.type === 'bus').length - 1),
+        departureTime: startTime,
+        arrivalTime: new Date(arrivalTime),
+        tags,
+        confidence,
+        historicalBasis: getTransitGraph().getTotalObservations(),
+    }
 }

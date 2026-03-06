@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { RouteOption } from '~/composables/useRouting'
+import type { RouteOption } from '~/types/bus'
 import type { BusStop } from '~/types/bus'
 
 const route = useRoute()
@@ -139,6 +139,13 @@ function getSegmentColor(type: string, lineId?: string) {
     return 'text-gray-500'
 }
 
+function formatDistance(meters: number) {
+    if (meters >= 1000) {
+        return (meters / 1000).toFixed(1) + ' km'
+    }
+    return Math.round(meters) + ' m'
+}
+
 </script>
 
 <template>
@@ -149,8 +156,8 @@ function getSegmentColor(type: string, lineId?: string) {
     </div>
 
     <!-- Content (right side on desktop) -->
-    <div class="w-full md:w-[400px] lg:w-[450px] shrink-0 px-4 py-6 flex flex-col pointer-events-auto relative z-10">
-      <UCard class="shadow-xl ring-1 ring-gray-200 dark:ring-gray-700 backdrop-blur-md bg-white/90 dark:bg-gray-900/90 w-full max-w-md mx-auto flex flex-col mt-0 h-fit max-h-[calc(100vh-6rem)]">
+    <div class="w-full md:w-[400px] lg:w-[450px] shrink-0 px-4 py-6 md:px-0 md:py-0 md:h-[calc(100vh-4rem)] flex flex-col pointer-events-auto relative z-10">
+      <UCard :ui="{ body: 'flex-1 overflow-hidden flex flex-col h-full p-4 sm:p-4' }" class="shadow-xl ring-1 ring-gray-200 dark:ring-gray-700 backdrop-blur-md bg-white/90 dark:bg-gray-900/90 w-full max-w-md mx-auto flex flex-col mt-0 h-fit max-h-[calc(100vh-6rem)] md:h-full md:max-h-none md:max-w-none md:rounded-none">
                 <template #header>
                     <div class="flex items-center gap-3">
                         <UButton icon="i-lucide-arrow-left" variant="ghost" color="neutral" @click="router.back()" />
@@ -173,12 +180,12 @@ function getSegmentColor(type: string, lineId?: string) {
                     <UButton :label="$t('route_results.try_again')" variant="ghost" class="mt-2" @click="calculateRoutes" />
                 </div>
                 
-                <div v-else class="space-y-4 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
+                <div v-else class="space-y-4 max-h-[60vh] md:max-h-none md:flex-1 overflow-y-auto pr-2 custom-scrollbar">
                     <div 
                         v-for="option in routes" 
                         :key="option.id"
-                        class="p-3 rounded-xl border border-gray-200 dark:border-gray-700 cursor-pointer transition-all hover:bg-gray-50 dark:hover:bg-gray-800"
-                        :class="selectedRouteId === option.id ? 'ring-2 ring-primary-500 bg-primary-50 dark:bg-primary-900/10' : ''"
+                        class="p-3 rounded-xl border cursor-pointer transition-all"
+                        :class="selectedRouteId === option.id ? 'border-primary-500 border-2 bg-primary-50/80 dark:bg-primary-900/20 shadow-md' : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'"
                         @click="selectRoute(option.id)"
                     >
                         <!-- Header: Duration + Arrival -->
@@ -188,7 +195,7 @@ function getSegmentColor(type: string, lineId?: string) {
                                 <span class="text-xs text-gray-400">({{ option.arrivalTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) }})</span>
                              </div>
                              <div class="flex items-center gap-2 text-sm text-gray-500">
-                                <span>{{ Math.ceil(option.walkingDistance) }}m</span>
+                                <span>{{ formatDistance(option.walkingDistance) }}</span>
                                 <UIcon name="i-lucide-footprints" class="w-3 h-3" />
                              </div>
                         </div>
@@ -230,11 +237,11 @@ function getSegmentColor(type: string, lineId?: string) {
                                 
                                 <div class="pb-1">
                                     <p class="font-medium dark:text-white">
-                                        {{ segment.instructions }}
+                                        {{ segment.type === 'walk' ? $t('route.instruction_walk') : $t('route.instruction_bus') + ' ' + segment.lineId }}
                                     </p>
                                     <p class="text-xs text-gray-500">
-                                        {{ segment.duration }} min · {{ Math.round(segment.distance) }}m
-                                        <span v-if="segment.type === 'bus'">· Desde {{ segment.from.name }} hasta {{ segment.to.name }}</span>
+                                        {{ segment.duration.toFixed(0) }} min · {{ formatDistance(segment.distance) }}
+                                        <span v-if="segment.type === 'bus'">· {{ $t('route_results.from') }} {{ segment.from.name }} {{ $t('route_results.to_stop') }} {{ segment.to.name }}</span>
                                     </p>
                                 </div>
                             </div>
