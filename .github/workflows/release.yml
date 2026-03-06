@@ -26,11 +26,9 @@ jobs:
           node-version: "20"
 
       - name: Install dependencies
-        working-directory: ./web
         run: npm ci
 
       - name: Release
-        working-directory: ./web
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npx semantic-release
