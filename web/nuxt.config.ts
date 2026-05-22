@@ -52,8 +52,8 @@ export default defineNuxtConfig({
   },
 
   umami: {
-    host: process.env.NUXT_UMAMI_HOST || '',
-    id: process.env.NUXT_UMAMI_ID || '',
+    host: process.env.NUXT_UMAMI_HOST || 'https://umami.juanman.tech/',
+    id: process.env.NUXT_UMAMI_ID || '26610ee2-4a1e-4dac-977a-86ae1a261bf4',
     autoTrack: true,
     ignoreLocalhost: true,
   },

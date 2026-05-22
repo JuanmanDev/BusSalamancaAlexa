@@ -48,6 +48,7 @@ onMounted(() => {
       <button
         v-if="modelValue"
         class="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+        v-track-click="'search_input_clear'"
         @click="handleClear"
       >
         <UIcon name="i-lucide-x" class="w-5 h-5" />

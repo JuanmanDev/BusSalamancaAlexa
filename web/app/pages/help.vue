@@ -18,6 +18,7 @@ const { t } = useI18n()
         @click="router.back()"
         class="-ml-2"
         aria-label="Volver"
+        v-track-click="'help_back'"
       />
       <div>
         <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">{{ $t('help.title') }}</h1>

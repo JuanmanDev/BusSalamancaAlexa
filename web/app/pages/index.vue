@@ -121,7 +121,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="md:flex md:min-h-full">
+  <div class="md:flex md:min-h-full" v-track-view="'home_page'">
     <!-- MapPreview: inline on mobile, left sticky on desktop -->
     <div class="md:flex-1 md:sticky md:top-16 md:h-[calc(100vh-4rem)] shrink-0 md:order-first z-0">
       <MapPreview height="h-[50vh] md:h-full" />
@@ -164,6 +164,7 @@ onMounted(async () => {
               :to="localePath(`/stop/${fav.id}`)"
               class="bg-white/80 dark:bg-gray-800/80 rounded-lg p-3 hover:bg-white dark:hover:bg-gray-800 transition-all"
               :style="{ viewTransitionName: `stop-${fav.id}` }"
+              v-track-click="{ id: 'home_click_favorite_stop', data: { stopId: fav.id } }"
             >
               <div class="flex items-center gap-3">
                 <div class="w-10 h-10 bg-primary-100 dark:bg-primary-900/50 rounded-lg flex items-center justify-center shrink-0">
@@ -190,6 +191,7 @@ onMounted(async () => {
               :to="localePath(`/line/${fav.id}`)"
               class="bg-white/80 dark:bg-gray-800/80 rounded-lg p-3 hover:bg-white dark:hover:bg-gray-800 transition-all flex items-center gap-3"
               :style="{ viewTransitionName: `line-${fav.id}` }"
+              v-track-click="{ id: 'home_click_favorite_line', data: { lineId: fav.id } }"
             >
               <div 
                 class="w-10 h-10 rounded-lg flex items-center justify-center text-white shadow-sm shrink-0"
@@ -211,6 +213,7 @@ onMounted(async () => {
                 variant="soft"
                 class="absolute -left-3 top-1/2 -translate-y-1/2 z-10 rounded-full shadow-md bg-white/95 dark:bg-gray-800/95 backdrop-blur aspect-square w-8 h-8 flex items-center justify-center pointer-events-auto transition-opacity"
                 size="sm"
+                v-track-click="'home_scroll_favorite_lines_left'"
                 @click.prevent="scrollFavLines('left')" 
               />
             </Transition>
@@ -225,6 +228,7 @@ onMounted(async () => {
                 :to="localePath(`/line/${fav.id}`)"
                 class="bg-white/80 dark:bg-gray-800/80 rounded-lg p-3 hover:bg-white dark:hover:bg-gray-800 transition-all flex flex-col items-center gap-2 shrink-0 w-[40%] snap-start"
                 :style="{ viewTransitionName: `line-${fav.id}` }"
+                v-track-click="{ id: 'home_click_favorite_line', data: { lineId: fav.id } }"
               >
                 <div 
                   class="w-10 h-10 rounded-lg flex items-center justify-center text-white shadow-sm shrink-0"
@@ -244,6 +248,7 @@ onMounted(async () => {
                 variant="soft"
                 class="absolute -right-3 top-1/2 -translate-y-1/2 z-10 rounded-full shadow-md bg-white/95 dark:bg-gray-800/95 backdrop-blur aspect-square w-8 h-8 flex items-center justify-center pointer-events-auto transition-opacity"
                 size="sm"
+                v-track-click="'home_scroll_favorite_lines_right'"
                 @click.prevent="scrollFavLines('right')" 
               />
             </Transition>
@@ -329,7 +334,7 @@ onMounted(async () => {
             <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
               {{ $t('index.find_closest_stops') }}
             </p>
-            <UButton icon="i-lucide-navigation" @click="handleRequestLocation">
+            <UButton icon="i-lucide-navigation" v-track-click="'home_request_location'" @click="handleRequestLocation">
               {{ $t('index.activate_location_btn') }}
             </UButton>
           </div>
@@ -345,6 +350,7 @@ onMounted(async () => {
           </div>
           <button 
             class="text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+            v-track-click="'home_clear_recents'"
             @click="storage.clearRecents"
           >
             {{ $t('index.clear') }}
@@ -356,6 +362,7 @@ onMounted(async () => {
             :key="`${recent.type}-${recent.id}`"
             :to="localePath(recent.type === 'stop' ? `/stop/${recent.id}` : `/line/${recent.id}`)"
             class="flex items-center gap-3 bg-white/80 dark:bg-gray-800/80 rounded-lg px-4 py-3 hover:bg-white dark:hover:bg-gray-800 transition-all"
+            v-track-click="{ id: 'home_click_recent', data: { type: recent.type, id: recent.id } }"
           >
             <div 
               v-if="recent.type === 'line'"
@@ -388,6 +395,7 @@ onMounted(async () => {
         <NuxtLink
           :to="localePath('/lines')"
           class="bg-gradient-to-br from-primary-500 to-primary-600 rounded-xl p-6 text-white shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all"
+          v-track-click="'home_quick_action_lines'"
         >
           <UIcon name="i-lucide-route" class="w-8 h-8 mb-3" />
           <h3 class="font-semibold">{{ $t('index.all_lines') }}</h3>
@@ -397,6 +405,7 @@ onMounted(async () => {
         <NuxtLink
           :to="localePath('/map')"
           class="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl p-6 text-white shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all"
+          v-track-click="'home_quick_action_map'"
         >
           <UIcon name="i-lucide-map" class="w-8 h-8 mb-3" />
           <h3 class="font-semibold">{{ $t('index.see_map') }}</h3>
@@ -407,6 +416,7 @@ onMounted(async () => {
           to="https://www.amazon.es/Juan-Manuel-B%C3%A9c-Bus-Salamanca/dp/B0F59TDK93/?utm_source=bussalamanca.juanman.tech&utm_compaign=home-bottom-card"
           target="_blank"
           class="col-span-2 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-xl p-6 text-white shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all flex items-center gap-4"
+          v-track-click="'home_quick_action_alexa'"
         >
           <div class="bg-white/20 p-2 rounded-xl shrink-0">
             <img src="https://m.media-amazon.com/images/I/41E21ldSofL.png" alt="Bus Salamanca Alexa Skill" class="w-12 h-12 object-contain rounded-lg" />

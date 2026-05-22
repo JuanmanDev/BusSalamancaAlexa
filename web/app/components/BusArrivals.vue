@@ -63,6 +63,7 @@ function goToLine(lineId: string) {
             name="list"
             tag="div"
             class="space-y-2"
+            v-track-view="'bus_arrivals_list'"
           >
             <div
               v-for="arrival in arrivals"
@@ -75,6 +76,7 @@ function goToLine(lineId: string) {
                   <!-- Line badge - only number, clickable -->
                   <button
                     class="shrink-0 flex flex-col items-center gap-0.5 hover:scale-105 transition-transform"
+                    v-track-click="{ id: 'arrival_go_to_line', data: { lineId: arrival.lineId, destination: arrival.destination, minutesRemaining: arrival.minutesRemaining, isEstimate: arrival.isEstimate, stopId: route.params.id } }"
                     @click.stop="goToLine(arrival.lineId)"
                   >
                     <div 
@@ -102,6 +104,7 @@ function goToLine(lineId: string) {
                   class="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center justify-center shrink-0"
                   :class="notification.isTracking(arrival.lineId, route.params.id as string, new Date(arrival.expectedArrivalTime).getTime()) ? 'text-primary-500 bg-primary-50 dark:bg-primary-900/30' : 'text-gray-400'"
                   :title="$t('arrivals.notify')"
+                  v-track-click="{ id: 'arrival_notify_toggle', data: { lineId: arrival.lineId, destination: arrival.destination, stopId: route.params.id, minutesRemaining: arrival.minutesRemaining } }"
                 >
                   <UIcon :name="notification.isTracking(arrival.lineId, route.params.id as string, new Date(arrival.expectedArrivalTime).getTime()) ? 'i-lucide-bell-ring' : 'i-lucide-bell'" class="w-6 h-6 animate-pulse-subtle opacity-25" v-if="notification.isTracking(arrival.lineId, route.params.id as string, new Date(arrival.expectedArrivalTime).getTime())" />
                   <UIcon name="i-lucide-bell" class="w-6 h-6 opacity-50" v-else />

@@ -423,7 +423,7 @@ function swappoints() {
 </script>
 
 <template>
-  <div class="md:flex md:min-h-full">
+  <div class="md:flex md:min-h-full" v-track-view="'route_page'">
     <!-- MapPreview: inline on mobile, left sticky on desktop -->
     <div 
       class="md:flex-1 md:sticky md:top-16 md:h-[calc(100vh-4rem)] shrink-0 md:order-first z-0"
@@ -473,7 +473,7 @@ function swappoints() {
                             @focus="onFocus('origin')"
                          >
                             <template #trailing>
-                                <UButton v-if="originQuery && activeField === 'origin'" icon="i-lucide-x" color="neutral" variant="ghost" size="xs" @click="originQuery = ''; mapStore.setRouteOrigin(null)" />
+                                <UButton v-if="originQuery && activeField === 'origin'" icon="i-lucide-x" color="neutral" variant="ghost" size="xs" @click="originQuery = ''; mapStore.setRouteOrigin(null)" v-track-click="'route_clear_origin'" />
                             </template>
                          </UInput>
                          
@@ -485,14 +485,14 @@ function swappoints() {
                             @focus="onFocus('destination')"
                          >
                              <template #trailing>
-                                <UButton v-if="destQuery && activeField === 'destination'" icon="i-lucide-x" color="neutral" variant="ghost" size="xs" @click="destQuery = ''; mapStore.setRouteDestination(null)" />
+                                <UButton v-if="destQuery && activeField === 'destination'" icon="i-lucide-x" color="neutral" variant="ghost" size="xs" @click="destQuery = ''; mapStore.setRouteDestination(null)" v-track-click="'route_clear_destination'" />
                             </template>
                          </UInput>
                      </div>
 
                      <!-- Swap Button -->
                      <div class="flex items-center">
-                         <UButton icon="i-lucide-arrow-up-down" color="neutral" variant="ghost" @click="swappoints" />
+                         <UButton icon="i-lucide-arrow-up-down" color="neutral" variant="ghost" @click="swappoints" v-track-click="'route_swap_points'" />
                      </div>
                      </div>
                      
@@ -504,6 +504,7 @@ function swappoints() {
                             size="md"
                             color="primary"
                             block
+                            v-track-click="'route_search_submit'"
                             @click="searchRoute"
                         />
                      </div>
@@ -526,6 +527,7 @@ function swappoints() {
                     v-for="item in suggestions" 
                     :key="item.id"
                     class="w-full text-left p-3 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 flex items-center gap-3 transition-colors active:bg-black/10 dark:active:bg-white/20"
+                    v-track-click="{ id: 'route_select_suggestion', data: { type: item.type } }"
                     @click="selectResult(item)"
                 >
                     <div class="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center shrink-0">
@@ -564,6 +566,7 @@ function swappoints() {
                         color="neutral" 
                         block 
                         class="flex-1 shadow-sm border border-gray-200 dark:border-gray-800"
+                        v-track-click="'route_from_here'"
                         @click="() => {
                             mapStore.setRouteOrigin({
                                 id: selectedOverlayStop.id,
@@ -585,6 +588,7 @@ function swappoints() {
                         color="neutral" 
                         block 
                         class="flex-1 shadow-sm border border-gray-200 dark:border-gray-800"
+                        v-track-click="'route_to_here'"
                         @click="() => {
                             mapStore.setRouteDestination({
                                 id: selectedOverlayStop.id,
@@ -606,7 +610,7 @@ function swappoints() {
         </div>
         
         <div v-if="!activeField && mapStore.routeOrigin && mapStore.routeDestination" class="mt-4 flex justify-center">
-             <UButton size="xl" class="w-full max-w-md shadow-lg" color="primary" @click="searchRoute">
+             <UButton size="xl" class="w-full max-w-md shadow-lg" color="primary" @click="searchRoute" v-track-click="'route_search_submit'">
                 {{ $t('route.search_route') }}
              </UButton>
         </div>
@@ -640,6 +644,7 @@ function swappoints() {
                         v-for="item in suggestions" 
                         :key="item.id"
                         class="w-full text-left p-3 rounded-lg bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 shadow-sm border border-gray-100 dark:border-gray-800 flex items-center gap-3 transition-colors active:bg-gray-100 dark:active:bg-gray-800"
+                        v-track-click="{ id: 'route_select_suggestion', data: { type: item.type } }"
                         @click="selectResult(item)"
                     >
                         <div class="w-10 h-10 rounded-full bg-gray-50 dark:bg-gray-800 flex items-center justify-center shrink-0">
@@ -713,7 +718,7 @@ function swappoints() {
             
             <!-- Bottom Confirmation -->
             <div class="pointer-events-auto p-6 pb-10 flex justify-center bg-gradient-to-t from-black/50 to-transparent">
-                <UButton size="xl" color="primary" :loading="isConfirmingLocation" @click="confirmMapSelection" class="shadow-xl">
+                <UButton size="xl" color="primary" :loading="isConfirmingLocation" @click="confirmMapSelection" class="shadow-xl" v-track-click="'route_confirm_map_selection'">
                     {{ $t('route.confirm_location') }}
                 </UButton>
             </div>

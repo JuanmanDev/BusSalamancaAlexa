@@ -43,7 +43,7 @@ function getRouteParts(name: string): { origin: string; destination: string } | 
 </script>
 
 <template>
-  <div class="space-y-2">
+  <div class="space-y-2" v-track-view="'bus_lines_list'">
     <!-- Loading skeleton -->
     <template v-if="loading">
       <div 
@@ -68,6 +68,7 @@ function getRouteParts(name: string): { origin: string; destination: string } | 
       :key="line.id"
       class="bg-white/80 dark:bg-gray-800/80 rounded-lg p-3 hover:bg-white dark:hover:bg-gray-800 cursor-pointer transition-all"
       :style="{ viewTransitionName: `line-${line.id}` }"
+      v-track-click="{ id: 'select_line', data: { lineId: line.id, lineName: line.name, hasRouteParts: !!getRouteParts(line.name) } }"
       @click="emit('select', line)"
     >
       <div class="flex items-center gap-3">
@@ -111,6 +112,7 @@ function getRouteParts(name: string): { origin: string; destination: string } | 
           v-if="showFavorite"
           class="p-2 rounded-lg transition-all hover:bg-gray-100 dark:hover:bg-gray-700"
           :class="isFavorite(line.id) ? 'text-amber-500' : 'text-gray-300 dark:text-gray-600'"
+          v-track-click="{ id: 'toggle_favorite_line', data: { lineId: line.id, isFavorite: !isFavorite(line.id), lineName: line.name } }"
           @click.stop="emit('toggle-favorite', line)"
         >
           <UIcon 

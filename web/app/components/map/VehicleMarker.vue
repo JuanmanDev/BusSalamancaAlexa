@@ -74,6 +74,7 @@ const isStale = computed(() => dataAge.value > 30000)
         <div
           class="vehicle-marker-wrapper relative flex flex-col items-center cursor-pointer vehicle-transition"
           :class="markerClasses"
+          v-track-click="{ id: 'map_click_vehicle_marker', data: { vehicleId: vehicle.id, lineId: vehicle.lineId, destination: vehicle.destination } }"
           @click.stop="emit('click', vehicle)"
         >
           <!-- Ping Halo — only rendered when vehicle is active and not delayed -->

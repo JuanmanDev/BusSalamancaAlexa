@@ -43,6 +43,7 @@ const markerClasses = computed(() => {
         <div
           class="stop-marker-wrapper cursor-pointer relative marker-transition"
           :class="markerClasses"
+          v-track-click="{ id: 'map_click_stop_marker', data: { stopId: stop.id, stopName: stop.name, lines: stop.lines } }"
           @click.stop="emit('click', stop)"
         >
           <div v-html="svgContent" />

@@ -82,7 +82,7 @@ onMounted(async () => {
       >
       <div class="mx-auto px-4 h-16 flex items-center justify-between">
         <!-- Logo -->
-        <NuxtLink :to="localePath('/')" class="flex items-center gap-2 font-bold text-xl text-primary-600 dark:text-primary-400">
+        <NuxtLink :to="localePath('/')" class="flex items-center gap-2 font-bold text-xl text-primary-600 dark:text-primary-400" v-track-click="'nav_logo'">
           <UIcon name="i-lucide-bus" class="w-8 h-8" />
           <span class="hidden sm:inline md:hidden lg:inline">BusSalamanca</span>
         </NuxtLink>
@@ -97,6 +97,7 @@ onMounted(async () => {
             :class="isActive(item.to) 
               ? 'text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/30 font-medium' 
               : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800'"
+            v-track-click="{ id: 'nav_desktop_link', data: { to: item.to } }"
           >
             <UIcon :name="item.icon" class="w-5 h-5" />
             <span>{{ $t(item.label) }}</span>
@@ -110,6 +111,7 @@ onMounted(async () => {
             @click="colorMode.preference = colorMode.value === 'dark' ? 'light' : 'dark'"
             class="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors flex items-center p-2 rounded-lg"
             :title="$t('nav.change_theme')"
+            v-track-click="'nav_toggle_theme'"
           >
             <UIcon :name="colorMode.value === 'dark' ? 'i-lucide-sun' : 'i-lucide-moon'" class="w-5 h-5" />
           </button>
@@ -118,6 +120,7 @@ onMounted(async () => {
             :to="localePath('/notifications')"
             class="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors flex items-center p-2 rounded-lg relative"
             :title="$t('notifications.title')"
+            v-track-click="'nav_notifications'"
           >
             <UIcon name="i-lucide-bell" class="w-5 h-5" />
             <span v-if="notification.activeNotifications.value.length > 0" class="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full animate-pulse-subtle"></span>
@@ -127,6 +130,7 @@ onMounted(async () => {
             :to="localePath('/settings')"
             class="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors flex items-center p-2 rounded-lg"
             :title="$t('nav.settings_title')"
+            v-track-click="'nav_settings'"
           >
             <UIcon name="i-lucide-settings" class="w-5 h-5" />
           </NuxtLink>
@@ -165,6 +169,7 @@ onMounted(async () => {
           :class="isActive(item.to)
             ? 'text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/30'
             : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'"
+          v-track-click="{ id: 'nav_mobile_link', data: { to: item.to } }"
         >
           <UIcon :name="item.icon" class="w-6 h-6" />
           <span class="text-xs font-medium">{{ $t(item.label) }}</span>
