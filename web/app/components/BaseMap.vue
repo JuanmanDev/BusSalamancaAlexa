@@ -549,6 +549,7 @@ defineExpose({
                 variant="ghost"
                 icon="i-lucide-x"
                 size="xs"
+                v-track-click="{ id: 'map_close_stop_card', data: { stopId: selectedStopData.id } }"
                 @click="mapStore.clearHighlight()"
               />
             </div>
@@ -606,6 +607,7 @@ defineExpose({
               color="neutral"
               variant="outline"
               icon="i-lucide-clock"
+              v-track-click="{ id: 'map_go_to_stop_details', data: { stopId: selectedStopData.id, stopName: selectedStopData.name } }"
               @click="goToStopDetails"
             >
               Ver tiempos de llegada
@@ -648,6 +650,7 @@ defineExpose({
                   variant="ghost"
                   icon="i-lucide-x"
                   size="xs"
+                  v-track-click="{ id: 'map_close_vehicle_card', data: { vehicleId: mapStore.selectedVehicle.id } }"
                   @click="mapStore.clearHighlight()"
                 />
               </div>
@@ -673,6 +676,7 @@ defineExpose({
                 block
                 color="primary"
                 icon="i-lucide-map"
+                v-track-click="{ id: 'map_go_to_line_details', data: { lineId: mapStore.selectedVehicle.lineId, vehicleId: mapStore.selectedVehicle.id } }"
                 @click="goToLineDetails(mapStore.selectedVehicle.lineId)"
               >
                 Ver recorrido de línea

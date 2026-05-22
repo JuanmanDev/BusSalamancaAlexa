@@ -52,7 +52,7 @@ const handleLanguageChange = (val: any) => {
 </script>
 
 <template>
-  <div class="max-w-2xl mx-auto p-4 md:p-8 space-y-8 pb-32">
+  <div class="max-w-2xl mx-auto p-4 md:p-8 space-y-8 pb-32" v-track-view="'settings_page'">
     <div>
       <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">{{ $t('settings.title') }}</h1>
       <p class="text-gray-500 dark:text-gray-400">{{ $t('settings.subtitle') }}</p>
@@ -109,7 +109,7 @@ const handleLanguageChange = (val: any) => {
           {{ $t('settings.map') }}
         </h2>
         
-        <div class="flex items-center justify-between">
+        <div class="flex items-center justify-between" v-track-click="'settings_toggle_animations'">
           <div>
             <span class="block font-medium text-gray-900 dark:text-white">{{ $t('settings.smooth_animations') }}</span>
             <span class="text-sm text-gray-500 dark:text-gray-400">{{ $t('settings.smooth_animations_desc') }}</span>
@@ -130,10 +130,10 @@ const handleLanguageChange = (val: any) => {
           <div class="flex items-center justify-between">
                <ClientOnly>
                  <div id="pwa-install-container">
-                    <UButton v-if="$pwa?.needRefresh" @click="$pwa.updateServiceWorker()" color="primary" variant="solid" icon="i-lucide-refresh-cw">
+                    <UButton v-if="$pwa?.needRefresh" @click="$pwa.updateServiceWorker()" color="primary" variant="solid" icon="i-lucide-refresh-cw" v-track-click="'settings_pwa_update'">
                       {{ $t('settings.update_app') }}
                     </UButton>
-                    <UButton v-else-if="$pwa?.showInstallPrompt && !$pwa?.offlineReady && !$pwa?.needRefresh" @click="$pwa.install()" color="primary" variant="soft" icon="i-lucide-download">
+                    <UButton v-else-if="$pwa?.showInstallPrompt && !$pwa?.offlineReady && !$pwa?.needRefresh" @click="$pwa.install()" color="primary" variant="soft" icon="i-lucide-download" v-track-click="'settings_pwa_install'">
                       {{ $t('settings.install_app') }}
                     </UButton>
                     <p v-else class="text-sm text-green-600 dark:text-green-400 flex items-center gap-2">
@@ -162,6 +162,7 @@ const handleLanguageChange = (val: any) => {
               variant="soft"
               icon="i-lucide-info"
               class="justify-center w-full sm:w-auto sm:justify-start"
+              v-track-click="'settings_view_help'"
             >
               {{ $t('settings.view_help') }}
             </UButton>
@@ -171,6 +172,7 @@ const handleLanguageChange = (val: any) => {
               variant="soft"
               icon="i-lucide-bell"
               class="justify-center w-full sm:w-auto sm:justify-start"
+              v-track-click="'settings_view_notifications'"
             >
               {{ $t('notifications.title') }}
             </UButton>
@@ -193,6 +195,7 @@ const handleLanguageChange = (val: any) => {
             variant="ghost"
             icon="i-lucide-user"
             class="justify-start"
+            v-track-click="'settings_link_dev_web'"
           >
             {{ $t('settings.dev_web') }}
           </UButton>
@@ -204,6 +207,7 @@ const handleLanguageChange = (val: any) => {
             variant="ghost"
             icon="i-lucide-bus"
             class="justify-start"
+            v-track-click="'settings_link_official_web'"
           >
             {{ $t('settings.official_web') }}
           </UButton>
@@ -215,6 +219,7 @@ const handleLanguageChange = (val: any) => {
             variant="ghost"
             icon="i-lucide-mic"
             class="justify-start"
+            v-track-click="'settings_link_alexa'"
           >
             {{ $t('settings.alexa_skill_btn') }}
           </UButton>
@@ -226,6 +231,7 @@ const handleLanguageChange = (val: any) => {
             variant="ghost"
             icon="i-lucide-github"
             class="justify-start"
+            v-track-click="'settings_link_github'"
           >
             {{ $t('settings.source_code') }}
           </UButton>

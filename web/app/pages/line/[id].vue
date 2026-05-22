@@ -114,7 +114,7 @@ const isLoading = computed(() =>
 </script>
 
 <template>
-  <div class="md:flex md:min-h-full">
+  <div class="md:flex md:min-h-full" v-track-view="{ id: 'line_detail_page', data: { lineId: lineId } }">
     <!-- MapPreview: inline on mobile, left sticky on desktop -->
     <div class="md:flex-1 md:sticky md:top-16 md:h-[calc(100vh-4rem)] shrink-0 md:order-first z-0">
       <MapPreview height="h-[50vh] md:h-full" />
@@ -135,13 +135,14 @@ const isLoading = computed(() =>
           <div class="glass-card p-5">
             <!-- Breadcrumb -->
             <div class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 mb-3 relative">
-              <NuxtLink :to="localePath('/lines')" class="hover:text-primary-500 transition-colors">{{ $t('nav.lines') }}</NuxtLink>
+              <NuxtLink :to="localePath('/lines')" class="hover:text-primary-500 transition-colors" v-track-click="'line_detail_breadcrumb_lines'">{{ $t('nav.lines') }}</NuxtLink>
               <UIcon name="i-lucide-chevron-right" class="w-4 h-4" />
               <span>{{ $t('search_modal.lines') }} {{ lineId }}</span>
 
               <button
                 class="p-3 rounded-xl transition-all bg-white/80 dark:bg-gray-800/80 hover:bg-white dark:hover:bg-gray-800 shrink-0 absolute right-0 top-0"
                 :class="isFavorite ? 'text-amber-500' : 'text-gray-400'"
+                v-track-click="{ id: 'line_detail_toggle_favorite', data: { lineId: lineId, isFavorite: !isFavorite } }"
                 @click="toggleFavorite"
               >
                 <UIcon 
@@ -231,6 +232,7 @@ const isLoading = computed(() =>
                 v-for="(stop, index) in lineStops"
                 :key="stop.id"
                 class="w-full flex items-center gap-3 p-3 bg-white/80 dark:bg-gray-800/80 rounded-lg hover:bg-white dark:hover:bg-gray-800 transition-all text-left"
+                v-track-click="{ id: 'line_detail_click_stop', data: { lineId: lineId, stopId: stop.id } }"
                 @click="goToStop(stop)"
               >
                 <!-- Stop number in route -->

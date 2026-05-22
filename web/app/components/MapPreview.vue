@@ -336,6 +336,7 @@ const toggleFullscreen = async () => {
               variant="solid"
               class="shadow-lg bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 transition-all duration-300"
               :icon="mapStore.isFullscreen ? 'i-lucide-minimize-2' : 'i-lucide-maximize-2'"
+              v-track-click="{ id: 'map_preview_toggle_fullscreen', data: { entering: !mapStore.isFullscreen, currentZoom: mapStore.zoom, pitch: mapStore.pitch } }"
               @click="toggleFullscreen"
             >
               <span class="hidden sm:flex items-center">
@@ -358,6 +359,7 @@ const toggleFullscreen = async () => {
               variant="solid"
               icon="i-lucide-minus"
               class="shadow-lg bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200"
+              v-track-click="{ id: 'map_preview_zoom_out', data: { currentZoom: mapStore.zoom } }"
               @click="zoomOutAnimated()"
             />
           </UTooltip>
@@ -368,6 +370,7 @@ const toggleFullscreen = async () => {
               variant="solid"
               icon="i-lucide-plus"
               class="shadow-lg bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200"
+              v-track-click="{ id: 'map_preview_zoom_in', data: { currentZoom: mapStore.zoom } }"
               @click="zoomInAnimated()"
             />
           </UTooltip>
@@ -379,6 +382,7 @@ const toggleFullscreen = async () => {
               variant="solid"
               icon="i-lucide-map-pin"
               class="shadow-lg bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200"
+              v-track-click="{ id: 'map_preview_center_location', data: { hasLocation: !!geolocation.userLocation.value } }"
               @click="clickLocationButton()"
             />
           </UTooltip>
@@ -390,6 +394,7 @@ const toggleFullscreen = async () => {
               variant="solid"
               icon="i-lucide-compass"
               class="shadow-lg bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200"
+              v-track-click="{ id: 'map_preview_reset_north', data: { currentRotation: mapStore.rotation } }"
               @click="mapStore.mapInstance?.easeTo({ bearing: 0, essential: true })"
               :style="{ transform: `rotate(${mapStore.rotation * -1}deg)` }"
             />
@@ -402,6 +407,7 @@ const toggleFullscreen = async () => {
               variant="solid"
               icon="i-lucide-box"
               class="shadow-lg bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200"
+              v-track-click="{ id: 'map_preview_reset_2d', data: { currentPitch: mapStore.pitch } }"
               @click="mapStore.mapInstance?.easeTo({ pitch: 0, essential: true })"
             />
           </UTooltip>

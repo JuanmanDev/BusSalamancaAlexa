@@ -33,7 +33,7 @@ function getTimeColor(minutes?: number): string {
 </script>
 
 <template>
-  <div class="max-w-2xl mx-auto p-4 md:p-8 space-y-6 pb-32">
+  <div class="max-w-2xl mx-auto p-4 md:p-8 space-y-6 pb-32" v-track-view="'notifications_page'">
     <!-- Header -->
     <div>
       <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-3">
@@ -56,6 +56,7 @@ function getTimeColor(minutes?: number): string {
         color="primary"
         variant="soft"
         icon="i-lucide-map"
+        v-track-click="'notifications_empty_go_map'"
       >
         {{ $t('notifications.go_to_map') }}
       </UButton>
@@ -69,6 +70,7 @@ function getTimeColor(minutes?: number): string {
             variant="ghost"
             icon="i-lucide-trash-2"
             size="sm"
+            v-track-click="'notifications_clear_all'"
             @click="notification.stopAllTracking"
           >
             {{ $t('notifications.clear_all') }}
@@ -91,7 +93,7 @@ function getTimeColor(minutes?: number): string {
             <!-- Line & Stop Info -->
             <div class="flex gap-4">
               <!-- Line Badge -->
-              <NuxtLink :to="localePath(`/line/${item.lineId}`)" class="shrink-0 hover:scale-105 transition-transform" :title="$t('notifications.view_line')">
+              <NuxtLink :to="localePath(`/line/${item.lineId}`)" class="shrink-0 hover:scale-105 transition-transform" :title="$t('notifications.view_line')" v-track-click="{ id: 'notifications_view_line', data: { lineId: item.lineId } }">
                 <div 
                   class="w-12 h-12 rounded-xl flex items-center justify-center text-white shadow-sm"
                   :class="getLineColor(item.lineId)"
@@ -105,7 +107,7 @@ function getTimeColor(minutes?: number): string {
                   {{ item.destination || $t('arrivals.unknown_destination') }}
                 </h3>
                 
-                <NuxtLink :to="localePath(`/stop/${item.stopId}`)" class="inline-flex items-center gap-1.5 mt-1 text-sm text-gray-500 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors group/link" :title="$t('notifications.view_stop')">
+                <NuxtLink :to="localePath(`/stop/${item.stopId}`)" class="inline-flex items-center gap-1.5 mt-1 text-sm text-gray-500 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors group/link" :title="$t('notifications.view_stop')" v-track-click="{ id: 'notifications_view_stop', data: { stopId: item.stopId } }">
                   <UIcon name="i-lucide-map-pin" class="w-4 h-4 shrink-0" />
                   <span class="line-clamp-1 border-b border-transparent group-hover/link:border-current transition-colors">
                     Stop {{ item.stopId }}
@@ -122,6 +124,7 @@ function getTimeColor(minutes?: number): string {
                 @click="notification.stopTracking(item.lineId, item.stopId)"
                 class="p-2 -mr-2 -mt-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-full transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
                 :title="$t('notifications.stop_tracking')"
+                v-track-click="{ id: 'notifications_delete_item', data: { lineId: item.lineId, stopId: item.stopId } }"
               >
                 <UIcon name="i-lucide-x" class="w-5 h-5" />
               </button>

@@ -92,7 +92,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="md:flex md:min-h-full relative">
+  <div class="md:flex md:min-h-full relative" v-track-view="'stops_page'">
     <!-- MapPreview: hidden on mobile, left sticky on desktop -->
     <div class="hidden md:block md:flex-1 md:sticky md:top-16 md:h-[calc(100vh-4rem)] shrink-0 md:order-first z-0">
       <MapPreview height="h-[50vh] md:h-full" />
@@ -121,6 +121,7 @@ onMounted(() => {
       <div 
         v-if="!searchQuery"
         class="flex items-center justify-between bg-white/50 dark:bg-gray-800/50 rounded-lg p-3"
+        v-track-click="'stops_toggle_nearby'"
       >
         <div class="flex items-center gap-2">
           <UIcon 

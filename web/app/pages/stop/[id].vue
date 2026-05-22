@@ -92,7 +92,7 @@ function openInAppleMaps() {
 </script>
 
 <template>
-  <div class="md:flex md:min-h-full">
+  <div class="md:flex md:min-h-full" v-track-view="{ id: 'stop_detail_page', data: { stopId: stopId } }">
     <!-- MapPreview: inline on mobile, left sticky on desktop -->
     <div class="md:flex-1 md:sticky md:top-16 md:h-[calc(100vh-4rem)] shrink-0 md:order-first z-0">
       <MapPreview height="h-[50vh] md:h-full" />
@@ -106,7 +106,7 @@ function openInAppleMaps() {
         <div class="grid grid-cols-[1fr_auto] grid-rows-[auto_auto] gap-x-4">
           <!-- Breadcrumb: top-left -->
           <div class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-            <NuxtLink :to="localePath('/stops')" class="hover:text-primary-500 transition-colors">
+            <NuxtLink :to="localePath('/stops')" class="hover:text-primary-500 transition-colors" v-track-click="'stop_detail_breadcrumb_stops'">
               {{ $t('nav.stops') }}
             </NuxtLink>
             <UIcon name="i-lucide-chevron-right" class="w-4 h-4" />
@@ -117,6 +117,7 @@ function openInAppleMaps() {
           <button
             class="row-span-2 self-center p-3 rounded-xl transition-all bg-white/80 dark:bg-gray-800/80 hover:bg-white dark:hover:bg-gray-800"
             :class="isFavorite ? 'text-amber-500' : 'text-gray-400'"
+            v-track-click="{ id: 'stop_detail_toggle_favorite', data: { stopId: stopId, isFavorite: !isFavorite } }"
             @click="toggleFavorite"
           >
             <UIcon 
@@ -163,6 +164,7 @@ function openInAppleMaps() {
               size="sm"
               icon="i-lucide-refresh-cw"
               :loading="loading || isRefreshing"
+              v-track-click="{ id: 'stop_detail_refresh', data: { stopId: stopId } }"
               @click="refreshArrivals"
             >
               {{ $t('stop_detail.refresh') }}
@@ -187,6 +189,7 @@ function openInAppleMaps() {
         <NuxtLink
           :to="localePath({ path: '/route', query: { origin: stopId } })"
           class="glass-card p-4 hover:scale-[1.02] transition-all flex items-center gap-3"
+          v-track-click="{ id: 'stop_detail_plan_route_from', data: { stopId: stopId } }"
         >
           <div class="w-10 h-10 bg-primary-100 dark:bg-primary-900/50 rounded-lg flex items-center justify-center shrink-0">
             <UIcon name="i-lucide-map-pin" class="w-5 h-5 text-primary-600 dark:text-primary-400" />
@@ -200,6 +203,7 @@ function openInAppleMaps() {
         <NuxtLink
           :to="localePath({ path: '/route', query: { destination: stopId } })"
           class="glass-card p-4 hover:scale-[1.02] transition-all flex items-center gap-3"
+          v-track-click="{ id: 'stop_detail_plan_route_to', data: { stopId: stopId } }"
         >
           <div class="w-10 h-10 bg-primary-100 dark:bg-primary-900/50 rounded-lg flex items-center justify-center shrink-0">
              <UIcon name="i-lucide-flag" class="w-5 h-5 text-primary-600 dark:text-primary-400" />
@@ -213,6 +217,7 @@ function openInAppleMaps() {
         <!-- External Maps -->
         <button
           class="glass-card p-4 hover:scale-[1.02] transition-all flex items-center gap-3"
+          v-track-click="{ id: 'stop_detail_open_google_maps', data: { stopId: stopId } }"
           @click="openInGoogleMaps"
         >
           <div class="w-10 h-10 bg-blue-100 dark:bg-blue-900/50 rounded-lg flex items-center justify-center shrink-0">
@@ -226,6 +231,7 @@ function openInAppleMaps() {
 
         <button
           class="glass-card p-4 hover:scale-[1.02] transition-all flex items-center gap-3"
+          v-track-click="{ id: 'stop_detail_open_apple_maps', data: { stopId: stopId } }"
           @click="openInAppleMaps"
         >
           <div class="w-10 h-10 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center shrink-0">
@@ -250,6 +256,7 @@ function openInAppleMaps() {
             :key="lineId"
             :to="localePath(`/line/${lineId}`)"
             class="pr-3 pl-1 py-1 rounded-lg hover:scale-[1.2] transition-all"
+            v-track-click="{ id: 'stop_detail_click_line', data: { stopId: stopId, lineId: lineId } }"
           >
             <div 
               class="w-8 h-8 rounded-md flex items-center justify-center text-white shadow-sm font-bold text-sm"

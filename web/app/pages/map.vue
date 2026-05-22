@@ -224,7 +224,7 @@ const hasUserLocation = computed(() => useGeolocation().userLocation.value !== n
 </script>
 
 <template>
-  <div class="flex flex-col justify-between flex-1 w-full overflow-hidden" ref="mapContainer">
+  <div class="flex flex-col justify-between flex-1 w-full overflow-hidden" ref="mapContainer" v-track-view="'map_page'">
     <!-- Top controls -->
     <div class="pt-4 pointer-events-none">
       <!-- First row: Line filter and actions -->
@@ -260,6 +260,7 @@ const hasUserLocation = computed(() => useGeolocation().userLocation.value !== n
           <button
             class="px-3 py-1.5 text-xs font-medium rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex items-center gap-1 h-full"
             :class="mapStore.filterLineIds.length === lineSelectItems.length && lineSelectItems.length > 0 ? 'text-primary-600 bg-primary-50 dark:bg-primary-900/30' : 'text-gray-600 dark:text-gray-400'"
+            v-track-click="'map_select_all_lines'"
             @click="selectAllLines"
             :title="$t('map.select_all')"
           >
@@ -269,6 +270,7 @@ const hasUserLocation = computed(() => useGeolocation().userLocation.value !== n
           <button
             class="px-3 py-1.5 text-xs font-medium rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors flex items-center gap-1 h-full"
             :class="mapStore.filterLineIds.length === 0 ? 'text-primary-600 bg-primary-50 dark:bg-primary-900/30' : 'text-gray-600 dark:text-gray-400'"
+            v-track-click="'map_deselect_all_lines'"
             @click="selectNoLines"
             :title="$t('map.deselect_all')"
           >
@@ -279,19 +281,19 @@ const hasUserLocation = computed(() => useGeolocation().userLocation.value !== n
 
         <!-- Visibility toggles -->
         <div class="glass-card px-3 flex items-center gap-3 pointer-events-auto h-10">
-          <label class="flex items-center gap-1.5 cursor-pointer select-none">
+          <label class="flex items-center gap-1.5 cursor-pointer select-none" v-track-click="{ id: 'map_toggle_visibility', data: { type: 'stops', state: !showStops } }">
             <UCheckbox v-model="showStops" />
             <UIcon name="i-lucide-map-pin" class="w-4 h-4" :class="showStops ? 'text-primary-500' : 'text-gray-400'" />
             {{ displayedStopsCount }}
             <span class="text-xs hidden sm:inline" :class="showStops ? 'text-gray-900 dark:text-white' : 'text-gray-400'">{{ $t('map.stops') }}</span>
           </label>
-          <label class="flex items-center gap-1.5 cursor-pointer select-none">
+          <label class="flex items-center gap-1.5 cursor-pointer select-none" v-track-click="{ id: 'map_toggle_visibility', data: { type: 'buses', state: !showBuses } }">
             <UCheckbox v-model="showBuses" />
             <UIcon name="i-lucide-bus" class="w-4 h-4" :class="showBuses ? 'text-green-500' : 'text-gray-400'" />
             {{ displayedVehiclesCount }}
             <span class="text-xs hidden sm:inline" :class="showBuses ? 'text-gray-900 dark:text-white' : 'text-gray-400'">{{ $t('map.buses') }}</span>
           </label>
-          <label class="flex items-center gap-1.5 cursor-pointer select-none">
+          <label class="flex items-center gap-1.5 cursor-pointer select-none" v-track-click="{ id: 'map_toggle_visibility', data: { type: 'routes', state: !showRoutes } }">
             <UCheckbox v-model="showRoutes" />
             <UIcon name="i-lucide-route" class="w-4 h-4" :class="showRoutes ? 'text-blue-500' : 'text-gray-400'" />
             <span class="text-xs hidden sm:inline" :class="showRoutes ? 'text-gray-900 dark:text-white' : 'text-gray-400'">{{ $t('map.routes') }}</span>
@@ -303,6 +305,7 @@ const hasUserLocation = computed(() => useGeolocation().userLocation.value !== n
           class="glass-card px-3 py-1.5 h-10 flex items-center justify-center gap-2 hover:scale-105 transition-transform pointer-events-auto"
           :class="isRefreshing ? 'opacity-50' : ''"
           :disabled="isRefreshing"
+          v-track-click="'map_refresh_buses'"
           @click="refresh"
           :title="$t('map.refresh_buses')"
         >
@@ -318,6 +321,7 @@ const hasUserLocation = computed(() => useGeolocation().userLocation.value !== n
         <button
           v-if="hasUserLocation"
           class="glass-card px-3 py-1.5 h-10 flex items-center justify-center gap-2 hover:scale-105 transition-transform pointer-events-auto"
+          v-track-click="'map_center_on_user'"
           @click="centerOnUser"
           :title="$t('map.my_location')"
         >

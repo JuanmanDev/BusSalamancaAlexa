@@ -46,7 +46,7 @@ function getDistance(stop: BusStop): string | null {
 </script>
 
 <template>
-  <div class="space-y-2">
+  <div class="space-y-2" v-track-view="'bus_stops_list'">
     <!-- Loading skeleton -->
     <template v-if="loading">
       <div 
@@ -71,6 +71,7 @@ function getDistance(stop: BusStop): string | null {
       :key="stop.id"
       class="bg-white/80 dark:bg-gray-800/80 rounded-lg p-3 hover:bg-white dark:hover:bg-gray-800 cursor-pointer transition-all"
       :style="{ viewTransitionName: `stop-${stop.id}` }"
+      v-track-click="{ id: 'select_stop', data: { stopId: stop.id, stopName: stop.name, distance: getDistance(stop), linesCount: stop.lines?.length || 0 } }"
       @click="emit('select', stop)"
     >
       <div class="flex items-center gap-3">
@@ -116,6 +117,7 @@ function getDistance(stop: BusStop): string | null {
           v-if="showFavorite"
           class="p-2 rounded-lg transition-all hover:bg-gray-100 dark:hover:bg-gray-700"
           :class="isFavorite(stop.id) ? 'text-amber-500' : 'text-gray-300 dark:text-gray-600'"
+          v-track-click="{ id: 'toggle_favorite_stop', data: { stopId: stop.id, isFavorite: !isFavorite(stop.id), stopName: stop.name } }"
           @click.stop="emit('toggle-favorite', stop)"
         >
           <UIcon 

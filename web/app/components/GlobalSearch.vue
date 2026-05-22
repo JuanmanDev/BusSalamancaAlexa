@@ -108,6 +108,7 @@ onMounted(() => {
     <!-- Search trigger button -->
     <button
       class="flex items-center gap-2 p-2 px-3 rounded-lg text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-sm"
+      v-track-click="'open_search_modal'"
       @click="openSearch"
     >
       <UIcon name="i-lucide-search" class="w-5 h-5" />
@@ -125,7 +126,10 @@ onMounted(() => {
           class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-start justify-center pt-4 sm:pt-[15vh] px-2 sm:px-0 pb-4"
           @click.self="closeSearch"
         >
-          <div class="w-full max-w-lg mx-auto bg-white dark:bg-gray-900 rounded-2xl shadow-2xl flex flex-col max-h-[95dvh] sm:max-h-[80vh] overflow-hidden animate-in slide-in-from-top-4">
+          <div 
+            class="w-full max-w-lg mx-auto bg-white dark:bg-gray-900 rounded-2xl shadow-2xl flex flex-col max-h-[95dvh] sm:max-h-[80vh] overflow-hidden animate-in slide-in-from-top-4"
+            v-track-view="'search_modal'"
+          >
             <!-- Search input -->
             <div class="flex items-center gap-3 p-4 border-b border-gray-200 dark:border-gray-800">
               <UIcon name="i-lucide-search" class="w-5 h-5 text-gray-400" />
@@ -157,6 +161,7 @@ onMounted(() => {
                     v-for="line in results.lines"
                     :key="`line-${line.id}`"
                     class="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-left"
+                    v-track-click="{ id: 'search_result_line', data: { lineId: line.id, query: modelValue, lineName: line.name } }"
                     @click="goToLine(line)"
                   >
                     <div class="w-10 h-10 bg-primary-100 dark:bg-primary-900/50 rounded-lg flex items-center justify-center shrink-0">
@@ -179,6 +184,7 @@ onMounted(() => {
                     v-for="stop in results.stops"
                     :key="`stop-${stop.id}`"
                     class="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-left"
+                    v-track-click="{ id: 'search_result_stop', data: { stopId: stop.id, query: modelValue, stopName: stop.name } }"
                     @click="goToStop(stop)"
                   >
                     <div class="w-10 h-10 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center shrink-0">

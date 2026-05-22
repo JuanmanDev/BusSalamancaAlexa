@@ -47,7 +47,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="md:flex md:min-h-full relative">
+  <div class="md:flex md:min-h-full relative" v-track-view="'lines_page'">
     <!-- MapPreview: hidden on mobile, left sticky on desktop -->
     <div class="hidden md:block md:flex-1 md:sticky md:top-16 md:h-[calc(100vh-4rem)] shrink-0 md:order-first z-0">
       <MapPreview height="h-[50vh] md:h-full" />

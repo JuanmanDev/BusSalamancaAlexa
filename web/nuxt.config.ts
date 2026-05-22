@@ -18,7 +18,8 @@ export default defineNuxtConfig({
     '@nuxt/icon',
     '@pinia/nuxt',
     '@vite-pwa/nuxt',
-    '@nuxtjs/i18n'
+    '@nuxtjs/i18n',
+    'nuxt-umami'
   ],
 
   i18n: {
@@ -48,6 +49,13 @@ export default defineNuxtConfig({
       { code: 'ro', file: 'ro.json', name: 'Română' },
       { code: 'ar', file: 'ar.json', name: 'العربية', dir: 'rtl' }
     ]
+  },
+
+  umami: {
+    host: process.env.NUXT_UMAMI_HOST || 'https://umami.juanman.tech/',
+    id: process.env.NUXT_UMAMI_ID || '26610ee2-4a1e-4dac-977a-86ae1a261bf4',
+    autoTrack: true,
+    ignoreLocalhost: true,
   },
 
   pwa: {
