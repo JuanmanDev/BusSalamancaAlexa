@@ -158,7 +158,7 @@ onMounted(async () => {
         <div v-if="storage.favoriteStops.value.length > 0" class="mb-4">
           <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">{{ $t('nav.stops') }}</h3>
           <div class="grid grid-cols-1 gap-3">
-            <NuxtLink v-umami="'link_click'"
+            <NuxtLink
               v-for="fav in storage.favoriteStops.value"
               :key="`stop-${fav.id}`"
               :to="localePath(`/stop/${fav.id}`)"
@@ -184,7 +184,7 @@ onMounted(async () => {
           
           <!-- 1 or 2 lines layout -->
           <div v-if="storage.favoriteLines.value.length <= 2" class="flex flex-col gap-3">
-            <NuxtLink v-umami="'link_click'"
+            <NuxtLink
               v-for="fav in storage.favoriteLines.value"
               :key="`line-${fav.id}`"
               :to="localePath(`/line/${fav.id}`)"
@@ -204,7 +204,7 @@ onMounted(async () => {
           <!-- 3 or more lines layout -->
           <div v-else class="relative group">
             <Transition name="fade">
-              <UButton v-umami="'button_click'" 
+              <UButton 
                 v-show="!arrivedState.left" 
                 icon="i-lucide-chevron-left" 
                 color="neutral"
@@ -219,7 +219,7 @@ onMounted(async () => {
               ref="favLinesScrollContainer"
               class="flex overflow-x-auto snap-x snap-mandatory gap-3 hide-scrollbar pb-1 px-1"
             >
-              <NuxtLink v-umami="'link_click'"
+              <NuxtLink
                 v-for="fav in storage.favoriteLines.value"
                 :key="`line-${fav.id}`"
                 :to="localePath(`/line/${fav.id}`)"
@@ -237,7 +237,7 @@ onMounted(async () => {
             </div>
 
             <Transition name="fade">
-              <UButton v-umami="'button_click'" 
+              <UButton 
                 v-show="!arrivedState.right" 
                 icon="i-lucide-chevron-right" 
                 color="neutral"
@@ -329,7 +329,7 @@ onMounted(async () => {
             <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
               {{ $t('index.find_closest_stops') }}
             </p>
-            <UButton v-umami="'button_click'" icon="i-lucide-navigation" @click="handleRequestLocation">
+            <UButton icon="i-lucide-navigation" @click="handleRequestLocation">
               {{ $t('index.activate_location_btn') }}
             </UButton>
           </div>
@@ -351,7 +351,7 @@ onMounted(async () => {
           </button>
         </div>
         <div class="space-y-2">
-          <NuxtLink v-umami="'link_click'"
+          <NuxtLink
             v-for="recent in enhancedRecents"
             :key="`${recent.type}-${recent.id}`"
             :to="localePath(recent.type === 'stop' ? `/stop/${recent.id}` : `/line/${recent.id}`)"
@@ -385,7 +385,7 @@ onMounted(async () => {
 
       <!-- Quick actions -->
       <div class="grid grid-cols-2 gap-4">
-        <NuxtLink v-umami="'link_click'"
+        <NuxtLink
           :to="localePath('/lines')"
           class="bg-gradient-to-br from-primary-500 to-primary-600 rounded-xl p-6 text-white shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all"
         >
@@ -394,7 +394,7 @@ onMounted(async () => {
           <p class="text-sm text-white/80">{{ $t('index.see_itineraries') }}</p>
         </NuxtLink>
 
-        <NuxtLink v-umami="'link_click'"
+        <NuxtLink
           :to="localePath('/map')"
           class="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl p-6 text-white shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all"
         >
@@ -403,7 +403,7 @@ onMounted(async () => {
           <p class="text-sm text-white/80">{{ $t('index.stops_and_buses') }}</p>
         </NuxtLink>
 
-        <NuxtLink v-umami="'link_click'"
+        <NuxtLink
           to="https://www.amazon.es/Juan-Manuel-B%C3%A9c-Bus-Salamanca/dp/B0F59TDK93/?utm_source=bussalamanca.juanman.tech&utm_compaign=home-bottom-card"
           target="_blank"
           class="col-span-2 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-xl p-6 text-white shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all flex items-center gap-4"

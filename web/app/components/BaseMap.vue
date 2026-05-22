@@ -544,7 +544,7 @@ defineExpose({
                   Parada {{ selectedStopData.id }}
                 </p>
               </div>
-              <UButton v-umami="'button_click'"
+              <UButton
                 color="neutral"
                 variant="ghost"
                 icon="i-lucide-x"
@@ -571,7 +571,7 @@ defineExpose({
 
             <!-- Actions Grid -->
             <div class="grid grid-cols-2 gap-2 mb-3" v-if="false">
-              <UButton v-umami="'button_click'"
+              <UButton
                 size="sm"
                 color="primary"
                 variant="soft"
@@ -585,7 +585,7 @@ defineExpose({
               >
                 Desde aquí
               </UButton>
-              <UButton v-umami="'button_click'"
+              <UButton
                 size="sm"
                 color="primary"
                 variant="soft"
@@ -601,7 +601,7 @@ defineExpose({
               </UButton>
             </div>
 
-            <UButton v-umami="'button_click'"
+            <UButton
               block
               color="neutral"
               variant="outline"
@@ -643,7 +643,7 @@ defineExpose({
                     </p>
                   </div>
                 </div>
-                <UButton v-umami="'button_click'"
+                <UButton
                   color="neutral"
                   variant="ghost"
                   icon="i-lucide-x"
@@ -669,7 +669,7 @@ defineExpose({
                 </div>
               </div>
 
-              <UButton v-umami="'button_click'"
+              <UButton
                 block
                 color="primary"
                 icon="i-lucide-map"

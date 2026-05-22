@@ -451,7 +451,7 @@ function swappoints() {
           <div class="glass-card p-4 pt-4">
              <div class="max-w-md mx-auto relative">
                 <div class="flex items-center gap-2 mb-4">
-                    <UButton v-umami="'button_click'" icon="i-lucide-arrow-left" variant="ghost" color="neutral" @click="router.back()" />
+                    <UButton icon="i-lucide-arrow-left" variant="ghost" color="neutral" @click="router.back()" />
                     <h1 class="text-lg font-bold text-gray-900 dark:text-white">{{ $t('route.title') }}</h1>
                 </div>
 
@@ -473,7 +473,7 @@ function swappoints() {
                             @focus="onFocus('origin')"
                          >
                             <template #trailing>
-                                <UButton v-umami="'button_click'" v-if="originQuery && activeField === 'origin'" icon="i-lucide-x" color="neutral" variant="ghost" size="xs" @click="originQuery = ''; mapStore.setRouteOrigin(null)" />
+                                <UButton v-if="originQuery && activeField === 'origin'" icon="i-lucide-x" color="neutral" variant="ghost" size="xs" @click="originQuery = ''; mapStore.setRouteOrigin(null)" />
                             </template>
                          </UInput>
                          
@@ -485,20 +485,20 @@ function swappoints() {
                             @focus="onFocus('destination')"
                          >
                              <template #trailing>
-                                <UButton v-umami="'button_click'" v-if="destQuery && activeField === 'destination'" icon="i-lucide-x" color="neutral" variant="ghost" size="xs" @click="destQuery = ''; mapStore.setRouteDestination(null)" />
+                                <UButton v-if="destQuery && activeField === 'destination'" icon="i-lucide-x" color="neutral" variant="ghost" size="xs" @click="destQuery = ''; mapStore.setRouteDestination(null)" />
                             </template>
                          </UInput>
                      </div>
 
                      <!-- Swap Button -->
                      <div class="flex items-center">
-                         <UButton v-umami="'button_click'" icon="i-lucide-arrow-up-down" color="neutral" variant="ghost" @click="swappoints" />
+                         <UButton icon="i-lucide-arrow-up-down" color="neutral" variant="ghost" @click="swappoints" />
                      </div>
                      </div>
                      
                      <!-- Search Action -->
                      <div class="flex items-center justify-end w-full pt-2" v-if="mapStore.routeOrigin && mapStore.routeDestination">
-                        <UButton v-umami="'button_click'" 
+                        <UButton 
                             :label="$t('route.search_route')" 
                             icon="i-lucide-search"
                             size="md"
@@ -555,11 +555,11 @@ function swappoints() {
                              <p class="text-xs text-gray-500 mt-1">{{ $t('search_modal.stop') }} {{ selectedOverlayStop.id }}</p>
                          </div>
                      </div>
-                     <UButton v-umami="'button_click'" icon="i-lucide-x" color="neutral" variant="ghost" size="xs" @click="selectedOverlayStop = null" />
+                     <UButton icon="i-lucide-x" color="neutral" variant="ghost" size="xs" @click="selectedOverlayStop = null" />
                  </div>
                  
                  <div class="flex gap-2">
-                     <UButton v-umami="'button_click'" 
+                     <UButton 
                         size="sm" 
                         color="neutral" 
                         block 
@@ -580,7 +580,7 @@ function swappoints() {
                          <UIcon name="i-lucide-circle" class="w-4 h-4 text-blue-500" />
                          {{ $t('route.from_here') }}
                      </UButton>
-                     <UButton v-umami="'button_click'" 
+                     <UButton 
                         size="sm" 
                         color="neutral" 
                         block 
@@ -606,7 +606,7 @@ function swappoints() {
         </div>
         
         <div v-if="!activeField && mapStore.routeOrigin && mapStore.routeDestination" class="mt-4 flex justify-center">
-             <UButton v-umami="'button_click'" size="xl" class="w-full max-w-md shadow-lg" color="primary" @click="searchRoute">
+             <UButton size="xl" class="w-full max-w-md shadow-lg" color="primary" @click="searchRoute">
                 {{ $t('route.search_route') }}
              </UButton>
         </div>
@@ -624,7 +624,7 @@ function swappoints() {
                 <h2 class="text-lg font-bold text-gray-900 dark:text-white">
                     {{ activeField === 'origin' ? $t('route.origin') : $t('route.destination') }}
                 </h2>
-                <UButton v-umami="'button_click'" icon="i-lucide-x" color="neutral" variant="ghost" @click="activeField = null" />
+                <UButton icon="i-lucide-x" color="neutral" variant="ghost" @click="activeField = null" />
             </div>
 
             <!-- Suggestions List (Mobile Reverse Stacking) -->
@@ -671,7 +671,7 @@ function swappoints() {
                     autofocus
                 >
                     <template #trailing>
-                        <UButton v-umami="'button_click'" v-if="originQuery" icon="i-lucide-x" color="neutral" variant="ghost" size="sm" @click="originQuery = ''; mapStore.setRouteOrigin(null)" />
+                        <UButton v-if="originQuery" icon="i-lucide-x" color="neutral" variant="ghost" size="sm" @click="originQuery = ''; mapStore.setRouteOrigin(null)" />
                     </template>
                 </UInput>
 
@@ -685,7 +685,7 @@ function swappoints() {
                     autofocus
                 >
                     <template #trailing>
-                        <UButton v-umami="'button_click'" v-if="destQuery" icon="i-lucide-x" color="neutral" variant="ghost" size="sm" @click="destQuery = ''; mapStore.setRouteDestination(null)" />
+                        <UButton v-if="destQuery" icon="i-lucide-x" color="neutral" variant="ghost" size="sm" @click="destQuery = ''; mapStore.setRouteDestination(null)" />
                     </template>
                 </UInput>
             </div>
@@ -697,7 +697,7 @@ function swappoints() {
                 <h2 class="text-lg font-bold text-gray-900 dark:text-white">
                     {{ $t('route.select_map') }} ({{ pickingField === 'origin' ? $t('route.origin') : $t('route.destination') }})
                 </h2>
-                <UButton v-umami="'button_click'" icon="i-lucide-x" color="neutral" variant="ghost" @click="cancelMapSelection" />
+                <UButton icon="i-lucide-x" color="neutral" variant="ghost" @click="cancelMapSelection" />
             </div>
             
             <!-- Center Pin -->
@@ -713,7 +713,7 @@ function swappoints() {
             
             <!-- Bottom Confirmation -->
             <div class="pointer-events-auto p-6 pb-10 flex justify-center bg-gradient-to-t from-black/50 to-transparent">
-                <UButton v-umami="'button_click'" size="xl" color="primary" :loading="isConfirmingLocation" @click="confirmMapSelection" class="shadow-xl">
+                <UButton size="xl" color="primary" :loading="isConfirmingLocation" @click="confirmMapSelection" class="shadow-xl">
                     {{ $t('route.confirm_location') }}
                 </UButton>
             </div>

@@ -16,10 +16,10 @@ const handleBack = () => {
 <template>
   <div class="min-h-[100dvh] flex flex-col bg-gray-50 dark:bg-gray-950">
     <header class="w-full h-16 flex items-center justify-between px-4 border-b border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md sticky top-0 z-50">
-      <UButton v-umami="'button_click'" icon="i-lucide-arrow-left" color="neutral" variant="ghost" @click="handleBack" />
+      <UButton icon="i-lucide-arrow-left" color="neutral" variant="ghost" @click="handleBack" />
       <div v-if="route.path !== localePath('/notifications')" class="flex items-center">
         <!-- Notification icon -->
-        <NuxtLink v-umami="'link_click'"
+        <NuxtLink
             :to="localePath('/notifications')"
             class="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors flex items-center p-2 rounded-lg relative"
             :title="$t('notifications.title')"

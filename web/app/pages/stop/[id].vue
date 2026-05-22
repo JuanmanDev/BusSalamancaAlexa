@@ -106,7 +106,7 @@ function openInAppleMaps() {
         <div class="grid grid-cols-[1fr_auto] grid-rows-[auto_auto] gap-x-4">
           <!-- Breadcrumb: top-left -->
           <div class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-            <NuxtLink v-umami="'link_click'" :to="localePath('/stops')" class="hover:text-primary-500 transition-colors">
+            <NuxtLink :to="localePath('/stops')" class="hover:text-primary-500 transition-colors">
               {{ $t('nav.stops') }}
             </NuxtLink>
             <UIcon name="i-lucide-chevron-right" class="w-4 h-4" />
@@ -144,7 +144,7 @@ function openInAppleMaps() {
         <div class="flex items-center gap-3 text-red-600 dark:text-red-400">
           <UIcon name="i-lucide-alert-circle" class="w-5 h-5 shrink-0" />
           <span class="flex-1">{{ error }}</span>
-          <UButton v-umami="'button_click'" size="sm" variant="ghost" @click="refreshArrivals">
+          <UButton size="sm" variant="ghost" @click="refreshArrivals">
             {{ $t('stop_detail.error_retry') }}
           </UButton>
         </div>
@@ -158,7 +158,7 @@ function openInAppleMaps() {
           </h2>
 
           <div class="flex items-center gap-2">
-            <UButton v-umami="'button_click'"
+            <UButton
               variant="ghost"
               size="sm"
               icon="i-lucide-refresh-cw"
@@ -184,7 +184,7 @@ function openInAppleMaps() {
       <!-- Actions -->
       <div class="grid grid-cols-2 gap-3">
         <!-- Route Actions -->
-        <NuxtLink v-umami="'link_click'"
+        <NuxtLink
           :to="localePath({ path: '/route', query: { origin: stopId } })"
           class="glass-card p-4 hover:scale-[1.02] transition-all flex items-center gap-3"
         >
@@ -197,7 +197,7 @@ function openInAppleMaps() {
           </div>
         </NuxtLink>
 
-        <NuxtLink v-umami="'link_click'"
+        <NuxtLink
           :to="localePath({ path: '/route', query: { destination: stopId } })"
           class="glass-card p-4 hover:scale-[1.02] transition-all flex items-center gap-3"
         >
@@ -245,7 +245,7 @@ function openInAppleMaps() {
           {{ $t('stop_detail.available_lines') }}
         </h2>
         <div class="flex flex-wrap gap-2">
-          <NuxtLink v-umami="'link_click'"
+          <NuxtLink
             v-for="lineId in stopInfo.lines"
             :key="lineId"
             :to="localePath(`/line/${lineId}`)"
