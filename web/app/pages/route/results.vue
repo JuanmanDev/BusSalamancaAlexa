@@ -160,7 +160,7 @@ function formatDistance(meters: number) {
       <UCard :ui="{ body: 'flex-1 overflow-hidden flex flex-col h-full p-4 sm:p-4' }" class="shadow-xl ring-1 ring-gray-200 dark:ring-gray-700 backdrop-blur-md bg-white/90 dark:bg-gray-900/90 w-full max-w-md mx-auto flex flex-col mt-0 h-fit max-h-[calc(100vh-6rem)] md:h-full md:max-h-none md:max-w-none md:rounded-none">
                 <template #header>
                     <div class="flex items-center gap-3">
-                        <UButton icon="i-lucide-arrow-left" variant="ghost" color="neutral" @click="router.back()" />
+                        <UButton v-umami="'button_click'" icon="i-lucide-arrow-left" variant="ghost" color="neutral" @click="router.back()" />
                         <h2 class="font-bold text-lg">{{ $t('route_results.options') }}</h2>
                     </div>
                 </template>
@@ -177,7 +177,7 @@ function formatDistance(meters: number) {
                 <div v-else-if="error" class="py-6 text-center text-red-500">
                     <UIcon name="i-lucide-alert-circle" class="w-8 h-8 mx-auto mb-2" />
                     <p>{{ error }}</p>
-                    <UButton :label="$t('route_results.try_again')" variant="ghost" class="mt-2" @click="calculateRoutes" />
+                    <UButton v-umami="'button_click'" :label="$t('route_results.try_again')" variant="ghost" class="mt-2" @click="calculateRoutes" />
                 </div>
                 
                 <div v-else class="space-y-4 max-h-[60vh] md:max-h-none md:flex-1 overflow-y-auto pr-2 custom-scrollbar">

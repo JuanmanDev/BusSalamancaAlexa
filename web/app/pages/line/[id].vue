@@ -135,7 +135,7 @@ const isLoading = computed(() =>
           <div class="glass-card p-5">
             <!-- Breadcrumb -->
             <div class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 mb-3 relative">
-              <NuxtLink :to="localePath('/lines')" class="hover:text-primary-500 transition-colors">{{ $t('nav.lines') }}</NuxtLink>
+              <NuxtLink v-umami="'link_click'" :to="localePath('/lines')" class="hover:text-primary-500 transition-colors">{{ $t('nav.lines') }}</NuxtLink>
               <UIcon name="i-lucide-chevron-right" class="w-4 h-4" />
               <span>{{ $t('search_modal.lines') }} {{ lineId }}</span>
 

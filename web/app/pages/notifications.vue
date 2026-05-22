@@ -51,7 +51,7 @@ function getTimeColor(minutes?: number): string {
       <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">{{ $t('notifications.empty_title') }}</h3>
       <p class="text-gray-500 dark:text-gray-400 max-w-sm mx-auto mb-6">{{ $t('notifications.empty_desc') }}</p>
       
-      <UButton
+      <UButton v-umami="'button_click'"
         :to="localePath('/map')"
         color="primary"
         variant="soft"
@@ -64,7 +64,7 @@ function getTimeColor(minutes?: number): string {
     <!-- Active Notifications List -->
     <div v-else class="space-y-4">
       <div class="flex justify-end mb-4">
-          <UButton
+          <UButton v-umami="'button_click'"
             color="error"
             variant="ghost"
             icon="i-lucide-trash-2"
@@ -91,7 +91,7 @@ function getTimeColor(minutes?: number): string {
             <!-- Line & Stop Info -->
             <div class="flex gap-4">
               <!-- Line Badge -->
-              <NuxtLink :to="localePath(`/line/${item.lineId}`)" class="shrink-0 hover:scale-105 transition-transform" :title="$t('notifications.view_line')">
+              <NuxtLink v-umami="'link_click'" :to="localePath(`/line/${item.lineId}`)" class="shrink-0 hover:scale-105 transition-transform" :title="$t('notifications.view_line')">
                 <div 
                   class="w-12 h-12 rounded-xl flex items-center justify-center text-white shadow-sm"
                   :class="getLineColor(item.lineId)"
@@ -105,7 +105,7 @@ function getTimeColor(minutes?: number): string {
                   {{ item.destination || $t('arrivals.unknown_destination') }}
                 </h3>
                 
-                <NuxtLink :to="localePath(`/stop/${item.stopId}`)" class="inline-flex items-center gap-1.5 mt-1 text-sm text-gray-500 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors group/link" :title="$t('notifications.view_stop')">
+                <NuxtLink v-umami="'link_click'" :to="localePath(`/stop/${item.stopId}`)" class="inline-flex items-center gap-1.5 mt-1 text-sm text-gray-500 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors group/link" :title="$t('notifications.view_stop')">
                   <UIcon name="i-lucide-map-pin" class="w-4 h-4 shrink-0" />
                   <span class="line-clamp-1 border-b border-transparent group-hover/link:border-current transition-colors">
                     Stop {{ item.stopId }}

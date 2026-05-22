@@ -1,0 +1,99 @@
+openapi: 3.0.0
+info:
+  title: Bus Salamanca Alexa+ Action API
+  version: 1.0.0
+  description: API for retrieving real-time bus arrivals in Salamanca for Alexa+ integration.
+servers:
+  - url: https://{your-deployment-domain}
+    description: Production server
+paths:
+  /api/action/stop/{stopNumber}:
+    get:
+      summary: Get bus arrivals for a specific stop
+      operationId: getBusArrivals
+      parameters:
+        - name: stopNumber
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: The number of the bus stop to query
+      responses:
+        '200':
+          description: A structured list of bus arrivals
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  linesText:
+                    type: string
+                    description: A natural language text describing the arriving buses
+                  stopData:
+                    type: object
+                    properties:
+                      address:
+                        type: string
+                      number:
+                        type: string
+                  arrivalData:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        line:
+                          type: integer
+                        aimedArrivalTime:
+                          type: string
+                        minutesRemaining:
+                          type: integer
+  /api/action/user/{userId}/stop:
+    get:
+      summary: Get the user's saved favorite bus stop
+      operationId: getUserStop
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The user's Alexa ID or unique identifier
+      responses:
+        '200':
+          description: The user's favorite stop number
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  stopNumber:
+                    type: integer
+                    nullable: true
+    post:
+      summary: Save a favorite bus stop for the user
+      operationId: saveUserStop
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                stopNumber:
+                  type: integer
+      responses:
+        '200':
+          description: Successfully saved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean

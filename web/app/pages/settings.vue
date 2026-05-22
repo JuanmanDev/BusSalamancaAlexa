@@ -130,10 +130,10 @@ const handleLanguageChange = (val: any) => {
           <div class="flex items-center justify-between">
                <ClientOnly>
                  <div id="pwa-install-container">
-                    <UButton v-if="$pwa?.needRefresh" @click="$pwa.updateServiceWorker()" color="primary" variant="solid" icon="i-lucide-refresh-cw">
+                    <UButton v-umami="'button_click'" v-if="$pwa?.needRefresh" @click="$pwa.updateServiceWorker()" color="primary" variant="solid" icon="i-lucide-refresh-cw">
                       {{ $t('settings.update_app') }}
                     </UButton>
-                    <UButton v-else-if="$pwa?.showInstallPrompt && !$pwa?.offlineReady && !$pwa?.needRefresh" @click="$pwa.install()" color="primary" variant="soft" icon="i-lucide-download">
+                    <UButton v-umami="'button_click'" v-else-if="$pwa?.showInstallPrompt && !$pwa?.offlineReady && !$pwa?.needRefresh" @click="$pwa.install()" color="primary" variant="soft" icon="i-lucide-download">
                       {{ $t('settings.install_app') }}
                     </UButton>
                     <p v-else class="text-sm text-green-600 dark:text-green-400 flex items-center gap-2">
@@ -156,7 +156,7 @@ const handleLanguageChange = (val: any) => {
         <div class="flex flex-col gap-2">
           <p class="text-sm text-gray-500 dark:text-gray-400 mb-2">{{ $t('settings.help_desc') }}</p>
           <div class="flex flex-col sm:flex-row gap-2">
-            <UButton
+            <UButton v-umami="'button_click'"
               :to="localePath('/help')"
               color="primary"
               variant="soft"
@@ -165,7 +165,7 @@ const handleLanguageChange = (val: any) => {
             >
               {{ $t('settings.view_help') }}
             </UButton>
-            <UButton
+            <UButton v-umami="'button_click'"
               :to="localePath('/notifications')"
               color="neutral"
               variant="soft"
@@ -186,7 +186,7 @@ const handleLanguageChange = (val: any) => {
         </h2>
         
         <div class="flex flex-col gap-2">
-          <UButton
+          <UButton v-umami="'button_click'"
             to="https://juanman.tech/"
             target="_blank"
             color="neutral"
@@ -197,7 +197,7 @@ const handleLanguageChange = (val: any) => {
             {{ $t('settings.dev_web') }}
           </UButton>
           
-          <UButton
+          <UButton v-umami="'button_click'"
             to="https://salamancadetransportes.com/"
             target="_blank"
             color="neutral"
@@ -208,7 +208,7 @@ const handleLanguageChange = (val: any) => {
             {{ $t('settings.official_web') }}
           </UButton>
           
-          <UButton
+          <UButton v-umami="'button_click'"
             to="https://www.amazon.es/Juan-Manuel-B%C3%A9c-Bus-Salamanca/dp/B0F59TDK93/?utm_source=bussalamanca.juanman.tech"
             target="_blank"
             color="neutral"
@@ -219,7 +219,7 @@ const handleLanguageChange = (val: any) => {
             {{ $t('settings.alexa_skill_btn') }}
           </UButton>
           
-          <UButton
+          <UButton v-umami="'button_click'"
             to="https://github.com/JuanmanDev/BusSalamancaAlexa"
             target="_blank"
             color="neutral"

@@ -331,7 +331,7 @@ const toggleFullscreen = async () => {
         <!-- Desktop: Top-Right -->
         <div class="absolute bottom-4 right-0 mr-4 z-10 pointer-events-auto flex flex-col gap-2">
           <UTooltip :text="mapStore.isFullscreen ? $t('map_preview.exit_fullscreen') : $t('map_preview.view_full_map')" :delay-duration="0">
-            <UButton
+            <UButton v-umami="'button_click'"
               color="neutral"
               variant="solid"
               class="shadow-lg bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 transition-all duration-300"
@@ -353,7 +353,7 @@ const toggleFullscreen = async () => {
         <!-- Zoom controls: Bottom-Left -->
         <div class="absolute bottom-4 left-4 z-10 pointer-events-auto flex flex-row gap-2 transition-all duration-500">
           <UTooltip :text="$t('map_preview.zoom_out')" :delay-duration="0">
-            <UButton
+            <UButton v-umami="'button_click'"
               color="neutral"
               variant="solid"
               icon="i-lucide-minus"
@@ -363,7 +363,7 @@ const toggleFullscreen = async () => {
           </UTooltip>
           
           <UTooltip :text="$t('map_preview.zoom_in')" :delay-duration="0">
-            <UButton
+            <UButton v-umami="'button_click'"
               color="neutral"
               variant="solid"
               icon="i-lucide-plus"
@@ -374,7 +374,7 @@ const toggleFullscreen = async () => {
     
           <!-- Add another button to center on current location by the user -->
           <UTooltip :text="$t('map_preview.center_location')" v-if="mapStore.showUserLocationButton" :delay-duration="0">
-            <UButton
+            <UButton v-umami="'button_click'"
               color="neutral"
               variant="solid"
               icon="i-lucide-map-pin"
@@ -385,7 +385,7 @@ const toggleFullscreen = async () => {
     
           <!-- Reset Bearing (North) -->
           <UTooltip :text="$t('map_preview.reset_north')" v-if="Math.abs(mapStore.rotation) > 5" :delay-duration="0">
-            <UButton
+            <UButton v-umami="'button_click'"
               color="neutral"
               variant="solid"
               icon="i-lucide-compass"
@@ -397,7 +397,7 @@ const toggleFullscreen = async () => {
     
           <!-- Reset Pitch (3D) -->
           <UTooltip :text="$t('map_preview.reset_2d')" v-if="mapStore.pitch > 5" :delay-duration="0">
-            <UButton
+            <UButton v-umami="'button_click'"
               color="neutral"
               variant="solid"
               icon="i-lucide-box"

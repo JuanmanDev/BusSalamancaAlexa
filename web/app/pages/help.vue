@@ -11,7 +11,7 @@ const { t } = useI18n()
   <div class="max-w-3xl mx-auto p-4 md:p-8 space-y-8 pb-32">
     <!-- Header -->
     <div class="flex items-center gap-4">
-      <UButton
+      <UButton v-umami="'button_click'"
         icon="i-lucide-arrow-left"
         color="neutral"
         variant="ghost"
