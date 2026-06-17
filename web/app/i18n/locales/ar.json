@@ -234,5 +234,14 @@
     "view_stop": "عرض المحطة",
     "stop_tracking": "إيقاف التتبع",
     "estimating": "جاري الحساب..."
+  },
+  "map_card": {
+    "stop_id": "موقف {id}",
+    "from_here": "من هنا",
+    "to_here": "إلى هنا",
+    "view_arrival_times": "عرض أوقات الوصول",
+    "en_route": "في الطريق",
+    "following_vehicle": "تتبع المركبة",
+    "view_line_route": "عرض مسار الخط"
   }
 }

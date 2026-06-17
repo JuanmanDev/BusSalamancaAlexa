@@ -234,5 +234,14 @@
     "view_stop": "停留所を表示",
     "stop_tracking": "追跡を停止",
     "estimating": "計算中..."
+  },
+  "map_card": {
+    "stop_id": "停留所 {id}",
+    "from_here": "ここから",
+    "to_here": "ここまで",
+    "view_arrival_times": "到着時間を見る",
+    "en_route": "ルート上",
+    "following_vehicle": "車両を追跡中",
+    "view_line_route": "路線のルートを見る"
   }
 }

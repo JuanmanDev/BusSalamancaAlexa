@@ -238,5 +238,14 @@
     "view_stop": "View stop",
     "stop_tracking": "Stop tracking",
     "estimating": "Estimating..."
+  },
+  "map_card": {
+    "stop_id": "Stop {id}",
+    "from_here": "From here",
+    "to_here": "To here",
+    "view_arrival_times": "View arrival times",
+    "en_route": "En route",
+    "following_vehicle": "Following vehicle",
+    "view_line_route": "View line route"
   }
 }

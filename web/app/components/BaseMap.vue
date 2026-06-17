@@ -140,6 +140,28 @@ const selectedStopData = computed(() => {
   return props.stops.find(s => s.id === mapStore.highlightStopId)
 })
 
+const stopArrivals = ref<any[]>([])
+
+watch(selectedStopData, async (stop) => {
+  if (stop) {
+    const busService = useBusService()
+    stopArrivals.value = await busService.fetchArrivals(stop.id)
+  } else {
+    stopArrivals.value = []
+  }
+}, { immediate: true })
+
+function getNextArrivalMinutes(lineId: string): number | null {
+  const lineArrivals = stopArrivals.value.filter((a: any) => a.lineId === lineId)
+  if (lineArrivals.length === 0) return null
+  
+  const minArrival = Math.min(...lineArrivals.map((a: any) => a.minutesRemaining))
+  if (minArrival <= 30) {
+    return minArrival
+  }
+  return null
+}
+
 
 
 // Discrete Zoom Scale (CSS custom property — avoids classes on root div)
@@ -541,7 +563,7 @@ defineExpose({
                   {{ selectedStopData.name }}
                 </h3>
                 <p class="text-xs text-gray-500 mt-1">
-                  Parada {{ selectedStopData.id }}
+                  {{ $t('map_card.stop_id', { id: selectedStopData.id }) }}
                 </p>
               </div>
               <UButton
@@ -567,6 +589,12 @@ defineExpose({
                 >
                   {{ lineId }}
                 </div>
+                <span
+                  v-if="getNextArrivalMinutes(lineId) !== null"
+                  class="text-[10px] text-gray-500 dark:text-gray-400 font-medium"
+                >
+                  {{ getNextArrivalMinutes(lineId) }} {{ $t('arrivals.minutes_short') }}
+                </span>
               </div>
             </div>
 
@@ -584,7 +612,7 @@ defineExpose({
                   mapStore.clearHighlight();
                 }"
               >
-                Desde aquí
+                {{ $t('map_card.from_here') }}
               </UButton>
               <UButton
                 size="sm"
@@ -598,7 +626,7 @@ defineExpose({
                     mapStore.clearHighlight();
                 }"
               >
-                Hasta aquí
+                {{ $t('map_card.to_here') }}
               </UButton>
             </div>
 
@@ -610,7 +638,7 @@ defineExpose({
               v-track-click="{ id: 'map_go_to_stop_details', data: { stopId: selectedStopData.id, stopName: selectedStopData.name } }"
               @click="goToStopDetails"
             >
-              Ver tiempos de llegada
+              {{ $t('map_card.view_arrival_times') }}
             </UButton>
           </div>
         </div>
@@ -641,7 +669,7 @@ defineExpose({
                     </h3>
                     <p class="text-xs text-gray-500 mt-0.5 flex items-center gap-1">
                       <UIcon name="i-lucide-navigation" class="w-3 h-3" />
-                      {{ mapStore.selectedVehicle.destination || 'En ruta' }}
+                      {{ mapStore.selectedVehicle.destination || $t('map_card.en_route') }}
                     </p>
                   </div>
                 </div>
@@ -659,7 +687,7 @@ defineExpose({
               <div class="flex items-center gap-2 mb-4 text-sm text-gray-500">
                 <div class="flex items-center gap-1">
                   <UIcon name="i-lucide-bus" class="w-4 h-4 text-green-500" />
-                  <span>Siguiendo vehículo</span>
+                  <span>{{ $t('map_card.following_vehicle') }}</span>
                 </div>
                 <span class="text-xs font-mono bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded">
                   {{ mapStore.selectedVehicle.id }}
@@ -679,7 +707,7 @@ defineExpose({
                 v-track-click="{ id: 'map_go_to_line_details', data: { lineId: mapStore.selectedVehicle.lineId, vehicleId: mapStore.selectedVehicle.id } }"
                 @click="goToLineDetails(mapStore.selectedVehicle.lineId)"
               >
-                Ver recorrido de línea
+                {{ $t('map_card.view_line_route') }}
               </UButton>
             </div>
         </div>

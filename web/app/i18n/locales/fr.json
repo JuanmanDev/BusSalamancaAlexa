@@ -234,5 +234,14 @@
     "view_stop": "Voir l'arrêt",
     "stop_tracking": "Arrêter le suivi",
     "estimating": "Estimation en cours..."
+  },
+  "map_card": {
+    "stop_id": "Arrêt {id}",
+    "from_here": "D'ici",
+    "to_here": "Jusqu'ici",
+    "view_arrival_times": "Voir les temps d'arrivée",
+    "en_route": "En route",
+    "following_vehicle": "Suivi du véhicule",
+    "view_line_route": "Voir l'itinéraire de la ligne"
   }
 }

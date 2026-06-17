@@ -234,5 +234,14 @@
     "view_stop": "Visualizza fermata",
     "stop_tracking": "Interrompi tracciamento",
     "estimating": "Calcolo..."
+  },
+  "map_card": {
+    "stop_id": "Fermata {id}",
+    "from_here": "Da qui",
+    "to_here": "Fino a qui",
+    "view_arrival_times": "Vedi tempi di arrivo",
+    "en_route": "In viaggio",
+    "following_vehicle": "Veicolo in rotta",
+    "view_line_route": "Vedi percorso della linea"
   }
 }

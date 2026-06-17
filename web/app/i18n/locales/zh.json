@@ -234,5 +234,14 @@
     "view_stop": "查看站点",
     "stop_tracking": "停止追踪",
     "estimating": "估算中..."
+  },
+  "map_card": {
+    "stop_id": "站点 {id}",
+    "from_here": "从这里",
+    "to_here": "到这里",
+    "view_arrival_times": "查看到达时间",
+    "en_route": "在途中",
+    "following_vehicle": "正在追踪车辆",
+    "view_line_route": "查看线路路线"
   }
 }

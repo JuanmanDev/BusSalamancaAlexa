@@ -45,6 +45,7 @@ export interface BusVehicle {
     latitude: number
     longitude: number
     bearing?: number
+    speed?: number
     delay?: number
     destination?: string
     timestamp?: number

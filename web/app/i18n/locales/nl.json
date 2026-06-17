@@ -234,5 +234,14 @@
     "view_stop": "Halte bekijken",
     "stop_tracking": "Volgen stoppen",
     "estimating": "Schatten..."
+  },
+  "map_card": {
+    "stop_id": "Halte {id}",
+    "from_here": "Vanaf hier",
+    "to_here": "Tot hier",
+    "view_arrival_times": "Aankomsttijden bekijken",
+    "en_route": "Onderweg",
+    "following_vehicle": "Voertuig volgen",
+    "view_line_route": "Lijnroute bekijken"
   }
 }

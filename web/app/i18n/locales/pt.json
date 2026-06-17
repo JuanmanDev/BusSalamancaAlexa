@@ -234,5 +234,14 @@
     "view_stop": "Ver parada",
     "stop_tracking": "Parar rastreamento",
     "estimating": "Calculando..."
+  },
+  "map_card": {
+    "stop_id": "Paragem {id}",
+    "from_here": "Daqui",
+    "to_here": "Até aqui",
+    "view_arrival_times": "Ver tempos de chegada",
+    "en_route": "Em rota",
+    "following_vehicle": "A seguir veículo",
+    "view_line_route": "Ver percurso da linha"
   }
 }

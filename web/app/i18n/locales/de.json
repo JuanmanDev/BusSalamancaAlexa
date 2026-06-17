@@ -234,5 +234,14 @@
     "view_stop": "Haltestelle anzeigen",
     "stop_tracking": "Verfolgung beenden",
     "estimating": "Schätzung..."
+  },
+  "map_card": {
+    "stop_id": "Haltestelle {id}",
+    "from_here": "Von hier",
+    "to_here": "Hierher",
+    "view_arrival_times": "Ankunftszeiten anzeigen",
+    "en_route": "Unterwegs",
+    "following_vehicle": "Fahrzeug folgen",
+    "view_line_route": "Linienroute anzeigen"
   }
 }

@@ -234,5 +234,14 @@
     "view_stop": "정류장 보기",
     "stop_tracking": "추적 중지",
     "estimating": "계산 중..."
+  },
+  "map_card": {
+    "stop_id": "정류장 {id}",
+    "from_here": "여기서부터",
+    "to_here": "여기까지",
+    "view_arrival_times": "도착 시간 보기",
+    "en_route": "운행 중",
+    "following_vehicle": "차량 추적 중",
+    "view_line_route": "노선 경로 보기"
   }
 }

@@ -234,5 +234,14 @@
     "view_stop": "Vezi stația",
     "stop_tracking": "Opriți urmărirea",
     "estimating": "Estimare..."
+  },
+  "map_card": {
+    "stop_id": "Stația {id}",
+    "from_here": "De aici",
+    "to_here": "Până aici",
+    "view_arrival_times": "Vezi timpii de sosire",
+    "en_route": "Pe traseu",
+    "following_vehicle": "Urmărire vehicul",
+    "view_line_route": "Vezi traseul liniei"
   }
 }
