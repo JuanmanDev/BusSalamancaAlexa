@@ -1,5 +1,15 @@
 # Bus Salamanca Alexa
 
+<br>
+
+## 💖 Support this project
+If you found this project helpful, please consider supporting it!
+
+[![GitHub Sponsor](https://img.shields.io/badge/Sponsor-JuanmanDev-ea4aaa?style=for-the-badge&logo=github)](https://github.com/sponsors/JuanmanDev) [![Ko-fi](https://img.shields.io/badge/Ko--fi-F16061?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/juanmandev) [![PayPal](https://img.shields.io/badge/PayPal-00457C?style=for-the-badge&logo=paypal&logoColor=white)](https://paypal.me/juanmandev)
+
+<br>
+
+
 [![Docker Build and Push](https://github.com/JuanmanDev/BusSalamancaAlexa/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/JuanmanDev/BusSalamancaAlexa/actions/workflows/docker-publish.yml)
 
 Skill for Alexa to get bus arrival times in Salamanca.
@@ -173,3 +183,13 @@ Here are some screenshots of the Bus Salamanca Alexa Skill in action:
 ![Bus Salamanca Route Map](./fotos/1280_800/3.jpg)
 ![Bus Salamanca Schedule](./fotos/1280_800/4.jpg)
 ![Bus Salamanca Live Updates](./fotos/1280_800/5.jpg)
+
+
+<br>
+
+## 💖 Support this project
+If you found this project helpful, please consider supporting it!
+
+[![GitHub Sponsor](https://img.shields.io/badge/Sponsor-JuanmanDev-ea4aaa?style=for-the-badge&logo=github)](https://github.com/sponsors/JuanmanDev) [![Ko-fi](https://img.shields.io/badge/Ko--fi-F16061?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/juanmandev) [![PayPal](https://img.shields.io/badge/PayPal-00457C?style=for-the-badge&logo=paypal&logoColor=white)](https://paypal.me/juanmandev)
+
+<br>
