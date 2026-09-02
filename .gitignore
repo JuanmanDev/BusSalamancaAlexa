@@ -2,3 +2,8 @@ node_modules/
 dist/
 .env
 storage.db
+
+# logs
+*.log
+web/*_log.txt
+web/*.log
