@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useMapStore } from '~/stores/map'
 
+useSeoMeta({ robots: 'noindex, follow' })
 definePageMeta({
   layout: 'simple'
 })
@@ -179,6 +180,9 @@ const handleLanguageChange = (val: any) => {
           </div>
         </div>
       </section>
+
+      <!-- Sponsor / support -->
+      <SupportProject />
 
       <!-- Links -->
       <section class="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-700">

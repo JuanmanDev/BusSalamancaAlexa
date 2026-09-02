@@ -50,7 +50,8 @@
     "stops": "Paragens",
     "stop": "Paragem",
     "no_results": "Nenhum resultado encontrado",
-    "type_to_search": "Escreva para procurar paragens ou linhas"
+    "type_to_search": "Escreva para procurar paragens ou linhas",
+    "line": "Linha"
   },
   "settings": {
     "title": "Definições",
@@ -243,5 +244,16 @@
     "en_route": "Em rota",
     "following_vehicle": "A seguir veículo",
     "view_line_route": "Ver percurso da linha"
+  },
+  "support": {
+    "title": "Apoie o projeto",
+    "desc": "O BusSalamanca é gratuito, sem anúncios e de código aberto. Se for útil para você, pode ajudar a cobrir os custos do servidor e do domínio.",
+    "github": "Patrocinar no GitHub",
+    "kofi": "Pague-me um café no Ko-fi",
+    "paypal": "Doar com PayPal"
+  },
+  "seo": {
+    "title": "Bus Salamanca – Autocarros urbanos de Salamanca em tempo real",
+    "description": "Horários de chegada em tempo real para todas as paragens de Salamanca (Espanha): linhas, mapa com autocarros ao vivo, rotas e alertas. Grátis e sem anúncios."
   }
 }

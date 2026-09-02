@@ -1,4 +1,6 @@
-# Nuxt Minimal Starter
+# Bus Salamanca — Web App (Nuxt 4)
+
+Live: https://bussalamanca.juanman.tech/ — part of [BusSalamancaAlexa](https://github.com/JuanmanDev/BusSalamancaAlexa). Sponsor links: see the root README.
 
 Look at the [Nuxt documentation](https://nuxt.com/docs/getting-started/introduction) to learn more.
 

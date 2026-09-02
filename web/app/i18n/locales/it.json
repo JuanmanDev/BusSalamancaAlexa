@@ -50,7 +50,8 @@
     "stops": "Fermate",
     "stop": "Fermata",
     "no_results": "Nessun risultato trovato",
-    "type_to_search": "Scrivi per cercare fermate o linee"
+    "type_to_search": "Scrivi per cercare fermate o linee",
+    "line": "Linea"
   },
   "settings": {
     "title": "Impostazioni",
@@ -243,5 +244,16 @@
     "en_route": "In viaggio",
     "following_vehicle": "Veicolo in rotta",
     "view_line_route": "Vedi percorso della linea"
+  },
+  "support": {
+    "title": "Sostieni il progetto",
+    "desc": "BusSalamanca è gratuito, senza pubblicità e open source. Se lo trovi utile, puoi aiutare a coprire i costi di server e dominio.",
+    "github": "Sponsorizza su GitHub",
+    "kofi": "Offrimi un caffè su Ko-fi",
+    "paypal": "Dona con PayPal"
+  },
+  "seo": {
+    "title": "Bus Salamanca – Autobus urbani di Salamanca in tempo reale",
+    "description": "Orari di arrivo in tempo reale per ogni fermata di Salamanca (Spagna): linee, mappa con i bus in diretta, percorsi e avvisi. Gratis e senza pubblicità."
   }
 }

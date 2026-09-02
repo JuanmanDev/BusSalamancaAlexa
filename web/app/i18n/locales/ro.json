@@ -50,7 +50,8 @@
     "stops": "Stații",
     "stop": "Stație",
     "no_results": "Nu au fost găsite rezultate",
-    "type_to_search": "Tastați pentru a căuta stații sau linii"
+    "type_to_search": "Tastați pentru a căuta stații sau linii",
+    "line": "Linia"
   },
   "settings": {
     "title": "Setări",
@@ -243,5 +244,16 @@
     "en_route": "Pe traseu",
     "following_vehicle": "Urmărire vehicul",
     "view_line_route": "Vezi traseul liniei"
+  },
+  "support": {
+    "title": "Susține proiectul",
+    "desc": "BusSalamanca este gratuit, fără reclame și open source. Dacă îți este util, poți ajuta la acoperirea costurilor de server și domeniu.",
+    "github": "Sponsorizează pe GitHub",
+    "kofi": "Oferă-mi o cafea pe Ko-fi",
+    "paypal": "Donează cu PayPal"
+  },
+  "seo": {
+    "title": "Bus Salamanca – Autobuze urbane din Salamanca în timp real",
+    "description": "Ore de sosire în timp real pentru fiecare stație din Salamanca (Spania): linii, hartă live cu autobuze, planificator de rute și notificări. Gratuit și fără reclame."
   }
 }

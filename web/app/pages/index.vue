@@ -4,8 +4,10 @@ import type { BusStop, BusLine } from '~/types/bus'
 const { t } = useI18n()
 
 useSeoMeta({
-  title: computed(() => `${t('index.title')} - ${t('index.subtitle')}`),
-  description: computed(() => t('index.subtitle')),
+  title: computed(() => t('seo.title')),
+  description: computed(() => t('seo.description')),
+  ogTitle: computed(() => t('seo.title')),
+  ogDescription: computed(() => t('seo.description')),
 })
 
 const router = useRouter()

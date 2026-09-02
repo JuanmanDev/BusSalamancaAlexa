@@ -50,7 +50,8 @@
     "stops": "Paradas",
     "stop": "Parada",
     "no_results": "No se encontraron resultados",
-    "type_to_search": "Escribe para buscar paradas o líneas"
+    "type_to_search": "Escribe para buscar paradas o líneas",
+    "line": "Línea"
   },
   "settings": {
     "title": "Ajustes",
@@ -247,5 +248,16 @@
     "en_route": "En ruta",
     "following_vehicle": "Siguiendo vehículo",
     "view_line_route": "Ver recorrido de línea"
+  },
+  "support": {
+    "title": "Apoya el proyecto",
+    "desc": "BusSalamanca es gratis, sin anuncios y de código abierto. Si te resulta útil, puedes ayudar a cubrir los costes del servidor y el dominio.",
+    "github": "Patrocinar en GitHub",
+    "kofi": "Invítame a un café en Ko-fi",
+    "paypal": "Donar con PayPal"
+  },
+  "seo": {
+    "title": "Bus Salamanca – Autobuses urbanos de Salamanca en tiempo real",
+    "description": "Consulta en tiempo real cuándo llega el autobús a tu parada en Salamanca: horarios, líneas, mapa con los buses en directo, rutas y avisos. Gratis, sin anuncios y sin instalar nada."
   }
 }

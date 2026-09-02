@@ -50,7 +50,8 @@
     "stops": "Arrêts",
     "stop": "Arrêt",
     "no_results": "Aucun résultat trouvé",
-    "type_to_search": "Tapez pour rechercher des arrêts ou des lignes"
+    "type_to_search": "Tapez pour rechercher des arrêts ou des lignes",
+    "line": "Ligne"
   },
   "settings": {
     "title": "Paramètres",
@@ -243,5 +244,16 @@
     "en_route": "En route",
     "following_vehicle": "Suivi du véhicule",
     "view_line_route": "Voir l'itinéraire de la ligne"
+  },
+  "support": {
+    "title": "Soutenir le projet",
+    "desc": "BusSalamanca est gratuit, sans publicité et open source. S'il vous est utile, vous pouvez aider à couvrir les frais de serveur et de domaine.",
+    "github": "Sponsoriser sur GitHub",
+    "kofi": "M'offrir un café sur Ko-fi",
+    "paypal": "Faire un don avec PayPal"
+  },
+  "seo": {
+    "title": "Bus Salamanca – Bus urbains de Salamanque en temps réel",
+    "description": "Horaires d'arrivée en temps réel pour chaque arrêt de Salamanque (Espagne) : lignes, carte avec les bus en direct, itinéraires et alertes. Gratuit et sans publicité."
   }
 }

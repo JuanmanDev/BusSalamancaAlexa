@@ -50,7 +50,8 @@
     "stops": "정류장",
     "stop": "정류장",
     "no_results": "결과를 찾을 수 없습니다",
-    "type_to_search": "입력하여 정류장 또는 노선 검색"
+    "type_to_search": "입력하여 정류장 또는 노선 검색",
+    "line": "노선"
   },
   "settings": {
     "title": "설정",
@@ -243,5 +244,16 @@
     "en_route": "운행 중",
     "following_vehicle": "차량 추적 중",
     "view_line_route": "노선 경로 보기"
+  },
+  "support": {
+    "title": "프로젝트 후원하기",
+    "desc": "BusSalamanca는 무료, 광고 없음, 오픈 소스입니다. 유용하다면 서버와 도메인 비용을 도와주세요.",
+    "github": "GitHub에서 후원",
+    "kofi": "Ko-fi에서 커피 한 잔",
+    "paypal": "PayPal로 기부"
+  },
+  "seo": {
+    "title": "Bus Salamanca – 살라망카 시내버스 실시간 도착 정보",
+    "description": "스페인 살라망카 모든 정류장의 실시간 버스 도착 시간: 노선, 실시간 지도, 경로 안내, 알림. 무료, 광고 없음, 설치 불필요."
   }
 }

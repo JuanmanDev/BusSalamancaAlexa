@@ -65,6 +65,9 @@ const { t } = useI18n()
         </h2>
         <div class="space-y-4 text-gray-600 dark:text-gray-300" v-html="$t('help.refresh.p1')"></div>
       </section>
+
+      <!-- Sponsor / support -->
+      <SupportProject />
     </div>
   </div>
 </template>

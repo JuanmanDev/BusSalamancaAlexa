@@ -50,7 +50,8 @@
     "stops": "バス停",
     "stop": "バス停",
     "no_results": "結果が見つかりません",
-    "type_to_search": "入力してバス停や路線を検索"
+    "type_to_search": "入力してバス停や路線を検索",
+    "line": "路線"
   },
   "settings": {
     "title": "設定",
@@ -243,5 +244,16 @@
     "en_route": "ルート上",
     "following_vehicle": "車両を追跡中",
     "view_line_route": "路線のルートを見る"
+  },
+  "support": {
+    "title": "プロジェクトを支援する",
+    "desc": "BusSalamanca は無料・広告なし・オープンソースです。役に立ったら、サーバーとドメインの費用をご支援ください。",
+    "github": "GitHub でスポンサーになる",
+    "kofi": "Ko-fi でコーヒーをおごる",
+    "paypal": "PayPal で寄付する"
+  },
+  "seo": {
+    "title": "Bus Salamanca – サラマンカ市バスのリアルタイム到着情報",
+    "description": "スペイン・サラマンカの全バス停のリアルタイム到着時刻：路線、ライブ地図、経路検索、通知。無料・広告なし・インストール不要。"
   }
 }

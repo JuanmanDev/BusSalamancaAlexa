@@ -2,6 +2,7 @@
 import { useArrivalNotification } from '~/composables/useArrivalNotification'
 import type { TrackedNotification } from '~/composables/useArrivalNotification'
 
+useSeoMeta({ robots: 'noindex, follow' })
 definePageMeta({
   layout: 'simple'
 })

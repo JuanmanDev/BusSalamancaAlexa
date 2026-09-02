@@ -50,9 +50,15 @@ function getRouteParts(name: string): { origin: string; destination: string } | 
 const routeParts = computed(() => lineInfo.value ? getRouteParts(lineInfo.value.name) : null)
 
 // Set page meta
+const lineTitle = computed(() => lineInfo.value
+  ? `${t('search_modal.line')} ${lineId.value} ${lineInfo.value.name} - ${t('index.title')}`
+  : `${t('search_modal.line')} ${lineId.value} - ${t('index.title')}`)
+const lineDescription = computed(() => `${t('line_detail.stops_list')} - ${t('search_modal.line')} ${lineId.value}${lineInfo.value ? ` ${lineInfo.value.name}` : ''}, Salamanca. ${t('index.subtitle')}.`)
 useSeoMeta({
-  title: () => lineInfo.value ? `${t('nav.lines')} ${lineId.value} - ${t('index.title')}` : `${t('nav.lines')} ${lineId.value}`,
-  description: () => `${t('line_detail.stops_list')} ${lineId.value}`,
+  title: lineTitle,
+  description: lineDescription,
+  ogTitle: lineTitle,
+  ogDescription: lineDescription,
 })
 
 // Favorite toggle

@@ -50,7 +50,8 @@
     "stops": "公交站",
     "stop": "公交站",
     "no_results": "未找到相关结果",
-    "type_to_search": "请键入以搜索公交站或线路"
+    "type_to_search": "请键入以搜索公交站或线路",
+    "line": "线路"
   },
   "settings": {
     "title": "设置",
@@ -243,5 +244,16 @@
     "en_route": "在途中",
     "following_vehicle": "正在追踪车辆",
     "view_line_route": "查看线路路线"
+  },
+  "support": {
+    "title": "支持本项目",
+    "desc": "BusSalamanca 免费、无广告且开源。如果它对你有帮助，可以帮忙分担服务器和域名费用。",
+    "github": "在 GitHub 上赞助",
+    "kofi": "在 Ko-fi 请我喝咖啡",
+    "paypal": "通过 PayPal 捐赠"
+  },
+  "seo": {
+    "title": "Bus Salamanca – 萨拉曼卡市公交实时到站",
+    "description": "西班牙萨拉曼卡所有公交站点的实时到站时间：线路、实时地图、路线规划和到站提醒。免费、无广告、无需安装。"
   }
 }

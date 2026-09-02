@@ -18,9 +18,30 @@ const stopInfo = computed(() => {
 })
 
 // Set page meta
+const stopTitle = computed(() => stopInfo.value
+  ? `${t('search_modal.stop')} ${stopId.value} ${stopInfo.value.name} - ${t('index.title')}`
+  : `${t('search_modal.stop')} ${stopId.value} - ${t('index.title')}`)
+const stopDescription = computed(() => `${t('stop_detail.next_arrivals')} - ${t('search_modal.stop')} ${stopId.value}${stopInfo.value ? ` ${stopInfo.value.name}` : ''}, Salamanca. ${t('index.subtitle')}.`)
 useSeoMeta({
-  title: () => stopInfo.value ? `${t('search_modal.stop')} ${stopInfo.value.name} - ${t('index.title')}` : `${t('search_modal.stop')} - ${t('index.title')}`,
-  description: () => `${t('stop_detail.next_arrivals')} - ${stopInfo.value?.name || stopId.value}`,
+  title: stopTitle,
+  description: stopDescription,
+  ogTitle: stopTitle,
+  ogDescription: stopDescription,
+})
+useHead({
+  script: [{
+    type: 'application/ld+json',
+    innerHTML: computed(() => stopInfo.value ? JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'BusStop',
+      name: stopInfo.value.name,
+      identifier: stopId.value,
+      address: { '@type': 'PostalAddress', addressLocality: 'Salamanca', addressCountry: 'ES' },
+      ...(stopInfo.value.latitude && stopInfo.value.longitude
+        ? { geo: { '@type': 'GeoCoordinates', latitude: stopInfo.value.latitude, longitude: stopInfo.value.longitude } }
+        : {}),
+    }) : ''),
+  }],
 })
 
 // Arrivals from store (managed by context)

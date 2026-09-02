@@ -388,10 +388,34 @@ watch(() => mapStore.positionEvent, (event) => {
     // Suppress marker transitions during fitBounds to prevent jank
     isAnimating.value = true
 
-    m.fitBounds(bounds, {
+    // MapLibre quirk: `fitBounds()` computes zoom/center using the map's CURRENT persistent
+    // padding (left by a previous flyTo/easeTo) PLUS the `padding` option, and then strips the
+    // option before animating. When a previous flyTo left e.g. left=320 and we ask for
+    // left=320 again, the bounds get fitted with 640px on the left → "duplicated margin".
+    // Fix: compute the camera with the DIFFERENCE vs. the current padding, then flyTo with the
+    // desired padding so the persistent padding ends up exactly as requested.
+    const bearing = event.bearing ?? m.getBearing()
+    const pitch = event.pitch ?? m.getPitch()
+    const currentPadding = m.getPadding()
+    const paddingDelta = {
+      top: safePadding.top - (currentPadding.top || 0),
+      bottom: safePadding.bottom - (currentPadding.bottom || 0),
+      left: safePadding.left - (currentPadding.left || 0),
+      right: safePadding.right - (currentPadding.right || 0),
+    }
+
+    const camera = m.cameraForBounds(bounds, { padding: paddingDelta, bearing, maxZoom: MAP_CONFIG.maxZoom })
+    if (!camera) {
+      console.warn('fitBounds: could not compute camera for bounds', bounds)
+      return
+    }
+
+    m.flyTo({
+      center: camera.center,
+      zoom: camera.zoom,
       padding: safePadding,
-      bearing: event.bearing ?? m.getBearing(),
-      pitch: event.pitch ?? m.getPitch(),
+      bearing,
+      pitch,
       duration: event.animate === false ? 0 : 800,
       essential: mapStore.forceAnimations,
     })

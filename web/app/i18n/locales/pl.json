@@ -50,7 +50,8 @@
     "stops": "Przystanki",
     "stop": "Przystanek",
     "no_results": "Brak wyników",
-    "type_to_search": "Zacznij pisać, aby wyszukać"
+    "type_to_search": "Zacznij pisać, aby wyszukać",
+    "line": "Linia"
   },
   "settings": {
     "title": "Ustawienia",
@@ -243,5 +244,16 @@
     "en_route": "W drodze",
     "following_vehicle": "Śledzenie pojazdu",
     "view_line_route": "Zobacz trasę linii"
+  },
+  "support": {
+    "title": "Wesprzyj projekt",
+    "desc": "BusSalamanca jest darmowa, bez reklam i open source. Jeśli Ci się przydaje, możesz pomóc pokryć koszty serwera i domeny.",
+    "github": "Sponsoruj na GitHub",
+    "kofi": "Kup mi kawę na Ko-fi",
+    "paypal": "Wesprzyj przez PayPal"
+  },
+  "seo": {
+    "title": "Bus Salamanca – Autobusy miejskie w Salamance w czasie rzeczywistym",
+    "description": "Czasy przyjazdu w czasie rzeczywistym dla każdego przystanku w Salamance (Hiszpania): linie, mapa na żywo, planer tras i powiadomienia. Bezpłatnie i bez reklam."
   }
 }

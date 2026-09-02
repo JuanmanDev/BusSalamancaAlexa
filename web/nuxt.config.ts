@@ -19,12 +19,39 @@ export default defineNuxtConfig({
     '@pinia/nuxt',
     '@vite-pwa/nuxt',
     '@nuxtjs/i18n',
+    '@nuxtjs/sitemap',
+    '@nuxtjs/robots',
     'nuxt-umami'
   ],
 
+  // ===== SEO =====
+  // Public site config shared by @nuxtjs/sitemap, @nuxtjs/robots and the canonical/og tags.
+  // Override with NUXT_SITE_URL / NUXT_SITE_INDEXABLE on staging deployments.
+  site: {
+    url: process.env.NUXT_SITE_URL || 'https://bussalamanca.juanman.tech',
+    name: 'Bus Salamanca',
+    description: 'Consulta en tiempo real cuándo llega el autobús a tu parada en Salamanca',
+    defaultLocale: 'es',
+    indexable: process.env.NUXT_SITE_INDEXABLE !== 'false',
+  },
+
+  sitemap: {
+    // Static pages come from the router; dynamic stop/line pages from this endpoint (per locale)
+    sources: ['/api/__sitemap__/urls'],
+    exclude: ['/settings', '/notifications', '/route/results', '/**/settings', '/**/notifications', '/**/route/results'],
+    defaults: { changefreq: 'daily', priority: 0.7 },
+  },
+
+  robots: {
+    disallow: ['/api/', '/settings', '/notifications', '/route/results'],
+  },
+
   i18n: {
     strategy: 'prefix_and_default',
-    defaultLocale: 'en',
+    // Salamanca is a Spanish city → Spanish is what people search for. `/` serves Spanish,
+    // every other language keeps its prefix. Browser language detection still redirects on `/`.
+    defaultLocale: 'es',
+    baseUrl: process.env.NUXT_SITE_URL || 'https://bussalamanca.juanman.tech',
     lazy: true,
     restructureDir: ".",
     langDir: 'app/i18n/locales/',
@@ -32,22 +59,22 @@ export default defineNuxtConfig({
       useCookie: true,
       cookieKey: 'i18n_redirected',
       redirectOn: 'root',
-      fallbackLocale: 'en',
+      fallbackLocale: 'es',
     },
     locales: [
-      { code: 'es', file: 'es.json', name: 'Español' },
-      { code: 'en', file: 'en.json', name: 'English' },
-      { code: 'it', file: 'it.json', name: 'Italiano' },
-      { code: 'fr', file: 'fr.json', name: 'Français' },
-      { code: 'pt', file: 'pt.json', name: 'Português' },
-      { code: 'de', file: 'de.json', name: 'Deutsch' },
-      { code: 'zh', file: 'zh.json', name: '中文 (Mandarin)' },
-      { code: 'ja', file: 'ja.json', name: '日本語' },
-      { code: 'ko', file: 'ko.json', name: '한국어' },
-      { code: 'nl', file: 'nl.json', name: 'Nederlands' },
-      { code: 'pl', file: 'pl.json', name: 'Polski' },
-      { code: 'ro', file: 'ro.json', name: 'Română' },
-      { code: 'ar', file: 'ar.json', name: 'العربية', dir: 'rtl' }
+      { code: 'es', language: 'es-ES', file: 'es.json', name: 'Español' },
+      { code: 'en', language: 'en-US', file: 'en.json', name: 'English' },
+      { code: 'it', language: 'it-IT', file: 'it.json', name: 'Italiano' },
+      { code: 'fr', language: 'fr-FR', file: 'fr.json', name: 'Français' },
+      { code: 'pt', language: 'pt-PT', file: 'pt.json', name: 'Português' },
+      { code: 'de', language: 'de-DE', file: 'de.json', name: 'Deutsch' },
+      { code: 'zh', language: 'zh-CN', file: 'zh.json', name: '中文 (Mandarin)' },
+      { code: 'ja', language: 'ja-JP', file: 'ja.json', name: '日本語' },
+      { code: 'ko', language: 'ko-KR', file: 'ko.json', name: '한국어' },
+      { code: 'nl', language: 'nl-NL', file: 'nl.json', name: 'Nederlands' },
+      { code: 'pl', language: 'pl-PL', file: 'pl.json', name: 'Polski' },
+      { code: 'ro', language: 'ro-RO', file: 'ro.json', name: 'Română' },
+      { code: 'ar', language: 'ar', file: 'ar.json', name: 'العربية', dir: 'rtl' }
     ]
   },
 
@@ -63,6 +90,8 @@ export default defineNuxtConfig({
     manifest: {
       name: 'Bus Salamanca',
       short_name: 'BusSalamanca',
+      description: 'Autobuses urbanos de Salamanca en tiempo real',
+      lang: 'es',
       theme_color: '#1e40af',
       background_color: '#ffffff',
       display: 'standalone',
@@ -120,12 +149,14 @@ export default defineNuxtConfig({
     head: {
       title: 'Bus Salamanca',
       meta: [
-        { name: 'description', content: 'Consulta tiempos de autobuses en Salamanca en tiempo real' },
-        { name: 'viewport', content: 'width=device-width, initial-scale=1, maximum-scale=1, interactive-widget=resizes-content' },
+        { name: 'viewport', content: 'width=device-width, initial-scale=1, interactive-widget=resizes-content' },
         { name: 'theme-color', content: '#1e40af' },
+        ...(process.env.NUXT_PUBLIC_GSC_VERIFICATION ? [{ name: 'google-site-verification', content: process.env.NUXT_PUBLIC_GSC_VERIFICATION }] : []),
+        ...(process.env.NUXT_PUBLIC_BING_VERIFICATION ? [{ name: 'msvalidate.01', content: process.env.NUXT_PUBLIC_BING_VERIFICATION }] : []),
       ],
       link: [
         { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' },
+        { rel: 'alternate icon', href: '/favicon.ico' },
       ],
     },
     pageTransition: { name: 'page', mode: 'out-in' },

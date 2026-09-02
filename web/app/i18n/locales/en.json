@@ -50,7 +50,8 @@
     "stops": "Stops",
     "stop": "Stop",
     "no_results": "No results found",
-    "type_to_search": "Type to search for stops or lines"
+    "type_to_search": "Type to search for stops or lines",
+    "line": "Line"
   },
   "settings": {
     "title": "Settings",
@@ -247,5 +248,16 @@
     "en_route": "En route",
     "following_vehicle": "Following vehicle",
     "view_line_route": "View line route"
+  },
+  "support": {
+    "title": "Support the project",
+    "desc": "BusSalamanca is free, ad-free and open source. If you find it useful, you can help cover the server and domain costs.",
+    "github": "Sponsor on GitHub",
+    "kofi": "Buy me a coffee on Ko-fi",
+    "paypal": "Donate with PayPal"
+  },
+  "seo": {
+    "title": "Bus Salamanca – Real-time city buses in Salamanca, Spain",
+    "description": "Live bus arrival times for every stop in Salamanca (Spain): lines, timetables, live map with buses, route planner and alerts. Free, ad-free, no install needed."
   }
 }
