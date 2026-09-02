@@ -1,4 +1,4 @@
-# Bus Salamanca Alexa
+# Bus Salamanca — Alexa Skill + Web App
 
 <br>
 
@@ -9,168 +9,148 @@ If you found this project helpful, please consider supporting it!
 
 <br>
 
-
 [![Docker Build and Push](https://github.com/JuanmanDev/BusSalamancaAlexa/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/JuanmanDev/BusSalamancaAlexa/actions/workflows/docker-publish.yml)
+[![Web Docker Build](https://github.com/JuanmanDev/BusSalamancaAlexa/actions/workflows/web-docker-publish.yml/badge.svg)](https://github.com/JuanmanDev/BusSalamancaAlexa/actions/workflows/web-docker-publish.yml)
+[![Release](https://github.com/JuanmanDev/BusSalamancaAlexa/actions/workflows/release.yml/badge.svg)](https://github.com/JuanmanDev/BusSalamancaAlexa/actions/workflows/release.yml)
 
-Skill for Alexa to get bus arrival times in Salamanca.
+Real-time bus arrival times for **Salamanca (Spain)**, available as:
 
-**🌐 New: Now also available as a full visual Web App!**  
-Check out the interactive map and live bus tracking at: [https://bussalamanca.juanman.tech/](https://bussalamanca.juanman.tech/)
+| | |
+|---|---|
+| 🗣️ **Alexa skill** | [Bus Salamanca on amazon.es](https://www.amazon.es/dp/B0F59TDK93) — *"Alexa, abre Bus Salamanca"* |
+| 🌐 **Web / PWA** | [bussalamanca.juanman.tech](https://bussalamanca.juanman.tech/) — live map, vehicles, routes, notifications, 13 languages |
 
-## 🚀 New Dockerized Version
+Both use the public SIRI web service of *Salamanca de Transportes*.
 
-This project has been refactored to run as a standalone Docker service, removing the AWS Lambda dependency.
+## 🤖 Alexa+ compatibility
 
-### Features
-- **Docker Ready**: Lightweight image based on Alpine Node.
-- **SQLite**: Local storage for favorite stops.
-- **Express Server**: Official Alexa SDK Adapter for Express.
-- **CI/CD**: Automatic image publishing to GitHub Container Registry (GHCR).
+Alexa+ (the LLM-based Alexa) routes requests to skills differently: it reads the skill's
+description/utterances, sends `CanFulfillIntentRequest`, fills slots with free text
+("ciento noventa y nueve"), and sends built-in intents the old model never sent. The skill
+has been updated for that — see **[ALEXA_PLUS.md](ALEXA_PLUS.md)** for the full list of
+changes, the manual steps the skill owner still has to do in the developer console, and how
+to deploy the updated manifest + interaction model from `skill-package/`.
 
-### Quick Deployment (Docker Compose)
+## 🧱 Repository layout
 
-1. Create a `docker-compose.yml` file:
-   ```yaml
-   services:
-     bus-salamanca:
-       image: ghcr.io/juanmandev/bussalamancaalexa:latest
-       ports:
-         - "3000:3000"
-       environment:
-         - VERIFY_SIGNATURE=true
-       volumes:
-         - ./data:/data
-   ```
-2. Run `docker-compose up -d`.
-3. Configure your endpoint in the Alexa Console pointing to your server (HTTPS required).
-
-For more details, see [DEPLOY.md](DEPLOY.md).
-
-## Local Development
-
-```bash
-# Install dependencies
-npm install
-
-# Run in dev mode (with auto-reload)
-npm run dev
-
-# Run local verification tests
-npm run test:local
 ```
-
-### Environment Variables
-Check `.env.example` to see available variables.
-
----
-**Note**: Legacy AWS Lambda deployment has been temporarily disabled.
-
-## ⚠️ Disclaimer
-
-This project is **not affiliated** with "Salamanca de Transportes" company or the City Council of Salamanca. It's an independent project that uses publicly available data to provide a service to bus users.
+src/                 Alexa skill backend (TypeScript, ask-sdk, Express, SQLite)
+  handlers/          Intent handlers (incl. CanFulfillIntentRequest, Fallback, Repeat…)
+  services/          BusService (SIRI SOAP client), StorageService (SQLite)
+  utils/             APL documents, StopNumberParser (digits + Spanish/English words)
+skill-package/       Alexa manifest (skill.json) + interaction model (es-ES.json)
+openapi.yaml         REST API for Alexa+ Action SDK / agents (/api/action/…)
+web/                 Nuxt 4 web app + PWA (Nuxt UI, MapLibre, Pinia, i18n, Umami)
+siri/                SIRI experiments / test scripts
+```
 
 ## 🏗️ Architecture
 
-The project follows this architecture:
-
 ```
-┌───────────────┐      ┌────────────────┐      ┌───────────────┐      ┌────────────────┐
-│               │      │                │      │               │      │                │
-│  Alexa Device │─────▶│  Alexa Cloud   │─────▶│  AWS Lambda   │─────▶│ External SIRI  │
-│               │      │     (AWS)      │      │  (This Code)  │      │  Web Service   │
-│               │◀─────│                │◀─────│   +UI Data    │◀─────│                │
-└───────────────┘      └────────────────┘      └───────────────┘      └────────────────┘
-        ▲                                                                     │
-        │                                                                     │
-        └─────────────────────────────────────────────────────────────────────┘
-                                     Response Flow
+┌──────────────┐   ┌──────────────┐   ┌──────────────────────────────┐   ┌──────────────────┐
+│ Alexa device │──▶│ Alexa Cloud  │──▶│ Docker: Express + ask-sdk    │──▶│ SIRI SOAP service│
+│ / Alexa+     │◀──│ (LLM router) │◀──│ + SQLite (saved stops)       │◀──│ Salamanca de Tr. │
+└──────────────┘   └──────────────┘   │ + REST /api/action (OpenAPI) │   └──────────────────┘
+                                      └──────────────────────────────┘             ▲
+┌──────────────┐   ┌──────────────────────────────────────────────┐                │
+│ Browser/PWA  │──▶│ Docker: Nuxt 4 (SSR + Nitro API)             │────────────────┘
+└──────────────┘   └──────────────────────────────────────────────┘
 ```
 
-## 🔧 Technical Details
+## 🚀 Skill backend (Docker)
 
-- Built with TypeScript and Node.js
-- Deployed as an AWS Lambda function
-- Uses the SIRI (Service Interface for Real Time Information) API to get bus data
-- Implements the Alexa Skills Kit for voice interaction
+```yaml
+services:
+  bus-salamanca:
+    image: ghcr.io/juanmandev/bussalamancaalexa:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - VERIFY_SIGNATURE=true
+      - ALEXA_SKILL_ID=amzn1.ask.skill.xxxx   # optional but recommended
+    volumes:
+      - ./data:/data
+```
 
-## 🚀 CI/CD Pipeline
+Endpoints: `POST /` (Alexa), `GET /health`, `GET /openapi.yaml`, `GET /api/action/stop/:n`,
+`GET|POST /api/action/user/:userId/stop`. Details in [DEPLOY.md](DEPLOY.md).
 
-This project uses GitHub Actions for continuous integration and deployment:
+### Local development
 
+```bash
+npm install
+VERIFY_SIGNATURE=false npm run dev   # tsx watch, port 3000
+npm run test:local                    # 13 smoke requests (Launch, intents, CanFulfill, …)
+npm run build                         # tsc → dist/
+```
 
-The CI/CD pipeline automatically:
-1. Runs tests when code is pushed to the main branch
-2. Builds the TypeScript code
-3. Deploys the code to AWS Lambda
-4. Updates the Alexa skill
+Environment variables: see [`.env.example`](.env.example).
 
-The workflow configuration is located in `.github/workflows/deploy-lambda.yml`.
+## 🌐 Web app
 
-## 🛠️ Development Setup
+```bash
+cd web
+npm install
+npm run dev          # http://localhost:3000
+npm run build        # .output/ (Node server)
+```
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/yourusername/BusSalamancaAlexa.git
-   cd BusSalamancaAlexa
-   ```
+Features: live map with vehicles (MapLibre + OpenFreeMap), stops & lines, arrivals with
+ETAs, route planner, arrival notifications, offline PWA, dark mode, 13 locales, Umami
+analytics. Built with Nuxt 4, Nuxt UI 4, Pinia, `@nuxtjs/i18n`, `@vite-pwa/nuxt`.
 
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
+## 🔎 SEO
 
-3. Generate SIRI API types (this is not required as it is improved by fetch file):
-   ```bash
-   # Download WSDL if you haven't already
-   # The WSDL file is already included in the repository as SiriWS.xml
-   
-   # Generate TypeScript types from WSDL
-   npx wsdl-tsclient ./SiriWS.xml -o ./generated/
-   ```
+The web app ships: `<html lang/dir>` per locale, canonical + `hreflang` alternates (13 locales,
+`x-default` → Spanish), Open Graph / Twitter cards (`/og-image.jpg`), JSON-LD (`WebSite`,
+`WebApplication`, `BusStop` on stop pages), `robots.txt` and multi-locale sitemaps
+(`/sitemap_index.xml`, ~390 URLs per locale incl. every stop and line) generated by
+`@nuxtjs/sitemap` from `server/api/__sitemap__/urls.get.ts`. Private pages (settings,
+notifications, route results) are `noindex`.
 
-4. Build the project:
-   ```bash
-   npm run build
-   ```
+**Manual steps to actually appear on Google/Bing** (one-off):
+1. [Google Search Console](https://search.google.com/search-console) → add property
+   `https://bussalamanca.juanman.tech` → verify with the HTML-tag method: set
+   `NUXT_PUBLIC_GSC_VERIFICATION=<token>` on the web container (or use DNS TXT).
+2. Submit `https://bussalamanca.juanman.tech/sitemap_index.xml` in Search Console → Sitemaps,
+   then *URL inspection → Request indexing* for `/`.
+3. [Bing Webmaster Tools](https://www.bing.com/webmasters): import from Search Console, or set
+   `NUXT_PUBLIC_BING_VERIFICATION=<token>`. Bing feeds DuckDuckGo/Ecosia.
+4. Get a few inbound links (GitHub README ✔, juanman.tech, Salamanca forums/Reddit) — a brand-new
+   domain with zero backlinks is the usual reason a site never shows up.
+
+Env vars: `NUXT_SITE_URL` (default `https://bussalamanca.juanman.tech`), `NUXT_SITE_INDEXABLE=false`
+for staging (emits `noindex` + blocking robots.txt).
+
+## 🔄 CI/CD
+
+* `docker-publish.yml` — builds & pushes the skill image to GHCR on every push to `main`.
+* `web-docker-publish.yml` — same for the web app.
+* `release.yml` — semantic-release (version bump, changelog, GitHub release).
+* `deploy-lambda.disabled.yml` — legacy AWS Lambda deployment (kept for reference, disabled).
 
 ## 🧪 Testing
 
-### Test the frontend interface
+* Skill: `npm run test:local` against a locally running server (see above).
+* Alexa simulator: *Developer Console → Test* (use `ask dialog` for multi-turn).
+* SIRI raw data: `npm run test:siri`.
 
-You can test the data received by running:
+## ⚠️ Disclaimer
 
-```bash
-npx ts-node src/fe.ts
-```
+This project is **not affiliated** with *Salamanca de Transportes* or the City Council of
+Salamanca. It is an independent, open-source project that uses publicly available data.
+Arrival times are estimations provided by the operator's public service.
 
-This will start a local server that simulates the Alexa frontend interaction.
+## 🔒 Privacidad
 
-### Test with Alexa Simulator
-
-You can also test the skill using the Alexa Developer Console simulator.
-
-## 📦 Deployment
-
-The project is automatically deployed through GitHub Actions. If you want to manually deploy:
-
-1. Build the project:
-   ```bash
-   npm run build
-   ```
-
-2. Deploy to AWS Lambda:
-   ```bash
-   # Using AWS CLI
-   aws lambda update-function-code --function-name BusSalamancaAlexa --zip-file fileb://dist.zip
-   ```
+La skill solo guarda el número de parada elegido asociado al identificador anónimo de
+usuario que proporciona Alexa. No se recogen ni comparten datos personales.
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+MIT.
 
 ## 📷 Screenshots
-
-Here are some screenshots of the Bus Salamanca Alexa Skill in action:
 
 ![Bus Salamanca Screenshot 1](./fotos/IMG-20250418-WA0006_edit.jpg)
 ![Bus Salamanca Screenshot 2](./fotos/IMG-20250418-WA0007_edit.jpg)
@@ -183,7 +163,6 @@ Here are some screenshots of the Bus Salamanca Alexa Skill in action:
 ![Bus Salamanca Route Map](./fotos/1280_800/3.jpg)
 ![Bus Salamanca Schedule](./fotos/1280_800/4.jpg)
 ![Bus Salamanca Live Updates](./fotos/1280_800/5.jpg)
-
 
 <br>
 
