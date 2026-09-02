@@ -54,7 +54,6 @@ Deploy them with the [ASK CLI](https://developer.amazon.com/en-US/docs/alexa/sma
 ```bash
 npm i -g ask-cli
 ask configure
-# replace YOUR-DEPLOYMENT-DOMAIN in skill-package/skill.json first
 ask smapi update-skill-manifest   -s <skillId> -g development --manifest "file:skill-package/skill.json"
 ask smapi set-interaction-model   -s <skillId> -g development -l es-ES --interaction-model "file:skill-package/interactionModels/custom/es-ES.json"
 ```

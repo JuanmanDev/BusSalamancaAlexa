@@ -37,8 +37,8 @@
     "apis": {
       "custom": {
         "endpoint": {
-          "uri": "https://YOUR-DEPLOYMENT-DOMAIN/",
-          "sslCertificateType": "Wildcard"
+          "uri": "https://bus-alexa.juanman.tech/",
+          "sslCertificateType": "Trusted"
         },
         "interfaces": [
           { "type": "ALEXA_PRESENTATION_APL", "supportedViewports": [

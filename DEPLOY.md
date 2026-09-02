@@ -28,29 +28,51 @@ docker run -d \
 
 ### Docker Compose (Recommended)
 
-Add this service to your `docker-compose.yml`:
+This is the live deployment on the Oracle ARM host (`/docker/bussalamancaalexa/docker-compose.yml`),
+where the skill backend sits next to the Nuxt web app behind the same Traefik:
 
 ```yaml
 services:
-  bus-salamanca:
-    image: ghcr.io/juanmandev/bussalamancaalexa:latest
-    container_name: bus-salamanca
+  web:
+    image: ghcr.io/juanmandev/bussalamancaalexa-web:latest
+    container_name: bussalamancaalexa-web
     restart: unless-stopped
+    networks: [traefik-public]
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.bussalamanca.rule=Host(`bussalamanca.79.72.51.163.nip.io`) || Host(`bussalamanca.juanman.tech`)
+      - traefik.http.routers.bussalamanca.entrypoints=websecure
+      - traefik.http.routers.bussalamanca.tls.certresolver=myresolver
+      - traefik.http.services.bussalamanca.loadbalancer.server.port=3000
+
+  alexa:
+    image: ghcr.io/juanmandev/bussalamancaalexa:latest
+    container_name: bussalamancaalexa-skill
+    restart: unless-stopped
+    networks: [traefik-public]
     environment:
       - VERIFY_SIGNATURE=true
-      # Optional but recommended: reject requests from any other skill id
-      # - ALEXA_SKILL_ID=amzn1.ask.skill.xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+      - ALEXA_SKILL_ID=amzn1.ask.skill.ec146a34-f92a-4889-893f-c245bedfd6cc
     volumes:
       - ./bus-data:/data
     labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.bus-salamanca.rule=Host(`bus-alexa.yourdomain.com`)"
-      - "traefik.http.routers.bus-salamanca.entrypoints=websecure"
-      - "traefik.http.routers.bus-salamanca.tls.certresolver=myresolver"
-      - "traefik.http.services.bus-salamanca.loadbalancer.server.port=3000"
+      - traefik.enable=true
+      - traefik.http.routers.bussalamanca-alexa.rule=Host(`bus-alexa.79.72.51.163.nip.io`) || Host(`bus-alexa.juanman.tech`)
+      - traefik.http.routers.bussalamanca-alexa.entrypoints=websecure
+      - traefik.http.routers.bussalamanca-alexa.tls.certresolver=myresolver
+      - traefik.http.services.bussalamanca-alexa.loadbalancer.server.port=3000
+
+networks:
+  traefik-public:
+    external: true
 ```
 
-*Replace `bus-alexa.yourdomain.com` and `myresolver` with your actual configuration.*
+The `nip.io` host resolves to the server IP without any DNS record, so the endpoint can be
+tested before `bus-alexa.juanman.tech` (an A record to the same IP) has propagated. Both get a
+real Let's Encrypt certificate, which is what Alexa requires.
+
+Watchtower on the host pulls new `:latest` images automatically, so a merge to `main` reaches
+production a few minutes after CI publishes the ARM64 image.
 
 ## 3. Alexa Configuration
 
@@ -58,7 +80,7 @@ services:
 2. Select your Skill (`Bus Salamanca`).
 3. Go to **Build** > **Endpoint**.
 4. Select **HTTPS**.
-5. In **Default Region**, enter your public URL (e.g., `https://bus-alexa.yourdomain.com`).
+5. In **Default Region**, enter `https://bus-alexa.juanman.tech/`.
 6. In **SSL Certificate Type**, select "My development endpoint has a certificate from a trusted certificate authority" (since Traefik/Let's Encrypt provides valid certs).
 7. Save Endpoints.
 8. Upload the manifest and the interaction model from `skill-package/` (see [ALEXA_PLUS.md](ALEXA_PLUS.md)) and make sure **CanFulfillIntentRequest** and **APL** interfaces are enabled.
