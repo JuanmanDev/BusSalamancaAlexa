@@ -34,6 +34,12 @@ jobs:
         env:
           platform: ${{ matrix.platform }}
 
+      - name: Lowercase the image name
+        # ghcr rejects uppercase repository names, and github.repository is JuanmanDev/...
+        run: echo "IMAGE_NAME_LC=${IMAGE_NAME,,}" >> $GITHUB_ENV
+        env:
+          IMAGE_NAME: ${{ env.IMAGE_NAME }}
+
       - name: Checkout repository
         uses: actions/checkout@v4
 
@@ -61,7 +67,7 @@ jobs:
           file: web/Dockerfile
           platforms: ${{ matrix.platform }}
           labels: ${{ steps.meta.outputs.labels }}
-          outputs: type=image,name=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }},push-by-digest=true,name-canonical=true,push=true
+          outputs: type=image,name=${{ env.REGISTRY }}/${{ env.IMAGE_NAME_LC }},push-by-digest=true,name-canonical=true,push=true
           cache-from: type=gha,scope=web-${{ env.PLATFORM_PAIR }}
           cache-to: type=gha,mode=max,scope=web-${{ env.PLATFORM_PAIR }}
 
@@ -87,6 +93,12 @@ jobs:
       contents: read
       packages: write
     steps:
+      - name: Lowercase the image name
+        # ghcr rejects uppercase repository names, and github.repository is JuanmanDev/...
+        run: echo "IMAGE_NAME_LC=${IMAGE_NAME,,}" >> $GITHUB_ENV
+        env:
+          IMAGE_NAME: ${{ env.IMAGE_NAME }}
+
       - name: Download digests
         uses: actions/download-artifact@v4
         with:
@@ -123,8 +135,8 @@ jobs:
         working-directory: ${{ runner.temp }}/digests
         run: |
           docker buildx imagetools create $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
-            $(printf '${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@sha256:%s ' *)
+            $(printf '${{ env.REGISTRY }}/${{ env.IMAGE_NAME_LC }}@sha256:%s ' *)
 
       - name: Inspect image
         run: |
-          docker buildx imagetools inspect ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.version }}
+          docker buildx imagetools inspect ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_LC }}:${{ steps.meta.outputs.version }}
