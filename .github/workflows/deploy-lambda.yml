@@ -1,9 +1,15 @@
+# STALE. The skill endpoint moved off Lambda onto the Oracle ARM host (see DEPLOY.md),
+# and this workflow no longer builds: it zips `dist/index.js`, a Lambda entrypoint that
+# stopped existing when the code was restructured around `dist/server.js` and Express.
+# Kept, manual-only, in case the Lambda path is ever revived; fix the entrypoint first.
+#
+# The file used to be named `deploy-lambda.disabled.yml`, which disabled nothing:
+# GitHub runs every `*.yml` under .github/workflows regardless of its name, so this
+# ran (and failed) on every push.
 name: Deploy to AWS Lambda
 
 on:
-  push:
-    branches:
-      - '**'
+  workflow_dispatch:
 
 jobs:
   build-and-zip:
