@@ -1,3 +1,10 @@
+## [1.0.1](https://github.com/JuanmanDev/BusSalamancaAlexa/compare/v1.0.0...v1.0.1) (2026-09-02)
+
+
+### Bug Fixes
+
+* **alexa:** make the skill package pass Amazon's validation ([e34cd54](https://github.com/JuanmanDev/BusSalamancaAlexa/commit/e34cd544deb04fbb70a6c578ac5d36210d790e15))
+
 # 1.0.0 (2026-09-02)
 
 
