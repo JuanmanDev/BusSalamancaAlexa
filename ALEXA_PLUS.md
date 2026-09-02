@@ -54,24 +54,58 @@ Deploy them with the [ASK CLI](https://developer.amazon.com/en-US/docs/alexa/sma
 ```bash
 npm i -g ask-cli
 ask configure
-ask smapi update-skill-manifest   -s <skillId> -g development --manifest "file:skill-package/skill.json"
-ask smapi set-interaction-model   -s <skillId> -g development -l es-ES --interaction-model "file:skill-package/interactionModels/custom/es-ES.json"
+SKILL=amzn1.ask.skill.ec146a34-f92a-4889-893f-c245bedfd6cc
+ask smapi update-skill-manifest -s $SKILL -g development --manifest "file:skill-package/skill.json"
+ask smapi set-interaction-model -s $SKILL -g development -l es-ES --interaction-model "file:skill-package/interactionModels/custom/es-ES.json"
+# both are asynchronous; poll them
+ask smapi get-skill-status -s $SKILL --resource manifest
+ask smapi get-skill-status -s $SKILL --resource interactionModel
 ```
+
+Two things Amazon rejects that are easy to trip over: `smallIconUri` must be 108x108 and
+`largeIconUri` 512x512 (both are served from the web app, `/alexa-icon-*.png`), and
+`fallbackIntentSensitivity` is only supported in English and German locales, so es-ES must not
+carry it.
 
 …or paste the JSON into the developer console (*Build → Interaction Model → JSON Editor*).
 After changing the model, **rebuild it in the console and re-certify** the skill so the live
 version gets the new utterances/interfaces.
 
-### 3. Manual checklist for the skill owner
+### 3. Where it runs
 
-1. Upload manifest + interaction model (above) and **enable `CanFulfillIntentRequest`** in
-   *Build → Interfaces* if the manifest upload didn't do it.
-2. Fill in Amazon's **Alexa+ existing-skill evaluation form** (link in the Feb-2025 blog post).
-3. Re-submit for certification. In *testing instructions* mention that the skill answers
-   `CanFulfillIntentRequest` and works name-free.
-4. Optionally set `ALEXA_SKILL_ID` on the server.
-5. Watch the server logs for `[REQ]` lines: new intents/slot formats coming from Alexa+ show up
-   there first.
+The skill backend used to be an AWS Lambda (`arn:aws:lambda:eu-west-1:…:function:BusSalamanca`),
+and the workflow that deployed it had been broken since the code moved to Express — it zipped a
+`dist/index.js` that no longer exists — so the live skill was answering from a stale zip. It now
+runs as the `alexa` service on the Oracle ARM host beside the web app (see [DEPLOY.md](DEPLOY.md)),
+at `https://bus-alexa.juanman.tech/`.
+
+Done, in the *development* stage of the skill:
+
+* manifest uploaded — endpoint `https://bus-alexa.juanman.tech/`, `CAN_FULFILL_INTENT_REQUEST`
+  and `ALEXA_PRESENTATION_APL` enabled;
+* es-ES interaction model uploaded and built (113 sample utterances, `StopNumberOnlyIntent`
+  and the built-ins);
+* verified against the live endpoint with `ask smapi invoke-skill-end-point`: `LaunchRequest`
+  asks for a stop and keeps the session open, `CanFulfillIntentRequest` answers `YES` for
+  `"ciento noventa y nueve"`, and `CheckAnyStopIntent` with `"parada ciento noventa y nueve"`
+  answers with stop 199, its address and the next arrival.
+
+### 4. What is left, and only the skill owner can do it
+
+1. **Submit for certification.** Development is ahead of live; until the skill is re-certified,
+   real users still reach the old Lambda. In *testing instructions* mention that the skill
+   answers `CanFulfillIntentRequest` and works name-free.
+2. **Fill in Amazon's Alexa+ existing-skill evaluation form** (link in the Feb-2025 blog post).
+3. Watch the server logs for `[REQ]` lines — new intents and slot formats coming from Alexa+
+   show up there first:
+   ```bash
+   ssh -F /dev/null -i ~/.ssh/id_rsa opc@79.72.51.163 'docker logs -f bussalamancaalexa-skill'
+   ```
+
+Two notes on the move off Lambda: the skill's availability is now the server's availability,
+where Lambda was managed; and stop preferences live in SQLite on that host (`/data/storage.db`,
+bind-mounted from `/docker/bussalamancaalexa/bus-data`), not in DynamoDB, so users who saved a
+stop under the Lambda version start empty.
 
 ## Testing locally
 
