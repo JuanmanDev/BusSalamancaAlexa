@@ -3,7 +3,8 @@ import { parseString } from 'xml2js';
 // const { DOMParser } = require('xmldom');
 // const { parseString } = require('xml2js');
 
-import fetch, { BodyInit } from 'node-fetch';
+// Node 22 ships a global fetch; the legacy node-fetch import was removed.
+type BodyInit = Parameters<typeof fetch>[1] extends { body?: infer B } ? B : never;
 
 async function xmlToJson(xml: string, options = {}) {
     const defaultOptions = {

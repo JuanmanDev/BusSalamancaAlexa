@@ -1,0 +1,71 @@
+{
+  "manifest": {
+    "manifestVersion": "1.0",
+    "publishingInformation": {
+      "locales": {
+        "es-ES": {
+          "name": "Bus Salamanca",
+          "summary": "Consulta en tiempo real cuándo llegan los próximos autobuses urbanos de Salamanca a tu parada.",
+          "description": "Bus Salamanca te dice cuánto falta para que lleguen los próximos autobuses urbanos de Salamanca (España) a cualquier parada, usando los datos en tiempo real de Salamanca de Transportes.\n\nQUÉ PUEDES HACER\n• Consultar cualquier parada por su número: \"Alexa, pide a Bus Salamanca la parada 199\" o \"Alexa, abre Bus Salamanca y consulta la parada 199\".\n• Guardar tu parada habitual: \"Alexa, dile a Bus Salamanca que guarde la parada 123\". A partir de entonces basta con decir \"Alexa, abre Bus Salamanca\" para escuchar los autobuses de esa parada.\n• Preguntar cuál es tu parada guardada: \"Alexa, pregunta a Bus Salamanca cuál es mi parada\".\n\nEl número de parada aparece en el poste de cada parada y en el mapa de https://bussalamanca.juanman.tech. En dispositivos con pantalla (Echo Show, Fire TV) se muestra además una tarjeta con las líneas y los minutos que faltan.\n\nProyecto independiente y de código abierto (https://github.com/JuanmanDev/BusSalamancaAlexa), no afiliado a Salamanca de Transportes ni al Ayuntamiento de Salamanca. Los tiempos son estimaciones proporcionadas por el servicio público SIRI del operador.",
+          "examplePhrases": [
+            "Alexa, abre Bus Salamanca",
+            "Alexa, pide a Bus Salamanca la parada ciento noventa y nueve",
+            "Alexa, dile a Bus Salamanca que guarde la parada ciento veintitrés"
+          ],
+          "keywords": [
+            "autobús",
+            "autobuses",
+            "bus",
+            "salamanca",
+            "parada",
+            "transporte",
+            "tiempo real",
+            "horarios",
+            "salamanca de transportes",
+            "transporte público"
+          ],
+          "smallIconUri": "https://m.media-amazon.com/images/I/41E21ldSofL.png",
+          "largeIconUri": "https://bussalamanca.s3.eu-west-1.amazonaws.com/publicimages/BusSalamancaBackground.png"
+        }
+      },
+      "isAvailableWorldwide": false,
+      "distributionCountries": ["ES"],
+      "testingInstructions": "1) Di 'abre bus salamanca' sin parada guardada: la skill pide un número de parada y mantiene la sesión abierta. Responde 'la 199' para escuchar los autobuses. 2) Di 'dile a bus salamanca que guarde la parada 199' y después 'abre bus salamanca': informa directamente de esa parada. 3) 'pide a bus salamanca la parada 45' funciona sin parada guardada. Las paradas 1-300 devuelven datos reales del servicio SIRI de Salamanca de Transportes; fuera del horario de servicio (noche) puede no haber autobuses previstos y la skill lo indica.",
+      "category": "PUBLIC_TRANSPORTATION",
+      "distributionMode": "PUBLIC"
+    },
+    "apis": {
+      "custom": {
+        "endpoint": {
+          "uri": "https://YOUR-DEPLOYMENT-DOMAIN/",
+          "sslCertificateType": "Wildcard"
+        },
+        "interfaces": [
+          { "type": "ALEXA_PRESENTATION_APL", "supportedViewports": [
+            { "mode": "HUB", "shape": "ROUND", "minWidth": 100, "maxWidth": 599, "minHeight": 100, "maxHeight": 599 },
+            { "mode": "HUB", "shape": "RECTANGLE", "minWidth": 600, "maxWidth": 1279, "minHeight": 100, "maxHeight": 599 },
+            { "mode": "HUB", "shape": "RECTANGLE", "minWidth": 1280, "maxWidth": 1920, "minHeight": 600, "maxHeight": 1279 },
+            { "mode": "HUB", "shape": "RECTANGLE", "minWidth": 960, "maxWidth": 1279, "minHeight": 600, "maxHeight": 1279 },
+            { "mode": "HUB", "shape": "RECTANGLE", "minWidth": 1920, "maxWidth": 2560, "minHeight": 1080, "maxHeight": 1440 },
+            { "mode": "TV", "shape": "RECTANGLE", "minWidth": 960, "maxWidth": 1920, "minHeight": 540, "maxHeight": 1080 },
+            { "mode": "MOBILE", "shape": "RECTANGLE", "minWidth": 600, "maxWidth": 1279, "minHeight": 100, "maxHeight": 599 }
+          ] },
+          { "type": "CAN_FULFILL_INTENT_REQUEST" }
+        ]
+      }
+    },
+    "privacyAndCompliance": {
+      "allowsPurchases": false,
+      "usesPersonalInfo": false,
+      "isChildDirected": false,
+      "isExportCompliant": true,
+      "containsAds": false,
+      "locales": {
+        "es-ES": {
+          "privacyPolicyUrl": "https://github.com/JuanmanDev/BusSalamancaAlexa#privacidad",
+          "termsOfUseUrl": "https://github.com/JuanmanDev/BusSalamancaAlexa#disclaimer"
+        }
+      }
+    }
+  }
+}

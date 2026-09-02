@@ -1,4 +1,3 @@
-import fetch, { BodyInit } from 'node-fetch';
 import { DOMParser } from 'xmldom';
 import { parseString } from 'xml2js';
 
@@ -20,7 +19,12 @@ export interface BusStopInfo {
 }
 
 export class BusService {
-    private static readonly SIRI_URL = "http://95.63.53.46:8015/SIRI/SiriWS.asmx";
+    private static readonly SIRI_URL = process.env.SIRI_URL || "http://95.63.53.46:8015/SIRI/SiriWS.asmx";
+    /**
+     * Alexa gives a skill 8 seconds in total to answer. Leave headroom for parsing + network
+     * latency to Alexa, otherwise the user hears "the skill is not responding".
+     */
+    private static readonly FETCH_TIMEOUT_MS = Number(process.env.SIRI_TIMEOUT_MS) || 5500;
 
     private getCurrentDateTime(): string {
         // Get the current date/time in Madrid timezone
@@ -51,14 +55,6 @@ export class BusService {
         return `${year}-${month}-${day}T${hour}:${minute}:${second}.${milliseconds}`;
     }
 
-    private stringToBase64(str: string) {
-        return btoa(unescape(encodeURIComponent(str)));
-    }
-
-    private base64toBytesArray(base64: string) {
-        return Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
-    }
-
     private async xmlToJson(xml: string, options = {}) {
         const defaultOptions = {
             explicitArray: false,
@@ -79,11 +75,9 @@ export class BusService {
         const date = this.getCurrentDateTime();
         const xmlString = `<v:Envelope xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns:d="http://www.w3.org/2001/XMLSchema" xmlns:c="http://schemas.xmlsoap.org/soap/encoding/" xmlns:v="http://schemas.xmlsoap.org/soap/envelope/"><v:Header /><v:Body><GetStopMonitoring xmlns="http://tempuri.org/"><request><ServiceRequestInfo xmlns=""><n0:RequestTimestamp xmlns:n0="http://www.siri.org.uk/siri">${date}</n0:RequestTimestamp><n1:AccountId xmlns:n1="http://www.siri.org.uk/siri">siritest</n1:AccountId><n2:AccountKey xmlns:n2="http://www.siri.org.uk/siri">siritest</n2:AccountKey></ServiceRequestInfo><Request version="2.0" xmlns=""><n3:RequestTimestamp xmlns:n3="http://www.siri.org.uk/siri">${date}</n3:RequestTimestamp><n4:MonitoringRef  xmlns:n4="http://www.siri.org.uk/siri">${parada}</n4:MonitoringRef ></Request></request></GetStopMonitoring></v:Body></v:Envelope>`;
 
-        const base64Text = this.stringToBase64(xmlString);
-
         console.log(`[BusService] Starting fetch for stop ${parada} at ${new Date().toISOString()}`);
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 8000); // 8s timeout
+        const timeoutId = setTimeout(() => controller.abort(), BusService.FETCH_TIMEOUT_MS);
 
         try {
             const response = await fetch(BusService.SIRI_URL, {
@@ -93,7 +87,7 @@ export class BusService {
                     "Content-Type": "text/xml;charset=utf-8",
                     "Accept-Encoding": "gzip",
                 },
-                body: this.base64toBytesArray(base64Text) as BodyInit,
+                body: Buffer.from(xmlString, 'utf-8'),
                 method: "POST",
                 signal: controller.signal
             });

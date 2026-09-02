@@ -36,6 +36,10 @@ services:
     image: ghcr.io/juanmandev/bussalamancaalexa:latest
     container_name: bus-salamanca
     restart: unless-stopped
+    environment:
+      - VERIFY_SIGNATURE=true
+      # Optional but recommended: reject requests from any other skill id
+      # - ALEXA_SKILL_ID=amzn1.ask.skill.xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
     volumes:
       - ./bus-data:/data
     labels:
@@ -57,6 +61,9 @@ services:
 5. In **Default Region**, enter your public URL (e.g., `https://bus-alexa.yourdomain.com`).
 6. In **SSL Certificate Type**, select "My development endpoint has a certificate from a trusted certificate authority" (since Traefik/Let's Encrypt provides valid certs).
 7. Save Endpoints.
+8. Upload the manifest and the interaction model from `skill-package/` (see [ALEXA_PLUS.md](ALEXA_PLUS.md)) and make sure **CanFulfillIntentRequest** and **APL** interfaces are enabled.
+
+The container exposes `GET /health` for Docker/Traefik health checks and `GET /openapi.yaml` describing the REST endpoints used for Alexa+ Actions.
 
 ## 4. Local Testing
 
@@ -66,12 +73,12 @@ You can verify the image locally before deploying:
    ```bash
    docker build -t bus-salamanca .
    ```
-2. Run it:
+2. Run it with signature verification disabled (local only!):
    ```bash
-   docker run -p 3000:3000 bus-salamanca
+   docker run -p 3000:3000 -e VERIFY_SIGNATURE=false bus-salamanca
    ```
-3. Run the test script (node):
+3. Run the smoke tests:
    ```bash
-   node local_test_script.js
+   npm run test:local
    ```
-   You should see a JSON response from the Alexa Skill.
+   13 request types (LaunchRequest, intents with word-number slots, CanFulfillIntentRequest, …) must answer HTTP 200.

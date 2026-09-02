@@ -225,10 +225,16 @@ export const APLUtils = {
         };
     },
 
+    /**
+     * Builds a text response: speech + StandardCard (+ APL document when the device supports it).
+     * - reprompt   → keeps the session open and asks again if the user stays silent.
+     * - endSession → explicitly closes the session (default when no reprompt is given).
+     * Alexa+ is strict about sessions left half-open, so we always make the intent explicit.
+     */
     cardForText(handlerInput: HandlerInput, {
-        title, subtitle, mainText, hint
+        title, subtitle, mainText, hint, reprompt, endSession
     }: {
-        title: string, subtitle?: string, mainText: string, hint: string
+        title: string, subtitle?: string, mainText: string, hint: string, reprompt?: string, endSession?: boolean
     }): Response {
         const cardDocument = this.buildCardTextDocument(title, subtitle, mainText, hint);
 
@@ -240,15 +246,21 @@ export const APLUtils = {
             });
         }
 
-        return handlerInput.responseBuilder
+        const builder = handlerInput.responseBuilder
             .speak(mainText)
             .withStandardCard(
                 title + (subtitle ? " - " + subtitle : ""),
                 mainText,
                 "https://m.media-amazon.com/images/I/41E21ldSofL.png",
                 "https://bussalamanca.s3.eu-west-1.amazonaws.com/publicimages/BusSalamancaBackground.png",
-            )
-            .withSimpleCard(title + (subtitle ? " - " + subtitle : ""), mainText)
-            .getResponse();
+            );
+
+        if (reprompt && !endSession) {
+            builder.reprompt(reprompt).withShouldEndSession(false);
+        } else {
+            builder.withShouldEndSession(true);
+        }
+
+        return builder.getResponse();
     }
 };

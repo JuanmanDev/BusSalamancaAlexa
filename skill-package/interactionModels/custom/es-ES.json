@@ -1,0 +1,173 @@
+{
+  "interactionModel": {
+    "languageModel": {
+      "invocationName": "bus salamanca",
+      "modelConfiguration": {
+        "fallbackIntentSensitivity": {
+          "level": "LOW"
+        }
+      },
+      "intents": [
+        { "name": "AMAZON.CancelIntent", "samples": [] },
+        { "name": "AMAZON.HelpIntent", "samples": [] },
+        { "name": "AMAZON.StopIntent", "samples": [] },
+        { "name": "AMAZON.NavigateHomeIntent", "samples": [] },
+        { "name": "AMAZON.FallbackIntent", "samples": [] },
+        { "name": "AMAZON.RepeatIntent", "samples": [] },
+        { "name": "AMAZON.YesIntent", "samples": [] },
+        { "name": "AMAZON.NoIntent", "samples": [] },
+        {
+          "name": "CheckStopIntent",
+          "slots": [],
+          "samples": [
+            "cuándo llega el autobús",
+            "cuándo llega el bus",
+            "cuándo llega mi autobús",
+            "cuándo viene el autobús",
+            "cuándo pasa el autobús",
+            "cuánto falta para el autobús",
+            "cuánto tarda el autobús",
+            "cuánto queda para que llegue el autobús",
+            "cuánto le queda al autobús",
+            "cuándo llega el próximo autobús",
+            "próximos autobuses",
+            "próximos autobuses de mi parada",
+            "los autobuses de mi parada",
+            "consulta mi parada",
+            "revisa mi parada",
+            "mira mi parada",
+            "dime los autobuses de mi parada",
+            "dime cuándo llega el autobús",
+            "dime los horarios de mi parada",
+            "horarios de mi parada",
+            "qué autobuses vienen",
+            "qué autobuses llegan",
+            "tiempos de llegada",
+            "tiempos de espera",
+            "información de mi parada"
+          ]
+        },
+        {
+          "name": "CheckAnyStopIntent",
+          "slots": [
+            { "name": "stopNumber", "type": "AMAZON.NUMBER" }
+          ],
+          "samples": [
+            "consulta la parada {stopNumber}",
+            "consultar la parada {stopNumber}",
+            "revisa la parada {stopNumber}",
+            "mira la parada {stopNumber}",
+            "comprueba la parada {stopNumber}",
+            "busca la parada {stopNumber}",
+            "parada {stopNumber}",
+            "la parada {stopNumber}",
+            "parada número {stopNumber}",
+            "cuándo llega el autobús a la parada {stopNumber}",
+            "cuándo llega el bus a la parada {stopNumber}",
+            "cuándo pasa el autobús por la parada {stopNumber}",
+            "cuándo viene el autobús a la parada {stopNumber}",
+            "cuánto falta para el autobús en la parada {stopNumber}",
+            "cuánto tarda el autobús en la parada {stopNumber}",
+            "cuánto queda para el autobús de la parada {stopNumber}",
+            "qué autobuses llegan a la parada {stopNumber}",
+            "qué autobuses vienen a la parada {stopNumber}",
+            "qué autobuses pasan por la parada {stopNumber}",
+            "próximos autobuses de la parada {stopNumber}",
+            "próximos autobuses en la parada {stopNumber}",
+            "autobuses de la parada {stopNumber}",
+            "autobuses en la parada {stopNumber}",
+            "tiempos de la parada {stopNumber}",
+            "tiempos de llegada de la parada {stopNumber}",
+            "tiempos de espera en la parada {stopNumber}",
+            "horarios de la parada {stopNumber}",
+            "información de la parada {stopNumber}",
+            "dime los autobuses de la parada {stopNumber}",
+            "dime cuándo llega el autobús a la parada {stopNumber}",
+            "dime los tiempos de la parada {stopNumber}",
+            "quiero consultar la parada {stopNumber}",
+            "quiero saber cuándo llega el autobús a la parada {stopNumber}",
+            "necesito los autobuses de la parada {stopNumber}",
+            "cuándo llega el autobús a la {stopNumber}",
+            "consulta la {stopNumber}",
+            "revisa la {stopNumber}"
+          ]
+        },
+        {
+          "name": "CheckMyStopIntent",
+          "slots": [],
+          "samples": [
+            "cuál es mi parada",
+            "qué parada tengo guardada",
+            "qué parada tengo configurada",
+            "qué parada tengo",
+            "cuál es mi parada guardada",
+            "cuál es mi parada favorita",
+            "dime mi parada",
+            "dime mi parada guardada",
+            "dime qué parada tengo guardada",
+            "mi parada guardada",
+            "mi parada",
+            "ver mi parada",
+            "muéstrame mi parada",
+            "tengo alguna parada guardada",
+            "qué parada uso"
+          ]
+        },
+        {
+          "name": "AddStopIntent",
+          "slots": [
+            { "name": "stopNumber", "type": "AMAZON.NUMBER" }
+          ],
+          "samples": [
+            "guarda la parada {stopNumber}",
+            "guardar la parada {stopNumber}",
+            "guarda la parada número {stopNumber}",
+            "guarda parada {stopNumber}",
+            "memoriza la parada {stopNumber}",
+            "recuerda la parada {stopNumber}",
+            "recuerda mi parada {stopNumber}",
+            "apunta la parada {stopNumber}",
+            "añade la parada {stopNumber}",
+            "agrega la parada {stopNumber}",
+            "configura la parada {stopNumber}",
+            "establece la parada {stopNumber}",
+            "pon la parada {stopNumber}",
+            "pon mi parada en la {stopNumber}",
+            "mi parada es la {stopNumber}",
+            "mi parada es la número {stopNumber}",
+            "mi parada habitual es la {stopNumber}",
+            "mi parada favorita es la {stopNumber}",
+            "cambia mi parada a la {stopNumber}",
+            "cambia la parada a la {stopNumber}",
+            "cambia mi parada por la {stopNumber}",
+            "actualiza mi parada a la {stopNumber}",
+            "quiero guardar la parada {stopNumber}",
+            "quiero que mi parada sea la {stopNumber}",
+            "usa la parada {stopNumber}",
+            "usa la parada {stopNumber} por defecto",
+            "guarda la {stopNumber}",
+            "guarda la {stopNumber} como mi parada"
+          ]
+        },
+        {
+          "name": "StopNumberOnlyIntent",
+          "slots": [
+            { "name": "stopNumber", "type": "AMAZON.NUMBER" }
+          ],
+          "samples": [
+            "{stopNumber}",
+            "la {stopNumber}",
+            "el {stopNumber}",
+            "número {stopNumber}",
+            "el número {stopNumber}",
+            "la número {stopNumber}",
+            "es la {stopNumber}",
+            "es la parada {stopNumber}"
+          ]
+        }
+      ],
+      "types": []
+    }
+  },
+  "version": "2"
+}
