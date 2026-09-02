@@ -24,8 +24,8 @@
             "salamanca de transportes",
             "transporte público"
           ],
-          "smallIconUri": "https://m.media-amazon.com/images/I/41E21ldSofL.png",
-          "largeIconUri": "https://bussalamanca.s3.eu-west-1.amazonaws.com/publicimages/BusSalamancaBackground.png"
+          "smallIconUri": "https://bussalamanca.juanman.tech/alexa-icon-108.png",
+          "largeIconUri": "https://bussalamanca.juanman.tech/alexa-icon-512.png"
         }
       },
       "isAvailableWorldwide": false,
