@@ -1,6 +1,7 @@
-import { BusService, BusStopInfo } from './BusService.js';
+import { BusService } from './BusService.js';
 import { DataStoreService } from './DataStoreService.js';
 import { IStorageService, WidgetDevice } from './StorageService.js';
+import { StopSnapshot, WebApiClient } from './WebApiClient.js';
 import { createHash } from 'crypto';
 
 /**
@@ -14,7 +15,9 @@ import { createHash } from 'crypto';
  *
  * - SIRI is a third-party service and the only source of arrival times. Polling it once per
  *   device would multiply load by the number of installs, so a tick fetches each *distinct stop*
- *   once and shares the answer between everyone watching that stop.
+ *   once and shares the answer between everyone watching that stop. When WEB_API_URL is set
+ *   the fetch goes through the web app's arrivals route, which already coalesces callers per
+ *   stop, so the widget and everyone reading the site share one SIRI call instead of two.
  * - Buses do not run all night, and pushing "no arrivals" every 30 seconds until 6am spends
  *   SIRI calls and device wake-ups on nothing. Outside service hours the loop idles.
  */
@@ -73,6 +76,7 @@ function madridTimeLabel(): string {
 
 export class WidgetRefresher {
     private readonly busService = new BusService();
+    private readonly webApi = new WebApiClient();
     private readonly intervalMs: number;
     private readonly activeHours: ActiveHours;
     private timer?: NodeJS.Timeout;
@@ -91,7 +95,8 @@ export class WidgetRefresher {
             console.log('[widget] ALEXA_CLIENT_ID / ALEXA_CLIENT_SECRET not set → widget refresh disabled');
             return;
         }
-        console.log(`[widget] refreshing every ${this.intervalMs / 1000}s between ${this.activeHours.from}:00 and ${this.activeHours.to}:00 Europe/Madrid`);
+        const source = this.webApi.isConfigured ? 'web API (shared cache)' : 'SIRI directly';
+        console.log(`[widget] refreshing every ${this.intervalMs / 1000}s between ${this.activeHours.from}:00 and ${this.activeHours.to}:00 Europe/Madrid, arrivals from ${source}`);
         this.timer = setInterval(() => { void this.tick(); }, this.intervalMs);
         this.timer.unref();
         void this.tick();
@@ -128,24 +133,48 @@ export class WidgetRefresher {
         }
     }
 
-    /** One SIRI call per distinct stop, however many devices are watching it. */
-    private async fetchDistinctStops(devices: WidgetDevice[]): Promise<Map<number, BusStopInfo | string | null>> {
+    /** One lookup per distinct stop, however many devices are watching it. */
+    private async fetchDistinctStops(devices: WidgetDevice[]): Promise<Map<number, StopSnapshot | null>> {
         const stops = [...new Set(devices.map(d => d.stopNumber).filter((s): s is number => typeof s === 'number'))];
-        const results = new Map<number, BusStopInfo | string | null>();
+        const results = new Map<number, StopSnapshot | null>();
 
         await Promise.all(stops.map(async (stop) => {
-            try {
-                results.set(stop, await this.busService.getStopInfo(stop));
-            } catch (error) {
-                console.error(`[widget] SIRI lookup failed for stop ${stop}`, error);
-                results.set(stop, null);
-            }
+            results.set(stop, await this.fetchStop(stop));
         }));
 
         return results;
     }
 
-    private async pushToDevices(devices: WidgetDevice[], stopInfo: Map<number, BusStopInfo | string | null>): Promise<void> {
+    /**
+     * Prefers the web app's arrivals route, which shares one SIRI call per stop with the site and
+     * adds its interpolation of buses that briefly drop out of the feed. Falls back to calling
+     * SIRI directly, so the widget keeps working when the web container is down or WEB_API_URL is
+     * not set.
+     */
+    private async fetchStop(stop: number): Promise<StopSnapshot | null> {
+        if (this.webApi.isConfigured) {
+            try {
+                return await this.webApi.getSnapshot(stop);
+            } catch (error) {
+                console.warn(`[widget] web API lookup failed for stop ${stop}, falling back to SIRI`, error);
+            }
+        }
+
+        try {
+            const info = await this.busService.getStopInfo(stop);
+            // BusService answers with a plain string when it has nothing for the stop.
+            if (typeof info === 'string' || !info) return { address: '', arrivals: [] };
+            return {
+                address: info.stopData.address || '',
+                arrivals: info.arrivalData.map(a => ({ line: String(a.line), minutes: a.minutesRemaining })),
+            };
+        } catch (error) {
+            console.error(`[widget] SIRI lookup failed for stop ${stop}`, error);
+            return null;
+        }
+    }
+
+    private async pushToDevices(devices: WidgetDevice[], stopInfo: Map<number, StopSnapshot | null>): Promise<void> {
         // Devices showing identical content can travel in one command, so group by payload.
         const batches = new Map<string, { content: WidgetContent; deviceIds: string[] }>();
 
@@ -193,8 +222,8 @@ export class WidgetRefresher {
         if (pushed > 0) console.log(`[widget] pushed to ${pushed} device(s)`);
     }
 
-    /** Turns what SIRI returned into exactly the fields the widget document binds to. */
-    private buildContent(device: WidgetDevice, stopInfo: Map<number, BusStopInfo | string | null>): WidgetContent {
+    /** Turns a stop snapshot into exactly the fields the widget document binds to. */
+    private buildContent(device: WidgetDevice, stopInfo: Map<number, StopSnapshot | null>): WidgetContent {
         const updatedAt = new Date().toISOString();
         const updatedLabel = madridTimeLabel();
 
@@ -210,32 +239,32 @@ export class WidgetRefresher {
             };
         }
 
-        const info = stopInfo.get(device.stopNumber);
+        const snapshot = stopInfo.get(device.stopNumber);
         const stopNumber = String(device.stopNumber);
 
-        // null is a failed lookup; a bare string is BusService's "no data" answer.
-        if (info === null || typeof info === 'string' || !info) {
+        // null means every source failed; an empty snapshot means the stop has nothing due.
+        if (!snapshot) {
             return {
-                status: info === null ? 'error' : 'no-arrivals',
+                status: 'error',
                 stopNumber,
                 stopName: '',
                 arrivals: [],
-                message: info === null ? 'No se pudo consultar el servicio.' : 'Sin autobuses previstos ahora mismo.',
+                message: 'No se pudo consultar el servicio.',
                 updatedLabel,
                 updatedAt,
             };
         }
 
-        const arrivals = info.arrivalData.slice(0, MAX_ARRIVALS_SHOWN).map(a => ({
-            line: String(a.line),
-            minutes: a.minutesRemaining,
-            label: a.minutesRemaining < 2 ? '<1 min' : `${a.minutesRemaining} min`,
+        const arrivals = snapshot.arrivals.slice(0, MAX_ARRIVALS_SHOWN).map(a => ({
+            line: a.line,
+            minutes: a.minutes,
+            label: a.minutes < 2 ? '<1 min' : `${a.minutes} min`,
         }));
 
         return {
             status: arrivals.length ? 'ok' : 'no-arrivals',
             stopNumber,
-            stopName: info.stopData.address || '',
+            stopName: snapshot.address,
             arrivals,
             message: arrivals.length ? '' : 'Sin autobuses previstos ahora mismo.',
             updatedLabel,

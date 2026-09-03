@@ -5,6 +5,16 @@ import { recordArrival } from '../../../../utils/arrivalHistory'
 const arrivalsCache = new Map<string, { data: any[], timestamp: number }>()
 const CACHE_TTL = 15 * 60 * 1000 // 15 minutes in ms
 
+// SIRI is a third-party service and the only source of arrivals, so the number of calls it gets
+// should depend on how many stops are being watched, not on how many watchers there are. Every
+// open stop page polls this route every 10s and the Alexa widget pushes every 30s; without the
+// window below, ten viewers of one stop meant ten SIRI calls per poll.
+const FRESH_TTL = Number(process.env.ARRIVALS_FRESH_TTL_MS) || 8000
+
+// Requests that arrive while a SIRI call is already in flight for the same stop wait for that
+// call instead of starting another.
+const inFlight = new Map<string, Promise<any[]>>()
+
 export default defineEventHandler(async (event) => {
     const stopId = getRouterParam(event, 'id')
 
@@ -15,6 +25,24 @@ export default defineEventHandler(async (event) => {
         })
     }
 
+    const now = Date.now()
+    const cached = arrivalsCache.get(stopId)
+
+    if (cached && (now - cached.timestamp) < FRESH_TTL) {
+        return cached.data
+    }
+
+    const existing = inFlight.get(stopId)
+    if (existing) {
+        return await existing
+    }
+
+    const pending = resolveArrivals(stopId).finally(() => inFlight.delete(stopId))
+    inFlight.set(stopId, pending)
+    return await pending
+})
+
+async function resolveArrivals(stopId: string) {
     const now = Date.now()
     const cached = arrivalsCache.get(stopId)
 
@@ -83,4 +111,4 @@ export default defineEventHandler(async (event) => {
     arrivalsCache.set(stopId, { data: finalArrivals, timestamp: now })
 
     return finalArrivals
-})
+}
