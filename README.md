@@ -83,7 +83,7 @@ so Claude, an editor or any other MCP host can answer "when is the next bus to L
 going near Alexa. Streamable HTTP, stateless, no authentication — the data is public.
 
 ```
-https://mcp.juanman.tech/mcp
+https://mcp.bussalamanca.juanman.tech/mcp
 ```
 
 | Tool | What it does |
@@ -96,7 +96,7 @@ https://mcp.juanman.tech/mcp
 Add it to Claude Code with:
 
 ```bash
-claude mcp add --transport http bus-salamanca https://mcp.juanman.tech/mcp
+claude mcp add --transport http bus-salamanca https://mcp.bussalamanca.juanman.tech/mcp
 ```
 
 Tools read through the web app's arrivals route, so they share the same coalesced SIRI call per
@@ -154,7 +154,8 @@ for staging (emits `noindex` + blocking robots.txt).
 * `docker-publish.yml` — builds & pushes the skill image to GHCR on every push to `main`.
 * `web-docker-publish.yml` — same for the web app.
 * `release.yml` — semantic-release (version bump, changelog, GitHub release).
-* `deploy-lambda.disabled.yml` — legacy AWS Lambda deployment (kept for reference, disabled).
+* `deploy-lambda.yml` — legacy AWS Lambda deployment, `workflow_dispatch` only and stale; the
+  endpoint moved to the Oracle host. See the note at the top of the file.
 
 ## 🧪 Testing
 
