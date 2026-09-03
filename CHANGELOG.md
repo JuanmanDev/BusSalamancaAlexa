@@ -1,3 +1,10 @@
+## [1.1.1](https://github.com/JuanmanDev/BusSalamancaAlexa/compare/v1.1.0...v1.1.1) (2026-09-03)
+
+
+### Bug Fixes
+
+* **widget:** declare the widget package on the PackageManager interface ([1f33e41](https://github.com/JuanmanDev/BusSalamancaAlexa/commit/1f33e41b017115fbb5cf541dd09a15e4713ca675))
+
 # [1.1.0](https://github.com/JuanmanDev/BusSalamancaAlexa/compare/v1.0.1...v1.1.0) (2026-09-03)
 
 
