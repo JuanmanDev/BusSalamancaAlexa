@@ -1,3 +1,10 @@
+# [1.2.0](https://github.com/JuanmanDev/BusSalamancaAlexa/compare/v1.1.2...v1.2.0) (2026-09-03)
+
+
+### Features
+
+* **mcp:** expose the bus data over the Model Context Protocol ([bfb6fba](https://github.com/JuanmanDev/BusSalamancaAlexa/commit/bfb6fbad54660de1f470c27775156423e4e184d0))
+
 ## [1.1.2](https://github.com/JuanmanDev/BusSalamancaAlexa/compare/v1.1.1...v1.1.2) (2026-09-03)
 
 
