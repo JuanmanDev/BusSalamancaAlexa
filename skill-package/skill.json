@@ -51,7 +51,7 @@
             { "mode": "MOBILE", "shape": "RECTANGLE", "minWidth": 600, "maxWidth": 1279, "minHeight": 100, "maxHeight": 599 }
           ] },
           { "type": "CAN_FULFILL_INTENT_REQUEST" },
-          { "type": "ALEXA_DATASTORE_PACKAGEMANAGER" },
+          { "type": "ALEXA_DATASTORE_PACKAGEMANAGER", "packages": [{ "id": "BusSalamancaWidget" }] },
           { "type": "ALEXA_DATA_STORE" }
         ]
       }
