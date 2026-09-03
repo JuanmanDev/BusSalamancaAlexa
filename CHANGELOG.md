@@ -1,3 +1,10 @@
+# [1.1.0](https://github.com/JuanmanDev/BusSalamancaAlexa/compare/v1.0.1...v1.1.0) (2026-09-03)
+
+
+### Features
+
+* **widget:** Echo Show widget showing the saved stop, refreshed every 30s ([233a581](https://github.com/JuanmanDev/BusSalamancaAlexa/commit/233a5815cc1d40ed77e8bd37814d96ec474fde3c))
+
 ## [1.0.1](https://github.com/JuanmanDev/BusSalamancaAlexa/compare/v1.0.0...v1.0.1) (2026-09-02)
 
 
