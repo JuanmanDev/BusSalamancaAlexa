@@ -1,3 +1,10 @@
+## [1.1.2](https://github.com/JuanmanDev/BusSalamancaAlexa/compare/v1.1.1...v1.1.2) (2026-09-03)
+
+
+### Performance Improvements
+
+* **widget:** share one SIRI call per stop with the website ([b74d93a](https://github.com/JuanmanDev/BusSalamancaAlexa/commit/b74d93a3216c3ef5760cdabe1fb6c8fa3e71490a))
+
 ## [1.1.1](https://github.com/JuanmanDev/BusSalamancaAlexa/compare/v1.1.0...v1.1.1) (2026-09-03)
 
 
