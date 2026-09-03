@@ -5,6 +5,7 @@ import { BusService } from '../services/BusService.js';
 import { IStorageService } from '../services/StorageService.js';
 import { APLUtils } from '../utils/APLUtils.js';
 import { parseStopNumber } from '../utils/StopNumberParser.js';
+import { WIDGET_PACKAGE_ID } from '../services/WidgetRefresher.js';
 
 const busService = new BusService();
 
@@ -367,6 +368,71 @@ export class Handlers {
         handle: (handlerInput: HandlerInput): Response => {
             console.warn(`Unhandled intent: ${Alexa.getIntentName(handlerInput.requestEnvelope)}`);
             return this.FallbackIntentHandler.handle(handlerInput) as Response;
+        }
+    };
+
+    // ---------------------------------------------------------------------
+    // Echo Show widget lifecycle
+    //
+    // These arrive outside any conversation, when the user installs or removes the widget from
+    // the device. The device id is what the Data Store REST API pushes to, so it is the whole
+    // point of handling them: WidgetRefresher can only reach devices recorded here.
+    // ---------------------------------------------------------------------
+
+    public WidgetInstalledHandler: RequestHandler = {
+        canHandle: (handlerInput: HandlerInput): boolean =>
+            handlerInput.requestEnvelope.request.type === 'Alexa.DataStore.PackageManager.UsagesInstalled',
+        handle: async (handlerInput: HandlerInput): Promise<Response> => {
+            const packageId = (handlerInput.requestEnvelope.request as any).payload?.packageId ?? WIDGET_PACKAGE_ID;
+            const deviceId = Alexa.getDeviceId(handlerInput.requestEnvelope);
+            const userId = Alexa.getUserId(handlerInput.requestEnvelope);
+
+            if (deviceId && userId) {
+                await this.storageService.addWidgetDevice(deviceId, userId, packageId);
+                console.log(`[widget] installed packageId=${packageId} device=${deviceId}`);
+            } else {
+                console.warn(`[widget] UsagesInstalled without deviceId/userId, cannot track`);
+            }
+            return handlerInput.responseBuilder.getResponse();
+        }
+    };
+
+    public WidgetRemovedHandler: RequestHandler = {
+        canHandle: (handlerInput: HandlerInput): boolean =>
+            handlerInput.requestEnvelope.request.type === 'Alexa.DataStore.PackageManager.UsagesRemoved',
+        handle: async (handlerInput: HandlerInput): Promise<Response> => {
+            const packageId = (handlerInput.requestEnvelope.request as any).payload?.packageId ?? WIDGET_PACKAGE_ID;
+            const deviceId = Alexa.getDeviceId(handlerInput.requestEnvelope);
+
+            if (deviceId) {
+                await this.storageService.removeWidgetDevice(deviceId, packageId);
+                console.log(`[widget] removed packageId=${packageId} device=${deviceId}`);
+            }
+            return handlerInput.responseBuilder.getResponse();
+        }
+    };
+
+    /**
+     * Data store and package manager problems. Nothing to say to the user — a widget has no
+     * conversation — but these are the only signal that pushes are silently not landing.
+     */
+    public WidgetErrorHandler: RequestHandler = {
+        canHandle: (handlerInput: HandlerInput): boolean => {
+            const type = handlerInput.requestEnvelope.request.type;
+            return type === 'Alexa.DataStore.Error'
+                || type === 'Alexa.DataStore.PackageManager.InstallationError'
+                || type === 'Alexa.DataStore.PackageManager.UpdateRequest';
+        },
+        handle: async (handlerInput: HandlerInput): Promise<Response> => {
+            const req = handlerInput.requestEnvelope.request as any;
+            const deviceId = Alexa.getDeviceId(handlerInput.requestEnvelope);
+            console.warn(`[widget] ${req.type} device=${deviceId ?? '-'} error=${JSON.stringify(req.error ?? req.payload ?? null)}`);
+
+            // A device that is gone for good should stop being pushed to.
+            if (req.error?.type === 'DEVICE_PERMANENTLY_UNAVAILABLE' && deviceId) {
+                await this.storageService.removeWidgetDevice(deviceId, WIDGET_PACKAGE_ID);
+            }
+            return handlerInput.responseBuilder.getResponse();
         }
     };
 

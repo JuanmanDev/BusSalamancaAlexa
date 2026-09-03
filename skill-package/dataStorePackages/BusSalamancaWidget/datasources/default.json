@@ -1,0 +1,10 @@
+{
+  "widgetDefaults": {
+    "status": "no-stop",
+    "stopNumber": "",
+    "stopName": "",
+    "arrivals": [],
+    "message": "Guarda tu parada diciendo: Alexa, dile a Bus Salamanca que guarde la parada 199.",
+    "updatedLabel": ""
+  }
+}

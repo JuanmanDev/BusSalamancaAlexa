@@ -1,0 +1,39 @@
+{
+  "packageVersion": "1.0",
+  "packageType": "APL_PACKAGE",
+  "publishingInformation": {
+    "schemaVersion": "1.0",
+    "locales": {
+      "es-ES": [
+        {
+          "targetViewport": "WIDGET_M",
+          "metadata": {
+            "name": "Bus Salamanca",
+            "description": "Muestra la parada que has guardado en Bus Salamanca y los próximos autobuses que llegan, con la línea y los minutos que faltan. Se actualiza solo. Guarda tu parada diciendo \"Alexa, dile a Bus Salamanca que guarde la parada 199\".",
+            "keywords": [
+              "autobús",
+              "bus",
+              "salamanca",
+              "parada",
+              "transporte público"
+            ],
+            "iconUri": "https://bussalamanca.juanman.tech/widget-icon-450.png",
+            "previews": [
+              "https://bussalamanca.juanman.tech/widget-preview-m.png"
+            ]
+          }
+        }
+      ]
+    }
+  },
+  "manifest": {
+    "id": "BusSalamancaWidget",
+    "version": "1.0.0",
+    "presentationDefinitions": [
+      {
+        "url": "presentations/default.tpl"
+      }
+    ],
+    "appliesTo": "${viewport.mode == 'HUB'}"
+  }
+}

@@ -1,0 +1,178 @@
+{
+  "type": "APL",
+  "version": "2024.3",
+  "extensions": [
+    {
+      "name": "DataStore",
+      "uri": "alexaext:datastore:10"
+    }
+  ],
+  "settings": {
+    "DataStore": {
+      "dataBindings": [
+        {
+          "namespace": "BusSalamanca",
+          "key": "stop",
+          "dataBindingName": "DS_Stop",
+          "dataType": "OBJECT"
+        }
+      ]
+    }
+  },
+  "theme": "dark",
+  "resources": [
+    {
+      "colors": {
+        "colorBrand": "#1e40af",
+        "colorBackground": "#0f172a",
+        "colorText": "#f8fafc",
+        "colorTextDim": "#94a3b8",
+        "colorSoon": "#22c55e"
+      },
+      "dimensions": {
+        "spacingUnit": "12dp",
+        "lineBadgeSize": "56dp"
+      }
+    }
+  ],
+  "layouts": {
+    "ArrivalRow": {
+      "parameters": [
+        { "name": "line", "type": "string" },
+        { "name": "label", "type": "string" },
+        { "name": "minutes", "type": "number" }
+      ],
+      "item": {
+        "type": "Container",
+        "direction": "row",
+        "alignItems": "center",
+        "width": "100%",
+        "paddingTop": "8dp",
+        "paddingBottom": "8dp",
+        "items": [
+          {
+            "type": "Frame",
+            "width": "@lineBadgeSize",
+            "height": "@lineBadgeSize",
+            "backgroundColor": "@colorBrand",
+            "borderRadius": "12dp",
+            "item": {
+              "type": "Container",
+              "width": "100%",
+              "height": "100%",
+              "justifyContent": "center",
+              "alignItems": "center",
+              "item": {
+                "type": "Text",
+                "text": "${line}",
+                "fontSize": "24dp",
+                "fontWeight": "700",
+                "color": "@colorText",
+                "textAlign": "center"
+              }
+            }
+          },
+          {
+            "type": "Text",
+            "text": "${label}",
+            "grow": 1,
+            "paddingLeft": "@spacingUnit",
+            "fontSize": "30dp",
+            "fontWeight": "500",
+            "textAlign": "right",
+            "color": "${minutes < 3 ? @colorSoon : @colorText}"
+          }
+        ]
+      }
+    }
+  },
+  "mainTemplate": {
+    "parameters": ["payload"],
+    "items": [
+      {
+        "type": "Frame",
+        "width": "100vw",
+        "height": "100vh",
+        "backgroundColor": "@colorBackground",
+        "bind": [
+          {
+            "comment": "The data store wins once the skill has pushed to this device; until then the data source defaults render, so a freshly installed widget is never blank.",
+            "name": "w",
+            "value": "${DS_Stop.status ? DS_Stop : payload.widgetDefaults}"
+          }
+        ],
+        "item": {
+          "type": "Container",
+          "width": "100%",
+          "height": "100%",
+          "padding": "@spacingUnit",
+          "items": [
+            {
+              "type": "Text",
+              "text": "Parada ${w.stopNumber}",
+              "when": "${w.stopNumber != ''}",
+              "fontSize": "26dp",
+              "fontWeight": "700",
+              "color": "@colorText",
+              "maxLines": 1
+            },
+            {
+              "type": "Text",
+              "text": "Bus Salamanca",
+              "when": "${w.stopNumber == ''}",
+              "fontSize": "26dp",
+              "fontWeight": "700",
+              "color": "@colorText",
+              "maxLines": 1
+            },
+            {
+              "type": "Text",
+              "text": "${w.stopName}",
+              "when": "${w.stopName != ''}",
+              "fontSize": "18dp",
+              "color": "@colorTextDim",
+              "maxLines": 2,
+              "paddingBottom": "@spacingUnit"
+            },
+            {
+              "type": "Sequence",
+              "when": "${w.arrivals.length > 0}",
+              "grow": 1,
+              "width": "100%",
+              "data": "${w.arrivals}",
+              "item": {
+                "type": "ArrivalRow",
+                "line": "${data.line}",
+                "label": "${data.label}",
+                "minutes": "${data.minutes}"
+              }
+            },
+            {
+              "type": "Container",
+              "when": "${w.arrivals.length == 0}",
+              "grow": 1,
+              "width": "100%",
+              "justifyContent": "center",
+              "item": {
+                "type": "Text",
+                "text": "${w.message}",
+                "fontSize": "20dp",
+                "color": "@colorTextDim",
+                "textAlign": "center"
+              }
+            },
+            {
+              "type": "Text",
+              "text": "Actualizado ${w.updatedLabel}",
+              "when": "${w.updatedLabel != ''}",
+              "fontSize": "14dp",
+              "color": "@colorTextDim",
+              "textAlign": "right",
+              "width": "100%"
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

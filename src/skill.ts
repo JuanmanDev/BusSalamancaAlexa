@@ -29,6 +29,10 @@ let builder = SkillBuilders.custom()
         handlers.FallbackIntentHandler,
         handlers.CancelAndStopIntentHandler,
         handlers.SessionEndedRequestHandler,
+        // Echo Show widget lifecycle — arrives outside any conversation
+        handlers.WidgetInstalledHandler,
+        handlers.WidgetRemovedHandler,
+        handlers.WidgetErrorHandler,
         // Catch-all for any IntentRequest not listed above (keep last)
         handlers.UnknownIntentHandler,
     )

@@ -50,7 +50,9 @@
             { "mode": "TV", "shape": "RECTANGLE", "minWidth": 960, "maxWidth": 1920, "minHeight": 540, "maxHeight": 1080 },
             { "mode": "MOBILE", "shape": "RECTANGLE", "minWidth": 600, "maxWidth": 1279, "minHeight": 100, "maxHeight": 599 }
           ] },
-          { "type": "CAN_FULFILL_INTENT_REQUEST" }
+          { "type": "CAN_FULFILL_INTENT_REQUEST" },
+          { "type": "ALEXA_DATASTORE_PACKAGEMANAGER" },
+          { "type": "ALEXA_DATA_STORE" }
         ]
       }
     },

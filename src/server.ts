@@ -3,6 +3,8 @@ import { ExpressAdapter } from 'ask-sdk-express-adapter';
 import { skill } from './skill.js';
 import { BusService } from './services/BusService.js';
 import { SQLiteStorage } from './services/StorageService.js';
+import { DataStoreService } from './services/DataStoreService.js';
+import { WidgetRefresher } from './services/WidgetRefresher.js';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
@@ -85,15 +87,21 @@ app.post('/api/action/user/:userId/stop', async (req, res) => {
     }
 });
 
+// The Echo Show widget renders from the device's own data store, so keeping it current is a
+// server-side push loop rather than anything the device asks for.
+const widgetRefresher = new WidgetRefresher(storageService, new DataStoreService());
+
 const port = Number(process.env.PORT) || 3000;
 const server = app.listen(port, () => {
     console.log(`Listening on port ${port} (signature verification: ${verifySignature ? 'on' : 'OFF'})`);
+    widgetRefresher.start();
 });
 
 // Graceful shutdown for Docker (SIGTERM) so in-flight Alexa requests finish.
 for (const signal of ['SIGTERM', 'SIGINT'] as const) {
     process.on(signal, () => {
         console.log(`[server] ${signal} received, shutting down…`);
+        widgetRefresher.stop();
         server.close(() => process.exit(0));
         setTimeout(() => process.exit(0), 5000).unref();
     });
