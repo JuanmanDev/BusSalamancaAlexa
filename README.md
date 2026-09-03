@@ -72,8 +72,35 @@ services:
       - ./data:/data
 ```
 
-Endpoints: `POST /` (Alexa), `GET /health`, `GET /openapi.yaml`, `GET /api/action/stop/:n`,
-`GET|POST /api/action/user/:userId/stop`. Details in [DEPLOY.md](DEPLOY.md).
+Endpoints: `POST /` (Alexa), `POST /mcp` (MCP), `GET /health`, `GET /openapi.yaml`,
+`GET /api/action/stop/:n`, `GET|POST /api/action/user/:userId/stop`.
+Details in [DEPLOY.md](DEPLOY.md).
+
+## 🔌 MCP server
+
+The same bus data is exposed over the [Model Context Protocol](https://modelcontextprotocol.io),
+so Claude, an editor or any other MCP host can answer "when is the next bus to Ledesma?" without
+going near Alexa. Streamable HTTP, stateless, no authentication — the data is public.
+
+```
+https://mcp.juanman.tech/mcp
+```
+
+| Tool | What it does |
+|---|---|
+| `get_stop_arrivals` | Real-time arrivals for a stop: line, destination, minutes away |
+| `search_stops` | Find stops by street or name (accent- and case-insensitive), or by number |
+| `list_lines` | Every urban line with its route and directions |
+| `get_line_stops` | The ordered stops of a line, per direction |
+
+Add it to Claude Code with:
+
+```bash
+claude mcp add --transport http bus-salamanca https://mcp.juanman.tech/mcp
+```
+
+Tools read through the web app's arrivals route, so they share the same coalesced SIRI call per
+stop as the website and the Echo Show widget. Source in [`src/mcp/server.ts`](src/mcp/server.ts).
 
 ### Local development
 

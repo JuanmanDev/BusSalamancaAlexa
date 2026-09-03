@@ -12,12 +12,14 @@
     "url": "https://github.com/JuanmanDev/BusSalamancaAlexa"
   },
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.30.0",
     "ask-sdk": "^2.14.0",
     "ask-sdk-express-adapter": "^2.14.0",
     "express": "^5.2.1",
     "sqlite3": "^5.1.7",
     "xml2js": "^0.6.2",
-    "xmldom": "^0.6.0"
+    "xmldom": "^0.6.0",
+    "zod": "^4.5.4"
   },
   "devDependencies": {
     "@semantic-release/changelog": "^6.0.3",

@@ -5,6 +5,9 @@ import { BusService } from './services/BusService.js';
 import { SQLiteStorage } from './services/StorageService.js';
 import { DataStoreService } from './services/DataStoreService.js';
 import { WidgetRefresher } from './services/WidgetRefresher.js';
+import { WebApiClient } from './services/WebApiClient.js';
+import { createMcpServer } from './mcp/server.js';
+import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
@@ -86,6 +89,48 @@ app.post('/api/action/user/:userId/stop', async (req, res) => {
         res.status(500).json({ error: 'Internal server error' });
     }
 });
+
+// ---------------------------------------------------------------------------
+// MCP server — the same bus data, for any MCP host (Claude, editors, agents)
+//
+// Stateless: a server and transport per request, with no session to resume. The tools are
+// read-only lookups, so there is nothing to keep between calls, and every instance is cheap.
+// The WebApiClient is shared, because it holds the stop and line caches.
+// ---------------------------------------------------------------------------
+const mcpApi = new WebApiClient(process.env.WEB_API_URL || 'https://bussalamanca.juanman.tech');
+
+app.post('/mcp', async (req, res) => {
+    try {
+        const mcpServer = createMcpServer(mcpApi);
+        const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined });
+        res.on('close', () => {
+            void transport.close();
+            void mcpServer.close();
+        });
+        await mcpServer.connect(transport);
+        await transport.handleRequest(req, res, req.body);
+    } catch (error) {
+        console.error('[mcp] request failed', error);
+        if (!res.headersSent) {
+            res.status(500).json({
+                jsonrpc: '2.0',
+                error: { code: -32603, message: 'Internal server error' },
+                id: null,
+            });
+        }
+    }
+});
+
+// Stateless mode has no stream to resume and no session to end.
+for (const method of ['get', 'delete'] as const) {
+    app[method]('/mcp', (_req, res) => {
+        res.status(405).json({
+            jsonrpc: '2.0',
+            error: { code: -32000, message: 'Method not allowed: this MCP endpoint is stateless, use POST' },
+            id: null,
+        });
+    });
+}
 
 // The Echo Show widget renders from the device's own data store, so keeping it current is a
 // server-side push loop rather than anything the device asks for.
