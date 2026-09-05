@@ -1,8 +1,14 @@
 import { fetchLines } from '../../utils/siri'
 import { registerLineStops } from '../../utils/arrivalHistory'
+import { loadReference } from '../../utils/referenceData'
 
-export default defineCachedEventHandler(async () => {
-    const lines = await fetchLines()
+export default defineEventHandler(async () => {
+    const lines = await loadReference('bus-lines', fetchLines)
+
+    if (!lines.length) {
+        // See stops.get.ts: an empty catalogue must not become the cached answer.
+        throw createError({ statusCode: 503, statusMessage: 'Line catalogue unavailable upstream' })
+    }
 
     // Register stop sequences for travel time learning
     for (const line of lines) {
@@ -12,7 +18,4 @@ export default defineCachedEventHandler(async () => {
     }
 
     return lines
-}, {
-    maxAge: 3600, // Cache for 1 hour
-    name: 'bus-lines-v3',
 })

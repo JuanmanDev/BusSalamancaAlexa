@@ -38,6 +38,13 @@ services:
     container_name: bussalamancaalexa-web
     restart: unless-stopped
     networks: [traefik-public]
+    environment:
+      # Last-known-good stop and line catalogues. SIRI answers with an empty catalogue outside
+      # bus service hours, which would otherwise strip every stop name from the site and shrink
+      # the sitemap to a handful of URLs until it recovered.
+      - NUXT_DATA_DIR=/data
+    volumes:
+      - ./web-data:/data
     labels:
       - traefik.enable=true
       - traefik.http.routers.bussalamanca.rule=Host(`bussalamanca.79.72.51.163.nip.io`) || Host(`bussalamanca.juanman.tech`)
