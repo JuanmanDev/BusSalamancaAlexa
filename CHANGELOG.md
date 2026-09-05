@@ -1,3 +1,10 @@
+## [1.2.1](https://github.com/JuanmanDev/BusSalamancaAlexa/compare/v1.2.0...v1.2.1) (2026-09-05)
+
+
+### Bug Fixes
+
+* **web:** stop an empty SIRI catalogue from blanking the site and the sitemap ([50fd83c](https://github.com/JuanmanDev/BusSalamancaAlexa/commit/50fd83c90fcd1b679e5d3e9ba2136ac7973750b8))
+
 # [1.2.0](https://github.com/JuanmanDev/BusSalamancaAlexa/compare/v1.1.2...v1.2.0) (2026-09-03)
 
 
