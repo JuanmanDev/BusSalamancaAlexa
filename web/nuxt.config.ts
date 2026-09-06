@@ -1,9 +1,6 @@
 import pkg from './package.json'
 
 // https://nuxt.com/docs/api/configuration/nuxt-config
-// Stamped when the app is built, which is when the static pages last changed.
-const BUILD_DATE = new Date().toISOString()
-
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
@@ -42,10 +39,12 @@ export default defineNuxtConfig({
     // Static pages come from the router; dynamic stop/line pages from this endpoint (per locale)
     sources: ['/api/__sitemap__/urls'],
     exclude: ['/settings', '/notifications', '/route/results', '/**/settings', '/**/notifications', '/**/route/results'],
-    // Static pages change when the app is rebuilt, so the build date is their honest lastmod.
-    // Stop and line URLs carry their own, from the last time that stop's content actually
-    // changed — see server/api/__sitemap__/urls.get.ts.
-    defaults: { changefreq: 'daily', priority: 0.7, lastmod: BUILD_DATE },
+    // Stop and line URLs carry a lastmod of their own, from the last time that entity's
+    // content actually changed — see server/api/__sitemap__/urls.get.ts. The handful of static
+    // pages have none: `defaults.lastmod` is not applied to router-sourced URLs, and the
+    // module's `autoLastmod` stamps today's date on everything, which is the habit that makes
+    // search engines stop trusting the field.
+    defaults: { changefreq: 'daily', priority: 0.7 },
   },
 
   robots: {
