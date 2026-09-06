@@ -1,3 +1,10 @@
+# [1.3.0](https://github.com/JuanmanDev/BusSalamancaAlexa/compare/v1.2.1...v1.3.0) (2026-09-06)
+
+
+### Features
+
+* **seo:** breadcrumbs, a truthful lastmod, and a sitemap that is not frozen ([85cb16e](https://github.com/JuanmanDev/BusSalamancaAlexa/commit/85cb16e25deab0a49616a63596b5f262559bd931))
+
 ## [1.2.1](https://github.com/JuanmanDev/BusSalamancaAlexa/compare/v1.2.0...v1.2.1) (2026-09-05)
 
 
