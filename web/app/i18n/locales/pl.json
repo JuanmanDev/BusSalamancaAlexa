@@ -255,5 +255,9 @@
   "seo": {
     "title": "Bus Salamanca – Autobusy miejskie w Salamance w czasie rzeczywistym",
     "description": "Czasy przyjazdu w czasie rzeczywistym dla każdego przystanku w Salamance (Hiszpania): linie, mapa na żywo, planer tras i powiadomienia. Bezpłatnie i bez reklam."
+  },
+  "errors": {
+    "service_unavailable": "Nie można teraz sprawdzić stanu autobusów. Serwis Salamanca de Transportes nie odpowiada.",
+    "load_failed": "Nie udało się wczytać przyjazdów. Spróbuj ponownie."
   }
 }

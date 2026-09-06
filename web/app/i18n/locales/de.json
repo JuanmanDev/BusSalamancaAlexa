@@ -255,5 +255,9 @@
   "seo": {
     "title": "Bus Salamanca – Stadtbusse in Salamanca in Echtzeit",
     "description": "Ankunftszeiten in Echtzeit für jede Haltestelle in Salamanca (Spanien): Linien, Live-Karte mit Bussen, Routenplaner und Benachrichtigungen. Kostenlos und werbefrei."
+  },
+  "errors": {
+    "service_unavailable": "Der Busstatus kann derzeit nicht abgefragt werden. Der Dienst von Salamanca de Transportes antwortet nicht.",
+    "load_failed": "Ankünfte konnten nicht geladen werden. Bitte erneut versuchen."
   }
 }

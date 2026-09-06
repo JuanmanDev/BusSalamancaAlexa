@@ -1,7 +1,7 @@
 import { HandlerInput, RequestHandler, RequestInterceptor, ResponseInterceptor } from 'ask-sdk-core';
 import { Response, canfulfill } from 'ask-sdk-model';
 import * as Alexa from 'ask-sdk-core';
-import { BusService } from '../services/BusService.js';
+import { BusService, SERVICE_UNAVAILABLE } from '../services/BusService.js';
 import { IStorageService } from '../services/StorageService.js';
 import { APLUtils } from '../utils/APLUtils.js';
 import { parseStopNumber } from '../utils/StopNumberParser.js';
@@ -511,6 +511,19 @@ export class Handlers {
                     .withStandardCard("Bus Salamanca - Parada " + stopInfo, data, CARD_IMAGE_SMALL, CARD_IMAGE_LARGE)
                     .withShouldEndSession(true)
                     .getResponse();
+            }
+
+            // SIRI answering with nothing at all — no arrivals and not even the stop's name —
+            // means the service is down, not that the street is quiet. Saying "no buses are
+            // due" to someone standing at a stop would send them home on bad information.
+            if (data.serviceAvailable === false) {
+                return APLUtils.cardForText(handlerInput, {
+                    title: "Bus Salamanca - Servicio no disponible",
+                    subtitle: "No se puede consultar",
+                    mainText: SERVICE_UNAVAILABLE,
+                    hint: "Vuelve a intentarlo en unos minutos.",
+                    endSession: true,
+                });
             }
 
             if (data.arrivalData.length === 0) {

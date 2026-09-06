@@ -170,7 +170,7 @@ function openInAppleMaps() {
       >
         <div class="flex items-center gap-3 text-red-600 dark:text-red-400">
           <UIcon name="i-lucide-alert-circle" class="w-5 h-5 shrink-0" />
-          <span class="flex-1">{{ error }}</span>
+          <span class="flex-1">{{ $t(`errors.${error}`) }}</span>
           <UButton size="sm" variant="ghost" @click="refreshArrivals">
             {{ $t('stop_detail.error_retry') }}
           </UButton>

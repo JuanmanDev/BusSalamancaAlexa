@@ -16,6 +16,19 @@ export interface BusStopInfo {
     linesText: string;
     stopData: StopData;
     arrivalData: BusArrival[];
+    /**
+     * False when SIRI answered but told us nothing at all — no arrivals *and* no stop name.
+     * A healthy service names the stop even at 3am when nothing is due, so a nameless answer
+     * means the service is down rather than the street being quiet.
+     */
+    serviceAvailable?: boolean;
+}
+
+/** What to say when Salamanca de Transportes cannot be reached. */
+export const SERVICE_UNAVAILABLE = 'No puedo consultar el estado de los autobuses en este momento porque el servicio de Salamanca de Transportes no responde. Inténtalo de nuevo en unos minutos.';
+
+function isServiceAnswering(stopData: StopData, arrivalData: BusArrival[]): boolean {
+    return arrivalData.length > 0 || Boolean(stopData.address);
 }
 
 export class BusService {
@@ -185,11 +198,12 @@ export class BusService {
             return {
                 linesText,
                 stopData,
-                arrivalData
+                arrivalData,
+                serviceAvailable: isServiceAnswering(stopData, arrivalData),
             };
         } catch (error) {
             console.error('[BusService] Error getting stop info:', error);
-            return "No hay información disponible para la parada seleccionada en estos momentos.";
+            return SERVICE_UNAVAILABLE;
         }
     }
 

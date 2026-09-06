@@ -20,6 +20,32 @@ const SERVER_VERSION = '1.0.0';
 const MAX_STOP_MATCHES = 25;
 const MAX_ARRIVALS = 10;
 
+/**
+ * Salamanca de Transportes answers 200 with nothing when it is unwell, so a tool that reported
+ * "no buses due" would be stating something it does not know. Every tool says this instead.
+ */
+const SERVICE_UNAVAILABLE_TEXT =
+    'No se puede consultar el estado de los autobuses ahora mismo: el servicio de Salamanca de '
+    + 'Transportes (SIRI) no responde. Vuelve a intentarlo en unos minutos.';
+
+function unavailable() {
+    return {
+        content: [{ type: 'text' as const, text: SERVICE_UNAVAILABLE_TEXT }],
+        structuredContent: { serviceAvailable: false },
+        isError: true,
+    };
+}
+
+/**
+ * Any failure to reach the data is the same thing from the caller's side, whether it arrives as
+ * a 503, a 502 or a refused connection — and "GET /api/bus/stops -> 502" is not an answer to
+ * give someone asking about a bus. The real error is logged for whoever maintains this.
+ */
+function unavailableBecause(tool: string, error: unknown) {
+    console.error(`[mcp] ${tool} could not reach the bus data:`, error);
+    return unavailable();
+}
+
 /** Accent- and case-insensitive matching, so "zurguen" finds "ZURGUÉN". */
 function normalise(text: string): string {
     return text.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase().trim();
@@ -63,10 +89,18 @@ export function createMcpServer(api: WebApiClient): McpServer {
             },
         },
         async ({ stopNumber }) => {
-            const [arrivals, stopName] = await Promise.all([
-                api.getArrivals(stopNumber),
-                api.getStopName(stopNumber),
-            ]);
+            let arrivals, stopName;
+            try {
+                [arrivals, stopName] = await Promise.all([
+                    api.getArrivals(stopNumber),
+                    api.getStopName(stopNumber),
+                ]);
+            } catch (error) {
+                return unavailableBecause('get_stop_arrivals', error);
+            }
+
+            // No arrivals and no stop name is the service being silent, not the stop being quiet.
+            if (!arrivals.length && !stopName) return unavailable();
 
             const shown = arrivals.slice(0, MAX_ARRIVALS);
             const header = `Parada ${stopNumber}${stopName ? ` — ${stopName}` : ''}`;
@@ -99,7 +133,12 @@ export function createMcpServer(api: WebApiClient): McpServer {
             },
         },
         async ({ query, limit }) => {
-            const stops = await api.getStops();
+            let stops;
+            try {
+                stops = await api.getStops();
+            } catch (error) {
+                return unavailableBecause('search_stops', error);
+            }
             const needle = normalise(query);
             const matches = stops
                 .filter(s => normalise(s.name).includes(needle) || String(s.id) === query.trim())
@@ -124,7 +163,12 @@ export function createMcpServer(api: WebApiClient): McpServer {
             inputSchema: {},
         },
         async () => {
-            const lines = await api.getLines();
+            let lines;
+            try {
+                lines = await api.getLines();
+            } catch (error) {
+                return unavailableBecause('list_lines', error);
+            }
             return {
                 content: [{ type: 'text', text: lines.map(lineSummary).join('\n') }],
                 structuredContent: {
@@ -151,7 +195,12 @@ export function createMcpServer(api: WebApiClient): McpServer {
             },
         },
         async ({ lineId }) => {
-            const [lines, stops] = await Promise.all([api.getLines(), api.getStops()]);
+            let lines, stops;
+            try {
+                [lines, stops] = await Promise.all([api.getLines(), api.getStops()]);
+            } catch (error) {
+                return unavailableBecause('get_line_stops', error);
+            }
             const line = lines.find(l => String(l.id) === lineId.trim());
 
             if (!line) {

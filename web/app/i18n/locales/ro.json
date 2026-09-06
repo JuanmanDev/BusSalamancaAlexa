@@ -255,5 +255,9 @@
   "seo": {
     "title": "Bus Salamanca – Autobuze urbane din Salamanca în timp real",
     "description": "Ore de sosire în timp real pentru fiecare stație din Salamanca (Spania): linii, hartă live cu autobuze, planificator de rute și notificări. Gratuit și fără reclame."
+  },
+  "errors": {
+    "service_unavailable": "Starea autobuzelor nu poate fi consultată momentan. Serviciul Salamanca de Transportes nu răspunde.",
+    "load_failed": "Sosirile nu au putut fi încărcate. Încearcă din nou."
   }
 }

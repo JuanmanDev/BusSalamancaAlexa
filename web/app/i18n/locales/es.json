@@ -259,5 +259,9 @@
   "seo": {
     "title": "Bus Salamanca – Autobuses urbanos de Salamanca en tiempo real",
     "description": "Consulta en tiempo real cuándo llega el autobús a tu parada en Salamanca: horarios, líneas, mapa con los buses en directo, rutas y avisos. Gratis, sin anuncios y sin instalar nada."
+  },
+  "errors": {
+    "service_unavailable": "No se puede consultar el estado de los autobuses en este momento. El servicio de Salamanca de Transportes no responde.",
+    "load_failed": "No se han podido cargar las llegadas. Inténtalo de nuevo."
   }
 }

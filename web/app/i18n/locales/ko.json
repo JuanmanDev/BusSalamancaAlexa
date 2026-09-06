@@ -255,5 +255,9 @@
   "seo": {
     "title": "Bus Salamanca – 살라망카 시내버스 실시간 도착 정보",
     "description": "스페인 살라망카 모든 정류장의 실시간 버스 도착 시간: 노선, 실시간 지도, 경로 안내, 알림. 무료, 광고 없음, 설치 불필요."
+  },
+  "errors": {
+    "service_unavailable": "현재 버스 운행 상태를 조회할 수 없습니다. Salamanca de Transportes 서비스가 응답하지 않습니다.",
+    "load_failed": "도착 정보를 불러오지 못했습니다. 다시 시도해 주세요."
   }
 }

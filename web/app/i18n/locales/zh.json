@@ -255,5 +255,9 @@
   "seo": {
     "title": "Bus Salamanca – 萨拉曼卡市公交实时到站",
     "description": "西班牙萨拉曼卡所有公交站点的实时到站时间：线路、实时地图、路线规划和到站提醒。免费、无广告、无需安装。"
+  },
+  "errors": {
+    "service_unavailable": "目前无法查询公交状态。Salamanca de Transportes 服务没有响应。",
+    "load_failed": "无法加载到站信息，请重试。"
   }
 }

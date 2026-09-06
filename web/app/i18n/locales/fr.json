@@ -255,5 +255,9 @@
   "seo": {
     "title": "Bus Salamanca – Bus urbains de Salamanque en temps réel",
     "description": "Horaires d'arrivée en temps réel pour chaque arrêt de Salamanque (Espagne) : lignes, carte avec les bus en direct, itinéraires et alertes. Gratuit et sans publicité."
+  },
+  "errors": {
+    "service_unavailable": "Impossible de consulter l'état des bus pour le moment. Le service de Salamanca de Transportes ne répond pas.",
+    "load_failed": "Impossible de charger les arrivées. Réessayez."
   }
 }

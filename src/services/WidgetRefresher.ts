@@ -32,7 +32,7 @@ const DELIVERY_DEADLINE_MS = 2 * 60 * 1000;
 const MAX_DEVICES_PER_COMMAND = 20;
 const MAX_ARRIVALS_SHOWN = 4;
 
-export type WidgetStatus = 'ok' | 'no-stop' | 'no-arrivals' | 'error';
+export type WidgetStatus = 'ok' | 'no-stop' | 'no-arrivals' | 'unavailable' | 'error';
 
 export interface WidgetContent extends Record<string, unknown> {
     status: WidgetStatus;
@@ -242,14 +242,29 @@ export class WidgetRefresher {
         const snapshot = stopInfo.get(device.stopNumber);
         const stopNumber = String(device.stopNumber);
 
-        // null means every source failed; an empty snapshot means the stop has nothing due.
+        // null means every source failed, so Salamanca de Transportes cannot be reached. Showing
+        // "no buses due" on a screen someone glances at on their way out would be a lie.
         if (!snapshot) {
             return {
-                status: 'error',
+                status: 'unavailable',
                 stopNumber,
                 stopName: '',
                 arrivals: [],
-                message: 'No se pudo consultar el servicio.',
+                message: 'No se puede consultar el estado de los autobuses ahora mismo.',
+                updatedLabel,
+                updatedAt,
+            };
+        }
+
+        // The web API answers with an empty snapshot both when a stop is quiet and when SIRI is
+        // down; a healthy service still names the stop, so a nameless empty answer is an outage.
+        if (!snapshot.arrivals.length && !snapshot.address) {
+            return {
+                status: 'unavailable',
+                stopNumber,
+                stopName: '',
+                arrivals: [],
+                message: 'No se puede consultar el estado de los autobuses ahora mismo.',
                 updatedLabel,
                 updatedAt,
             };

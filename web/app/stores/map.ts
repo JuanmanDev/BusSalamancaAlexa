@@ -75,6 +75,17 @@ export interface MapPositionEvent {
 // Context types
 export type MapContext = 'home' | 'stop' | 'line' | 'map' | 'stops-list' | 'lines-list' | 'route'
 
+/**
+ * Which of the two failures this is, as a translation key rather than a sentence: a 503 from
+ * the arrivals route means Salamanca de Transportes cannot be reached at all, and telling
+ * someone waiting at a stop that there are simply no buses would be worse than saying nothing.
+ */
+function classifyArrivalsError(e: unknown): string {
+    const status = (e as { statusCode?: number; response?: { status?: number } })?.statusCode
+        ?? (e as { response?: { status?: number } })?.response?.status
+    return status === 503 ? 'service_unavailable' : 'load_failed'
+}
+
 export const useMapStore = defineStore('map', () => {
     // Default center: Salamanca Plaza Mayor
     const center = ref<[number, number]>([-5.6635, 40.9701])
@@ -920,10 +931,10 @@ export const useMapStore = defineStore('map', () => {
                     arrivals.value = estimatedArrivals
                     // Note: We don't update vehicles here to avoid showing stale positions
                 } else {
-                    arrivalsError.value = 'Error al cargar llegadas'
+                    arrivalsError.value = classifyArrivalsError(e)
                 }
             } else {
-                arrivalsError.value = 'Error al cargar llegadas'
+                arrivalsError.value = classifyArrivalsError(e)
             }
         } finally {
             arrivalsLoading.value = false

@@ -255,5 +255,9 @@
   "seo": {
     "title": "Bus Salamanca – Autocarros urbanos de Salamanca em tempo real",
     "description": "Horários de chegada em tempo real para todas as paragens de Salamanca (Espanha): linhas, mapa com autocarros ao vivo, rotas e alertas. Grátis e sem anúncios."
+  },
+  "errors": {
+    "service_unavailable": "Não é possível consultar o estado dos autocarros neste momento. O serviço da Salamanca de Transportes não responde.",
+    "load_failed": "Não foi possível carregar as chegadas. Tenta novamente."
   }
 }

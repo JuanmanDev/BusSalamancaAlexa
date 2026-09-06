@@ -1,5 +1,6 @@
 import { fetchArrivals } from '../../../../utils/siri'
 import { recordArrival } from '../../../../utils/arrivalHistory'
+import { isServiceAvailable } from '../../../../utils/serviceStatus'
 
 // In-memory cache for stop arrivals: stopId -> { data, timestamp }
 const arrivalsCache = new Map<string, { data: any[], timestamp: number }>()
@@ -30,6 +31,17 @@ export default defineEventHandler(async (event) => {
 
     if (cached && (now - cached.timestamp) < FRESH_TTL) {
         return cached.data
+    }
+
+    // SIRI answers 200 with nothing when it is unwell, which is indistinguishable from a stop
+    // with no buses due. If it cannot even produce the stop catalogue it is down, and saying
+    // "no buses are coming" would be a lie — so say nothing rather than something wrong.
+    if (!await isServiceAvailable()) {
+        throw createError({
+            statusCode: 503,
+            statusMessage: 'Bus service unavailable',
+            data: { reason: 'service_unavailable' },
+        })
     }
 
     const existing = inFlight.get(stopId)

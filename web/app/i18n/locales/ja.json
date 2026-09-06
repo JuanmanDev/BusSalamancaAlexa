@@ -255,5 +255,9 @@
   "seo": {
     "title": "Bus Salamanca – サラマンカ市バスのリアルタイム到着情報",
     "description": "スペイン・サラマンカの全バス停のリアルタイム到着時刻：路線、ライブ地図、経路検索、通知。無料・広告なし・インストール不要。"
+  },
+  "errors": {
+    "service_unavailable": "現在バスの運行状況を取得できません。Salamanca de Transportes のサービスが応答していません。",
+    "load_failed": "到着情報を読み込めませんでした。もう一度お試しください。"
   }
 }

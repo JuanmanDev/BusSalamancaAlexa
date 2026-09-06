@@ -1,7 +1,7 @@
 import express from 'express';
 import { ExpressAdapter } from 'ask-sdk-express-adapter';
 import { skill } from './skill.js';
-import { BusService } from './services/BusService.js';
+import { BusService, SERVICE_UNAVAILABLE } from './services/BusService.js';
 import { SQLiteStorage } from './services/StorageService.js';
 import { DataStoreService } from './services/DataStoreService.js';
 import { WidgetRefresher } from './services/WidgetRefresher.js';
@@ -56,8 +56,17 @@ app.get('/api/action/stop/:stopNumber', async (req, res) => {
             return res.status(400).json({ error: 'Invalid stop number' });
         }
         const data = await busService.getStopInfo(stopNumber);
-        if (typeof data === 'string') {
-            return res.json({ linesText: data, stopData: { address: '', number: stopNumber.toString() }, arrivalData: [] });
+
+        // A string is BusService's failure answer, and serviceAvailable:false means SIRI replied
+        // without telling us anything. Either way the honest answer is "unavailable", not an
+        // empty arrivals list that reads as "no buses are coming".
+        if (typeof data === 'string' || data.serviceAvailable === false) {
+            return res.status(503).json({
+                error: 'service_unavailable',
+                message: typeof data === 'string' ? data : SERVICE_UNAVAILABLE,
+                stopData: { address: '', number: stopNumber.toString() },
+                arrivalData: [],
+            });
         }
         res.json(data);
     } catch (error) {

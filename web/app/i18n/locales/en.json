@@ -259,5 +259,9 @@
   "seo": {
     "title": "Bus Salamanca – Real-time city buses in Salamanca, Spain",
     "description": "Live bus arrival times for every stop in Salamanca (Spain): lines, timetables, live map with buses, route planner and alerts. Free, ad-free, no install needed."
+  },
+  "errors": {
+    "service_unavailable": "Bus information is unavailable right now. The Salamanca de Transportes service is not responding.",
+    "load_failed": "Could not load arrivals. Please try again."
   }
 }
