@@ -52,6 +52,78 @@ async function restore<T>(name: string): Promise<T[]> {
 }
 
 /**
+ * Optional change tracking, so the sitemap can carry a `lastmod` that means something.
+ *
+ * A sitemap where every URL changed "today" tells search engines nothing and gets the field
+ * ignored, so the date has to come from the content actually changing. `fingerprint` is
+ * compared against the last one recorded for that id; the stored date only moves when it does.
+ */
+export interface ChangeTracking<T> {
+    id: (item: T) => string
+    fingerprint: (item: T) => string
+}
+
+interface ChangeRecord {
+    fingerprint: string
+    changedAt: string
+}
+
+type ChangeLog = Record<string, ChangeRecord>
+
+const changeLogs = new Map<string, ChangeLog>()
+
+async function readChangeLog(name: string): Promise<ChangeLog> {
+    const held = changeLogs.get(name)
+    if (held) return held
+
+    try {
+        const raw = await readFile(join(DATA_DIR, `${name}-lastmod.json`), 'utf-8')
+        const parsed = JSON.parse(raw)
+        const log: ChangeLog = parsed && typeof parsed === 'object' ? parsed : {}
+        changeLogs.set(name, log)
+        return log
+    } catch {
+        const empty: ChangeLog = {}
+        changeLogs.set(name, empty)
+        return empty
+    }
+}
+
+async function updateChangeLog<T>(name: string, items: T[], tracking: ChangeTracking<T>): Promise<void> {
+    const log = await readChangeLog(name)
+    const now = new Date().toISOString()
+    let changed = false
+
+    for (const item of items) {
+        const id = tracking.id(item)
+        const fingerprint = tracking.fingerprint(item)
+        const previous = log[id]
+        if (!previous || previous.fingerprint !== fingerprint) {
+            log[id] = { fingerprint, changedAt: now }
+            changed = true
+        }
+    }
+
+    // Entries that disappear from the catalogue are left alone: the page may still be indexed,
+    // and inventing a change date for something that is simply gone helps nobody.
+    if (!changed) return
+
+    changeLogs.set(name, log)
+    try {
+        await mkdir(DATA_DIR, { recursive: true })
+        await writeFile(join(DATA_DIR, `${name}-lastmod.json`), JSON.stringify(log), 'utf-8')
+    } catch (error) {
+        console.warn(`[reference] could not persist ${name} change log:`, (error as Error).message)
+    }
+}
+
+/** When each entity's content last changed, by id. Missing ids simply have no `lastmod`. */
+export async function getLastModified(name: string): Promise<Record<string, string>> {
+    const log = await readChangeLog(name)
+    return Object.fromEntries(Object.entries(log).map(([id, record]) => [id, record.changedAt]))
+}
+
+/**
  * Returns the catalogue, preferring a fresh fetch and falling back to the last good one.
  * An empty result is never treated as an answer worth keeping.
  */
@@ -59,6 +131,7 @@ export async function loadReference<T>(
     name: string,
     fetcher: () => Promise<T[]>,
     ttlMs = DEFAULT_TTL_MS,
+    tracking?: ChangeTracking<T>,
 ): Promise<T[]> {
     const held = memory.get(name) as Entry<T> | undefined
     if (held && held.items.length && Date.now() - held.fetchedAt < ttlMs) {
@@ -79,6 +152,7 @@ export async function loadReference<T>(
         if (fresh.length) {
             memory.set(name, { items: fresh, fetchedAt: Date.now() })
             void persist(name, fresh)
+            if (tracking) void updateChangeLog(name, fresh, tracking)
             return fresh
         }
 
@@ -92,6 +166,10 @@ export async function loadReference<T>(
             console.warn(`[reference] ${name} came back empty, serving the snapshot on disk`)
             // Deliberately not stamped as fresh: the next request retries the upstream.
             memory.set(name, { items: fromDisk, fetchedAt: 0 })
+            // A restored catalogue still needs change dates — without this a server that only
+            // ever serves the snapshot (a long outage, or a restart at night) would publish a
+            // sitemap with no lastmod at all. First sighting stamps now and then stays put.
+            if (tracking) void updateChangeLog(name, fromDisk, tracking)
             return fromDisk
         }
 

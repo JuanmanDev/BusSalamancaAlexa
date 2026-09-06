@@ -1,8 +1,7 @@
-import { fetchStops } from '../../utils/siri'
-import { loadReference } from '../../utils/referenceData'
+import { loadStops } from '../../utils/catalogues'
 
 export default defineEventHandler(async () => {
-    const stops = await loadReference('bus-stops', fetchStops)
+    const stops = await loadStops()
 
     if (!stops.length) {
         // Returning an empty catalogue would be cached and served as if it were the truth.

@@ -1,9 +1,8 @@
-import { fetchLines } from '../../utils/siri'
 import { registerLineStops } from '../../utils/arrivalHistory'
-import { loadReference } from '../../utils/referenceData'
+import { loadLines } from '../../utils/catalogues'
 
 export default defineEventHandler(async () => {
-    const lines = await loadReference('bus-lines', fetchLines)
+    const lines = await loadLines()
 
     if (!lines.length) {
         // See stops.get.ts: an empty catalogue must not become the cached answer.

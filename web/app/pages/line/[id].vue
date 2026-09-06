@@ -60,6 +60,38 @@ useSeoMeta({
   ogTitle: lineTitle,
   ogDescription: lineDescription,
 })
+useBreadcrumbs(computed(() => [
+  { name: t('nav.home'), path: localePath('/') },
+  { name: t('nav.lines'), path: localePath('/lines') },
+  { name: lineInfo.value ? `${t('search_modal.line')} ${lineId.value} ${lineInfo.value.name}` : `${t('search_modal.line')} ${lineId.value}` },
+]))
+// A bus line is a public transport route: saying so lets search engines relate it to the stops
+// it calls at, which are already published as BusStop on their own pages.
+useHead({
+  script: [{
+    type: 'application/ld+json',
+    innerHTML: computed(() => lineInfo.value ? JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'BusTrip',
+      name: `${t('search_modal.line')} ${lineId.value} ${lineInfo.value.name}`,
+      identifier: lineId.value,
+      provider: { '@type': 'Organization', name: 'Salamanca de Transportes' },
+      ...(lineStops.value.length
+        ? {
+          itinerary: lineStops.value.map((stop, index) => ({
+            '@type': 'BusStop',
+            position: index + 1,
+            name: stop.name,
+            identifier: stop.id,
+            ...(stop.latitude && stop.longitude
+              ? { geo: { '@type': 'GeoCoordinates', latitude: stop.latitude, longitude: stop.longitude } }
+              : {}),
+          })),
+        }
+        : {}),
+    }) : ''),
+  }],
+})
 
 // Favorite toggle
 const isFavorite = computed(() => storage.isFavorite('line', lineId.value))

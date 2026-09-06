@@ -28,6 +28,11 @@ useSeoMeta({
   ogTitle: stopTitle,
   ogDescription: stopDescription,
 })
+useBreadcrumbs(computed(() => [
+  { name: t('nav.home'), path: localePath('/') },
+  { name: t('nav.stops'), path: localePath('/stops') },
+  { name: stopInfo.value?.name || `${t('search_modal.stop')} ${stopId.value}` },
+]))
 useHead({
   script: [{
     type: 'application/ld+json',

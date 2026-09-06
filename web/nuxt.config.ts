@@ -1,6 +1,9 @@
 import pkg from './package.json'
 
 // https://nuxt.com/docs/api/configuration/nuxt-config
+// Stamped when the app is built, which is when the static pages last changed.
+const BUILD_DATE = new Date().toISOString()
+
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
@@ -39,7 +42,10 @@ export default defineNuxtConfig({
     // Static pages come from the router; dynamic stop/line pages from this endpoint (per locale)
     sources: ['/api/__sitemap__/urls'],
     exclude: ['/settings', '/notifications', '/route/results', '/**/settings', '/**/notifications', '/**/route/results'],
-    defaults: { changefreq: 'daily', priority: 0.7 },
+    // Static pages change when the app is rebuilt, so the build date is their honest lastmod.
+    // Stop and line URLs carry their own, from the last time that stop's content actually
+    // changed — see server/api/__sitemap__/urls.get.ts.
+    defaults: { changefreq: 'daily', priority: 0.7, lastmod: BUILD_DATE },
   },
 
   robots: {
@@ -170,10 +176,11 @@ export default defineNuxtConfig({
   },
 
   ssr: true,
-  nitro: {
-    prerender: {
-      crawlLinks: true,
-      routes: ['/']
-    }
-  }
+
+  // No prerendering. Every page here is driven by the live stop and line catalogue, and
+  // prerendering baked whatever SIRI happened to be serving at build time into static files:
+  // the sitemaps were written to .output/public/__sitemap__/*.xml with 12 URLs instead of ~390
+  // because the build ran while SIRI was returning an empty catalogue, and they stayed that way
+  // until the next deploy. Rendering per request costs little and is always current.
+  nitro: {}
 })
