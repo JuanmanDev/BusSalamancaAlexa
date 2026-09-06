@@ -1,3 +1,10 @@
+# [1.4.0](https://github.com/JuanmanDev/BusSalamancaAlexa/compare/v1.3.0...v1.4.0) (2026-09-06)
+
+
+### Features
+
+* say when the bus service cannot be reached, instead of "no buses" ([b9d67a7](https://github.com/JuanmanDev/BusSalamancaAlexa/commit/b9d67a741638fa0b1101c228abf96b002d00a4a0))
+
 # [1.3.0](https://github.com/JuanmanDev/BusSalamancaAlexa/compare/v1.2.1...v1.3.0) (2026-09-06)
 
 
