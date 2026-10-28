@@ -1,3 +1,16 @@
+# [1.5.0](https://github.com/JuanmanDev/BusSalamancaAlexa/compare/v1.4.0...v1.5.0) (2026-10-28)
+
+
+### Features
+
+* **catalogues:** use JSON API fallback for arrivals, stops and route geometry ([2074919](https://github.com/JuanmanDev/BusSalamancaAlexa/commit/207491945bb3a642d00a3829d855a4869e3b545b))
+* **transportes:** add client for Salamanca de Transportes JSON API ([62f6880](https://github.com/JuanmanDev/BusSalamancaAlexa/commit/62f6880543cd3b7c4237c9f25a265828afd4aac8))
+
+
+### Performance Improvements
+
+* **reference:** serve cached catalogue immediately and refresh in background ([a412067](https://github.com/JuanmanDev/BusSalamancaAlexa/commit/a41206759aeafc0cb77f6b5283e767c79b514081))
+
 # [1.4.0](https://github.com/JuanmanDev/BusSalamancaAlexa/compare/v1.3.0...v1.4.0) (2026-09-06)
 
 
