@@ -1,4 +1,5 @@
 import { fetchStops, fetchLines } from './siri'
+import { fetchTransportesStops } from './transportes'
 import { loadReference, type ChangeTracking } from './referenceData'
 
 /**
@@ -27,8 +28,24 @@ const lineTracking: ChangeTracking<any> = {
     ]),
 }
 
+/**
+ * SOAP first, because its names are the originals ("Juan Pablo II", "AV. Obispo…") and switching
+ * source back and forth would move `lastmod` for the handful of stops the two spell differently.
+ * The JSON API has the same stops, lines and coordinates, so it is a sound fallback when SOAP is
+ * down — which is what stops a server with no snapshot from having no catalogue at all.
+ */
+async function fetchStopsFromAnySource() {
+    try {
+        const stops = await fetchStops()
+        if (stops.length) return stops
+    } catch (error) {
+        console.warn('[catalogues] SOAP stops failed, trying the JSON API:', (error as Error).message)
+    }
+    return await fetchTransportesStops()
+}
+
 export function loadStops() {
-    return loadReference(STOPS_KEY, fetchStops, undefined, stopTracking)
+    return loadReference(STOPS_KEY, fetchStopsFromAnySource, undefined, stopTracking)
 }
 
 export function loadLines() {

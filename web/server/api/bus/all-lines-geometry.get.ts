@@ -1,4 +1,4 @@
-import { fetchLines, fetchStops } from '../../utils/siri'
+import { loadLines, loadStops } from '../../utils/catalogues'
 
 const delay = (ms: number) => new Promise(res => setTimeout(res, ms))
 
@@ -22,11 +22,12 @@ export default defineCachedEventHandler(async (event) => {
 
         console.log(`[Server] Generating geometry${lineIdFilter ? ` for line ${lineIdFilter}` : ' for all lines'}...`);
 
-        // Add retries to SIRI fetches to handle ECONNRESET
-        const [lines, stops] = await Promise.all([
-            retry(() => fetchLines(), 3, 2000),
-            retry(() => fetchStops(), 3, 2000)
-        ])
+        // Through the catalogue layer rather than SIRI directly: it answers from the last good
+        // copy at once, where three retries against a dead SOAP host took over half a minute.
+        const [lines, stops] = await Promise.all([loadLines(), loadStops()])
+        if (!lines.length || !stops.length) {
+            throw new Error('Line or stop catalogue unavailable upstream')
+        }
 
         const allGeometry: Record<string, { id: string, color: string, points: { lat: number, lng: number }[] }[]> = {}
         const CHUNK_SIZE = 25

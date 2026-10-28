@@ -80,7 +80,14 @@ async function resolveArrivals(stopId: string) {
             console.warn(`[Arrivals] Fetch failed for stop ${stopId}, returning cached data.`)
             return cached.data
         }
-        throw error
+        // Both sources failed: that is the service being unreachable, which the page words
+        // differently from a crash in this route.
+        console.warn(`[Arrivals] Fetch failed for stop ${stopId}:`, (error as Error).message)
+        throw createError({
+            statusCode: 503,
+            statusMessage: 'Bus service unavailable',
+            data: { reason: 'service_unavailable' },
+        })
     }
 
     if (!cached) {

@@ -3,9 +3,16 @@
  * Ported from siri/siri_service.ts for use in Nuxt server routes
  */
 
+import { fetchTransportesArrivals } from './transportes'
+
 const SIRI_ENDPOINT = 'http://95.63.53.46:8015/SIRI/SiriWS.asmx'
 const ACCOUNT_ID = 'siritest'
 const ACCOUNT_KEY = 'siritest'
+
+// Without a timeout a dead host costs undici's 10s connect timeout on every call, and SSR waits
+// for it. The discovery answers are large, so they get more room than a stop lookup.
+const SIRI_TIMEOUT_MS = Number(process.env.SIRI_TIMEOUT_MS) || 4000
+const SIRI_DISCOVERY_TIMEOUT_MS = Number(process.env.SIRI_DISCOVERY_TIMEOUT_MS) || 15000
 
 // Cache for vehicles
 let vehiclesCache: { data: any[], timestamp: number } | null = null
@@ -58,7 +65,7 @@ function buildSiriRequest(requestInnerXml: string = '', isDiscoveryRequest: bool
 </request>`
 }
 
-async function callSiriService(operation: string, requestXmlBody: string): Promise<any> {
+async function callSiriService(operation: string, requestXmlBody: string, timeoutMs = SIRI_TIMEOUT_MS): Promise<any> {
     const soapEnvelope = `
 <v:Envelope xmlns:i="http://www.w3.org/2001/XMLSchema-instance" 
             xmlns:d="http://www.w3.org/2001/XMLSchema" 
@@ -92,6 +99,7 @@ async function callSiriService(operation: string, requestXmlBody: string): Promi
             'Content-Type': 'text/xml;charset=utf-8',
         },
         body: bodyBytes,
+        signal: AbortSignal.timeout(timeoutMs),
     })
 
     if (!response.ok) {
@@ -164,7 +172,7 @@ function xmlToJson(xml: string): any {
 
 export async function fetchLines() {
     const requestXml = buildSiriRequest('', true)
-    const result = await callSiriService('LinesDiscovery', requestXml)
+    const result = await callSiriService('LinesDiscovery', requestXml, SIRI_DISCOVERY_TIMEOUT_MS)
 
     const annotatedLines = result?.Answer?.AnnotatedLineRef
     if (!annotatedLines) return []
@@ -209,7 +217,7 @@ export async function fetchLines() {
 
 export async function fetchStops() {
     const requestXml = buildSiriRequest('', true)
-    const result = await callSiriService('StopPointsDiscovery', requestXml)
+    const result = await callSiriService('StopPointsDiscovery', requestXml, SIRI_DISCOVERY_TIMEOUT_MS)
 
     const annotatedStops = result?.Answer?.AnnotatedStopPointRef
     if (!annotatedStops) return []
@@ -245,7 +253,20 @@ export async function fetchStops() {
 }
 
 
+/**
+ * Arrivals for a stop, from Salamanca de Transportes' JSON API first and the SOAP service only
+ * if that fails: the JSON API is the faster of the two and the one their own website uses.
+ */
 export async function fetchArrivals(stopId: string) {
+    try {
+        return await fetchTransportesArrivals(stopId)
+    } catch (error) {
+        console.warn(`[SIRI] JSON arrivals failed for stop ${stopId}, trying SOAP:`, (error as Error).message)
+        return await fetchSoapArrivals(stopId)
+    }
+}
+
+async function fetchSoapArrivals(stopId: string) {
     const innerXml = `
       <n4:PreviewInterval xmlns:n4="http://www.siri.org.uk/siri">PT30M</n4:PreviewInterval>
       <n4:MonitoringRef xmlns:n4="http://www.siri.org.uk/siri">${stopId}</n4:MonitoringRef>
