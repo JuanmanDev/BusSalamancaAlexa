@@ -13,10 +13,17 @@ import { join } from 'node:path'
  *
  * The catalogues are static in practice, so a good answer is kept in memory and on disk and
  * reused whenever a fetch comes back empty.
+ *
+ * Whenever a copy is held, it is served straight away and refreshed in the background. Every
+ * stop page renders the catalogue during SSR, so waiting on the upstream there put its latency —
+ * or, when the SOAP host went dark in October 2026, a 10s connect timeout — in front of every
+ * page view.
  */
 
 const DATA_DIR = process.env.NUXT_DATA_DIR || '/data'
 const DEFAULT_TTL_MS = 60 * 60 * 1000
+/** After a refresh that produced nothing, how long to leave the upstream alone. */
+const RETRY_AFTER_MS = 60 * 1000
 
 interface Entry<T> {
     items: T[]
@@ -26,6 +33,8 @@ interface Entry<T> {
 const memory = new Map<string, Entry<unknown>>()
 /** Guards against a burst of requests all starting the same upstream call. */
 const inFlight = new Map<string, Promise<unknown[]>>()
+/** When each catalogue last failed to refresh, so a dead upstream is not retried on every request. */
+const failedAt = new Map<string, number>()
 
 function snapshotPath(name: string): string {
     return join(DATA_DIR, `${name}.json`)
@@ -124,7 +133,8 @@ export async function getLastModified(name: string): Promise<Record<string, stri
 }
 
 /**
- * Returns the catalogue, preferring a fresh fetch and falling back to the last good one.
+ * Returns the catalogue: the copy held in memory or on disk when there is one — refreshing it in
+ * the background once it is older than `ttlMs` — and otherwise whatever the upstream gives.
  * An empty result is never treated as an answer worth keeping.
  */
 export async function loadReference<T>(
@@ -133,13 +143,38 @@ export async function loadReference<T>(
     ttlMs = DEFAULT_TTL_MS,
     tracking?: ChangeTracking<T>,
 ): Promise<T[]> {
-    const held = memory.get(name) as Entry<T> | undefined
-    if (held && held.items.length && Date.now() - held.fetchedAt < ttlMs) {
+    let held = memory.get(name) as Entry<T> | undefined
+
+    if (!held?.items.length) {
+        const fromDisk = await restore<T>(name)
+        if (fromDisk.length) {
+            console.warn(`[reference] ${name} not in memory, serving the snapshot on disk`)
+            // Deliberately not stamped as fresh: it is refreshed straight away below.
+            held = { items: fromDisk, fetchedAt: 0 }
+            memory.set(name, held)
+            // A restored catalogue still needs change dates — without this a server that only
+            // ever serves the snapshot (a long outage, or a restart at night) would publish a
+            // sitemap with no lastmod at all. First sighting stamps now and then stays put.
+            if (tracking) void updateChangeLog(name, fromDisk, tracking)
+        }
+    }
+
+    if (held?.items.length) {
+        if (Date.now() - held.fetchedAt >= ttlMs) void refresh(name, fetcher, tracking)
         return held.items
     }
 
+    return await refresh(name, fetcher, tracking)
+}
+
+function refresh<T>(name: string, fetcher: () => Promise<T[]>, tracking?: ChangeTracking<T>): Promise<T[]> {
     const existing = inFlight.get(name) as Promise<T[]> | undefined
-    if (existing) return await existing
+    if (existing) return existing
+
+    const held = memory.get(name) as Entry<T> | undefined
+    if (Date.now() - (failedAt.get(name) ?? 0) < RETRY_AFTER_MS) {
+        return Promise.resolve(held?.items ?? [])
+    }
 
     const pending = (async (): Promise<T[]> => {
         let fresh: T[] = []
@@ -150,27 +185,18 @@ export async function loadReference<T>(
         }
 
         if (fresh.length) {
+            failedAt.delete(name)
             memory.set(name, { items: fresh, fetchedAt: Date.now() })
             void persist(name, fresh)
             if (tracking) void updateChangeLog(name, fresh, tracking)
             return fresh
         }
 
-        if (held?.items.length) {
-            console.warn(`[reference] ${name} came back empty, serving the copy held in memory`)
-            return held.items
-        }
+        failedAt.set(name, Date.now())
 
-        const fromDisk = await restore<T>(name)
-        if (fromDisk.length) {
-            console.warn(`[reference] ${name} came back empty, serving the snapshot on disk`)
-            // Deliberately not stamped as fresh: the next request retries the upstream.
-            memory.set(name, { items: fromDisk, fetchedAt: 0 })
-            // A restored catalogue still needs change dates — without this a server that only
-            // ever serves the snapshot (a long outage, or a restart at night) would publish a
-            // sitemap with no lastmod at all. First sighting stamps now and then stays put.
-            if (tracking) void updateChangeLog(name, fromDisk, tracking)
-            return fromDisk
+        if (held?.items.length) {
+            console.warn(`[reference] ${name} came back empty, keeping the copy held in memory`)
+            return held.items
         }
 
         console.warn(`[reference] ${name} is empty and no snapshot exists yet`)
@@ -178,5 +204,5 @@ export async function loadReference<T>(
     })().finally(() => inFlight.delete(name))
 
     inFlight.set(name, pending as Promise<unknown[]>)
-    return await pending
+    return pending
 }
